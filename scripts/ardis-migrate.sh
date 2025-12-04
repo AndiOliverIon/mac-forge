@@ -21,6 +21,9 @@ if [[ -n "${FORGE_SECRETS_FILE:-}" && -f "$FORGE_SECRETS_FILE" ]]; then
     source "$FORGE_SECRETS_FILE"
 fi
 
+# Always use sa for this workflow (default if unset)
+FORGE_SQL_USER="${FORGE_SQL_USER:-sa}"
+
 # Required variables
 : "${ARDIS_MIGRATIONS_PATH:?ARDIS_MIGRATIONS_PATH must be set in forge.sh}"
 : "${ARDIS_MIGRATIONS_LIBRARY:?ARDIS_MIGRATIONS_LIBRARY must be set in forge.sh}"
@@ -46,6 +49,16 @@ if ! command -v dotnet >/dev/null 2>&1; then
     echo "dotnet is required but not found in PATH." >&2
     exit 1
 fi
+
+#######################################
+# Helper: ensure SQL container is running
+#######################################
+ensure_container_running() {
+    if ! docker ps --format '{{.Names}}' | grep -q "^${FORGE_SQL_DOCKER_CONTAINER}\$"; then
+        echo "SQL container '$FORGE_SQL_DOCKER_CONTAINER' is not running. Start it and retry." >&2
+        exit 1
+    fi
+}
 
 #######################################
 # Helper: detect TargetFramework from .csproj
@@ -152,13 +165,13 @@ main() {
     fi
 
     # Choose database
+    ensure_container_running
     db="$(choose_database)" || exit 1
     echo "Selected database: $db"
 
     # Compose connection string for the console (from host to container)
     conn_str="Server=${FORGE_SQL_HOST},${FORGE_SQL_PORT};Database=${db};User ID=${FORGE_SQL_USER};Password=${FORGE_SQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=False;"
 
-    echo "Cnn string $conn_str"
     export MIGRATIONS_DatabaseConnectionString="$conn_str"
 
     echo "Using MIGRATIONS_DatabaseConnectionString (password hidden):"

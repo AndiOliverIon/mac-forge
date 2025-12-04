@@ -2,6 +2,7 @@
 alias forge="cd ~/mac-forge"
 alias work="cd ~/work"
 alias perf="cd ~/work/ardis-perform"
+alias demo="cd ~/work/ardis-demo"
 alias gpt="cd ~/work/ardis.tools.extensions"
 
 # Git
