@@ -1,0 +1,29 @@
+# Navigation shortcuts
+alias forge="cd ~/mac-forge"
+alias work="cd ~/work"
+alias perf="cd ~/work/ardis-perform"
+alias gpt="cd ~/work/ardis.tools.extensions"
+
+# Git
+alias gs="git status"
+alias gco="git checkout"
+alias gp="git pull"
+alias gfo="git fetch origin"
+alias gpu="git push"
+
+# Docker
+alias dps="docker ps"
+alias dcu="docker compose up"
+alias dcd="docker compose down"
+
+# Common folders
+alias doc="cd ~/Documents"
+alias desk="cd ~/Desktop"
+alias oliver="cd ~/"
+alias down="cd ~/Downloads"
+
+# Command commands
+alias reloadterm="source ~/.zshrc"
+
+# Applications
+alias rider="open -a 'Rider.app'"
