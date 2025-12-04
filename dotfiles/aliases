@@ -19,6 +19,7 @@ alias dcd="docker compose down"
 # Common folders
 alias doc="cd ~/Documents"
 alias desk="cd ~/Desktop"
+alias dev="cd ~/dev"
 alias oliver="cd ~/"
 alias down="cd ~/Downloads"
 
@@ -29,8 +30,11 @@ alias reloadterm="source ~/.zshrc"
 alias rider="open -a 'Rider.app'"
 
 # borg script commands
-alias bds="~/mac-forge/scripts/db-restore.sh"
+alias bdr="~/mac-forge/scripts/db-restore.sh"
+alias bds="~/mac-forge/scripts/db-snapshot.sh"
 
 # work drives
 alias vsql="cd /Volumes/shared/sql"
 alias cloudforge='cd "$HOME/Library/Mobile Documents/com~apple~CloudDocs/forge"'
+alias snapshots="cd /Users/oliver/sql/docker/snapshots"
+alias snap=snapshots

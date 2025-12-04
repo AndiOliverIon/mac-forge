@@ -20,3 +20,13 @@ echo ".DS_Store" >> ~/.gitignore_global
 
 # installing forticlient vpn
 pay attention, take forticlient vpn only. not their entire shit/
+
+
+# set your correct git user account
+# on global
+git config --global user.name "Andi Ion Oliver"
+git config --global user.email "andioliverion@gmail.com"
+
+# on work
+git config --global user.name "Andi Ion Oliver"
+git config --global user.email "andi@ardis.eu"
