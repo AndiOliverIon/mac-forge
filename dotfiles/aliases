@@ -27,3 +27,10 @@ alias reloadterm="source ~/.zshrc"
 
 # Applications
 alias rider="open -a 'Rider.app'"
+
+# borg script commands
+alias bds="~/mac-forge/scripts/db-restore.sh"
+
+# work drives
+alias vsql="cd /Volumes/shared/sql"
+alias cloudforge='cd "$HOME/Library/Mobile Documents/com~apple~CloudDocs/forge"'
