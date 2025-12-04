@@ -38,3 +38,7 @@ alias vsql="cd /Volumes/shared/sql"
 alias cloudforge='cd "$HOME/Library/Mobile Documents/com~apple~CloudDocs/forge"'
 alias snapshots="cd /Users/oliver/sql/docker/snapshots"
 alias snap=snapshots
+
+# work aliases for commands
+alias ardis-migrate="~/mac-forge/scripts/ardis-migrate.sh"
+alias am="~/mac-forge/scripts/ardis-migrate.sh"

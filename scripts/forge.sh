@@ -33,6 +33,13 @@ FORGE_SQL_SNAPSHOTS_PATH="$FORGE_DOCKER_VOLUME_ROOT/snapshots"
 # Docker / SQL Server
 #######################################
 FORGE_SQL_DOCKER_CONTAINER="forge-sql"
+FORGE_SQL_USER="sa"
+
+#######################################
+# Ardis migrations
+#######################################
+ARDIS_MIGRATIONS_PATH="$HOME/work/ardis-perform/Ardis.Migrations.Console"
+ARDIS_MIGRATIONS_LIBRARY="Ardis.Migrations.Console.dll"
 
 #######################################
 # Export
@@ -47,4 +54,6 @@ export \
   FORGE_SECRETS_FILE \
   FORGE_SQL_DOCKER_CONTAINER \
   FORGE_SQL_DOCKER_ROOT \
-  FORGE_SQL_DOCKER_BACKUP_PATH
+  FORGE_SQL_DOCKER_BACKUP_PATH \
+  ARDIS_MIGRATIONS_PATH \
+  ARDIS_MIGRATIONS_LIBRARY
