@@ -24,8 +24,10 @@ alias dev="cd ~/dev"
 alias oliver="cd ~/"
 alias down="cd ~/Downloads"
 
-# Command commands
+# system commands
 alias reloadterm="source ~/.zshrc"
+alias showeth='networksetup -listallhardwareports | awk "/Hardware Port|Device/"; echo; for i in $(networksetup -listallhardwareports | awk "/Device/ {print \$2}"); do ip=$(ipconfig getifaddr $i 2>/dev/null); echo "$i : ${ip:-no-ip}"; done'
+
 
 # Applications
 alias rider="open -a 'Rider.app'"

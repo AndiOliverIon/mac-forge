@@ -30,3 +30,6 @@ git config --global user.email "andioliverion@gmail.com"
 # on work
 git config --global user.name "Andi Ion Oliver"
 git config --global user.email "andi@ardis.eu"
+
+# restart codemeter wibu
+sudo launchctl kickstart -k system/com.wibu.CodeMeter.Server

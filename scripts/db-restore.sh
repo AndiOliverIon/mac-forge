@@ -76,6 +76,7 @@ ensure_sql_container() {
 
     # Prefer FORGE_SQL_SA_PASSWORD, fall back to SA_PASSWORD if set
     local sa_password="${FORGE_SQL_SA_PASSWORD:-${SA_PASSWORD:-}}"
+    local host_port="${FORGE_SQL_PORT:-1433}"
     [[ -n "$sa_password" ]] || die "SA password not set. Define FORGE_SQL_SA_PASSWORD in '$FORGE_SECRETS_FILE'."
 
     local name="$FORGE_SQL_DOCKER_CONTAINER"
@@ -107,12 +108,13 @@ ensure_sql_container() {
             -e "ACCEPT_EULA=Y" \
             -e "MSSQL_SA_PASSWORD=$sa_password" \
             -e "SA_PASSWORD=$sa_password" \
-            -p 1433:1433 \
+            -p "${host_port}:1433" \
             -v "$FORGE_DOCKER_VOLUME_ROOT:$FORGE_SQL_DOCKER_ROOT" \
             "$image" >/dev/null
 
         echo "Container '$name' created and started from image '$image'."
         echo "Host volume: $FORGE_DOCKER_VOLUME_ROOT  ->  Container: $FORGE_SQL_DOCKER_ROOT"
+        echo "Host port ${host_port} -> container port 1433"
     fi
 }
 
