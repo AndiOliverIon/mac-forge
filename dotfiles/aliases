@@ -33,6 +33,7 @@ alias rider="open -a 'Rider.app'"
 # borg script commands
 alias bdr="~/mac-forge/scripts/db-restore.sh"
 alias bds="~/mac-forge/scripts/db-snapshot.sh"
+alias bdc="~/mac-forge/scripts/db-clear.sh"
 
 # work drives
 alias vsql="cd /Volumes/shared/sql"
