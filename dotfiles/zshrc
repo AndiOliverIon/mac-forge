@@ -119,3 +119,6 @@ source "$(brew --prefix nvm)/nvm.sh"
 
 # load aliases
 source ~/mac-forge/dotfiles/aliases
+
+# Load Angular CLI autocompletion.
+source <(ng completion script)

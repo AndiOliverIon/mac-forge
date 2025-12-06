@@ -43,6 +43,18 @@ ARDIS_MIGRATIONS_PATH="$HOME/work/ardis-perform/Ardis.Migrations.Console"
 ARDIS_MIGRATIONS_LIBRARY="Ardis.Migrations.Console.dll"
 
 #######################################
+# Perform
+#######################################
+PERFORM_ROOT="${PERFORM_ROOT:-$HOME/work/ardis-perform}"
+PERFORM_WEB_PROJECT="${PERFORM_WEB_PROJECT:-Asms2.Web}"
+
+#######################################
+# System paths
+#######################################
+# Path to libgdiplus from Homebrew (tweak if your brew path changes)
+LIBGDIPLUS_PATH="${LIBGDIPLUS_PATH:-/opt/homebrew/opt/mono-libgdiplus/lib/libgdiplus.dylib}"
+
+#######################################
 # Export
 #######################################
 export \
@@ -58,4 +70,7 @@ export \
   FORGE_SQL_DOCKER_ROOT \
   FORGE_SQL_DOCKER_BACKUP_PATH \
   ARDIS_MIGRATIONS_PATH \
-  ARDIS_MIGRATIONS_LIBRARY
+  ARDIS_MIGRATIONS_LIBRARY \
+  PERFORM_ROOT \
+  PERFORM_WEB_PROJECT \
+  LIBGDIPLUS_PATH

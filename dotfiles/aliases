@@ -2,8 +2,11 @@
 alias forge="cd ~/mac-forge"
 alias work="cd ~/work"
 alias perf="cd ~/work/ardis-perform"
+alias perfclient="cd ~/work/ardis-perform/ardis.perform.client"
 alias demo="cd ~/work/ardis-demo"
 alias gpt="cd ~/work/ardis.tools.extensions"
+alias lc="cd ~/work/ardis-local-connector"
+alias localconnector="cd ~/work/ardis-local-connector"
 
 # Git
 alias gs="git status"
@@ -36,6 +39,7 @@ alias rider="open -a 'Rider.app'"
 alias bdr="~/mac-forge/scripts/db-restore.sh"
 alias bds="~/mac-forge/scripts/db-snapshot.sh"
 alias bdc="~/mac-forge/scripts/db-clear.sh"
+alias binclear="~/mac-forge/scripts/bin-clear.sh"
 
 # work drives
 alias vsql="cd /Volumes/shared/sql"
@@ -46,3 +50,7 @@ alias snap=snapshots
 # work aliases for commands
 alias ardis-migrate="~/mac-forge/scripts/ardis-migrate.sh"
 alias am="~/mac-forge/scripts/ardis-migrate.sh"
+
+# ardis usefull scripts to run
+# Prepare prep different needs of perform.
+alias perform-prep="~/mac-forge/scripts/perform-prep.sh"
