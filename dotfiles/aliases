@@ -28,11 +28,17 @@ alias desk="cd ~/Desktop"
 alias dev="cd ~/dev"
 alias oliver="cd ~/"
 alias down="cd ~/Downloads"
+alias andi-notes="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
+alias an="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
+alias notes="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
+
 
 # system commands
 alias reloadterm="source ~/.zshrc"
 alias showeth='networksetup -listallhardwareports | awk "/Hardware Port|Device/"; echo; for i in $(networksetup -listallhardwareports | awk "/Device/ {print \$2}"); do ip=$(ipconfig getifaddr $i 2>/dev/null); echo "$i : ${ip:-no-ip}"; done'
 alias cdp='pwd | pbcopy'
+alias info="~/mac-forge/scripts/info.sh"
+alias winappclean="~/mac-forge/scripts/win-shortcut-clean.sh"
 
 # Applications
 alias rider="open -a 'Rider.app'"
