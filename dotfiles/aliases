@@ -5,6 +5,7 @@ alias perf="cd ~/work/ardis-perform"
 alias perfclient="cd ~/work/ardis-perform/ardis.perform.client"
 alias demo="cd ~/work/ardis-demo"
 alias gpt="cd ~/work/ardis.tools.extensions"
+alias gptbin="cd ~/work/ardis.tools.extensions/Ardis.Utils/bin/debug/net8.0"
 alias lc="cd ~/work/ardis-local-connector"
 alias localconnector="cd ~/work/ardis-local-connector"
 
@@ -14,6 +15,7 @@ alias gco="git checkout"
 alias gp="git pull"
 alias gfo="git fetch origin"
 alias gpu="git push"
+alias gb="git branch"
 
 # Docker
 alias dps="docker ps"
@@ -30,7 +32,7 @@ alias down="cd ~/Downloads"
 # system commands
 alias reloadterm="source ~/.zshrc"
 alias showeth='networksetup -listallhardwareports | awk "/Hardware Port|Device/"; echo; for i in $(networksetup -listallhardwareports | awk "/Device/ {print \$2}"); do ip=$(ipconfig getifaddr $i 2>/dev/null); echo "$i : ${ip:-no-ip}"; done'
-
+alias cdp='pwd | pbcopy'
 
 # Applications
 alias rider="open -a 'Rider.app'"
