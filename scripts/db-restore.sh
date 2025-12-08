@@ -80,7 +80,7 @@ ensure_sql_container() {
     [[ -n "$sa_password" ]] || die "SA password not set. Define FORGE_SQL_SA_PASSWORD in '$FORGE_SECRETS_FILE'."
 
     local name="$FORGE_SQL_DOCKER_CONTAINER"
-    local image="mcr.microsoft.com/mssql/server:2022-latest"  # adjust if needed
+    local image="${FORGE_SQL_DOCKER_IMAGE:-mcr.microsoft.com/mssql/server:2022-latest}"
 
     # Make sure host volume root is defined
     [[ -n "${FORGE_DOCKER_VOLUME_ROOT:-}" ]] \
@@ -251,7 +251,7 @@ echo "Starting restore of database [$db_name]..."
 docker exec -i "$FORGE_SQL_DOCKER_CONTAINER" \
   /opt/mssql-tools18/bin/sqlcmd \
     -S localhost \
-    -U sa \
+    -U "$FORGE_SQL_USER" \
     -P "$FORGE_SQL_SA_PASSWORD" \
     -C \
     -b <<SQL_EOF

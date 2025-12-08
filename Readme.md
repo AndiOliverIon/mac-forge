@@ -18,6 +18,10 @@ echo ".DS_Store" >> ~/.gitignore_global
 # Generate faster key repeat rate and delay shorter
 # Do not want this, was not happy with it
 
+# pointers
+I use a lot raycast, one mistake was to open by mistake parallels accesing an application
+that I meant for macos. There is a script that allows me to remove that and allow me to specify the only ones I really need = win-shortcut-clean.sh
+
 # installing forticlient vpn
 pay attention, take forticlient vpn only. not their entire shit/
 

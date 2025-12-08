@@ -8,6 +8,7 @@ alias gpt="cd ~/work/ardis.tools.extensions"
 alias gptbin="cd ~/work/ardis.tools.extensions/Ardis.Utils/bin/debug/net8.0"
 alias lc="cd ~/work/ardis-local-connector"
 alias localconnector="cd ~/work/ardis-local-connector"
+alias fn="cd ~/projects/macos-frontnotes"
 
 # Git
 alias gs="git status"
@@ -32,7 +33,6 @@ alias andi-notes="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
 alias an="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
 alias notes="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
 
-
 # system commands
 alias reloadterm="source ~/.zshrc"
 alias showeth='networksetup -listallhardwareports | awk "/Hardware Port|Device/"; echo; for i in $(networksetup -listallhardwareports | awk "/Device/ {print \$2}"); do ip=$(ipconfig getifaddr $i 2>/dev/null); echo "$i : ${ip:-no-ip}"; done'
@@ -43,10 +43,11 @@ alias winappclean="~/mac-forge/scripts/win-shortcut-clean.sh"
 # Applications
 alias rider="open -a 'Rider.app'"
 
-# borg script commands
-alias bdr="~/mac-forge/scripts/db-restore.sh"
-alias bds="~/mac-forge/scripts/db-snapshot.sh"
-alias bdc="~/mac-forge/scripts/db-clear.sh"
+# forge script commands
+alias dbs="~/mac-forge/scripts/docker-start.sh"
+alias dbr="~/mac-forge/scripts/db-restore.sh"
+alias dbsn="~/mac-forge/scripts/db-snapshot.sh"
+alias dbc="~/mac-forge/scripts/db-clear.sh"
 alias binclear="~/mac-forge/scripts/bin-clear.sh"
 
 # work drives
