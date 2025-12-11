@@ -7,115 +7,114 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [[ -f "$SCRIPT_DIR/forge.sh" ]]; then
-    # shellcheck disable=SC1091
-    source "$SCRIPT_DIR/forge.sh"
+	# shellcheck disable=SC1091
+	source "$SCRIPT_DIR/forge.sh"
 else
-    # shellcheck disable=SC1091
-    source "$HOME/mac-forge/forge.sh"
+	# shellcheck disable=SC1091
+	source "$HOME/mac-forge/forge.sh"
 fi
 
 #######################################
 # Helpers
 #######################################
 die() {
-    echo "✖ $*" >&2
-    exit 1
+	echo "✖ $*" >&2
+	exit 1
 }
 
 require_cmd() {
-    command -v "$1" >/dev/null 2>&1 || die "Required command '$1' not found."
+	command -v "$1" >/dev/null 2>&1 || die "Required command '$1' not found."
 }
 
 #######################################
 # Load secrets from iCloud (if any)
 #######################################
 load_secrets() {
-    if [[ -n "${FORGE_SECRETS_FILE:-}" && -f "$FORGE_SECRETS_FILE" ]]; then
-        # shellcheck disable=SC1090
-        source "$FORGE_SECRETS_FILE"
-    fi
+	if [[ -n "${FORGE_SECRETS_FILE:-}" && -f "$FORGE_SECRETS_FILE" ]]; then
+		# shellcheck disable=SC1090
+		source "$FORGE_SECRETS_FILE"
+	fi
 }
 
 #######################################
 # Wait function for SQL Server readiness
 #######################################
 wait_for_sql_ready() {
-    echo "Waiting for SQL Server in container '$FORGE_SQL_DOCKER_CONTAINER' to be ready..."
+	echo "Waiting for SQL Server in container '$FORGE_SQL_DOCKER_CONTAINER' to be ready..."
 
-    local max_tries=30
-    local i
+	local max_tries=30
+	local i
 
-    for ((i=1; i<=max_tries; i++)); do
-        # Try a simple SELECT 1 using the same credentials as in Step 7
-        if docker exec "$FORGE_SQL_DOCKER_CONTAINER" \
-            /opt/mssql-tools18/bin/sqlcmd \
-                -S localhost \
-                -U sa \
-                -P "$FORGE_SQL_SA_PASSWORD" \
-                -C \
-                -Q "SELECT 1" >/dev/null 2>&1; then
+	for ((i = 1; i <= max_tries; i++)); do
+		# Try a simple SELECT 1 using the same credentials as in Step 7
+		if docker exec "$FORGE_SQL_DOCKER_CONTAINER" \
+			/opt/mssql-tools18/bin/sqlcmd \
+			-S localhost \
+			-U sa \
+			-P "$FORGE_SQL_SA_PASSWORD" \
+			-C \
+			-Q "SELECT 1" >/dev/null 2>&1; then
 
-            echo "SQL Server is ready (attempt $i)."
-            return 0
-        fi
+			echo "SQL Server is ready (attempt $i)."
+			return 0
+		fi
 
-        echo "  ... not ready yet (attempt $i), retrying in 2s"
-        sleep 2
-    done
+		echo "  ... not ready yet (attempt $i), retrying in 2s"
+		sleep 2
+	done
 
-    die "SQL Server did not become ready after $((max_tries * 2)) seconds."
+	die "SQL Server did not become ready after $((max_tries * 2)) seconds."
 }
-
 
 #######################################
 # Ensure SQL container exists & is running
 #######################################
 ensure_sql_container() {
-    require_cmd docker
-    load_secrets
+	require_cmd docker
+	load_secrets
 
-    # Prefer FORGE_SQL_SA_PASSWORD, fall back to SA_PASSWORD if set
-    local sa_password="${FORGE_SQL_SA_PASSWORD:-${SA_PASSWORD:-}}"
-    local host_port="${FORGE_SQL_PORT:-1433}"
-    [[ -n "$sa_password" ]] || die "SA password not set. Define FORGE_SQL_SA_PASSWORD in '$FORGE_SECRETS_FILE'."
+	# Prefer FORGE_SQL_SA_PASSWORD, fall back to SA_PASSWORD if set
+	local sa_password="${FORGE_SQL_SA_PASSWORD:-${SA_PASSWORD:-}}"
+	local host_port="${FORGE_SQL_PORT:-1433}"
+	[[ -n "$sa_password" ]] || die "SA password not set. Define FORGE_SQL_SA_PASSWORD in '$FORGE_SECRETS_FILE'."
 
-    local name="$FORGE_SQL_DOCKER_CONTAINER"
-    local image="${FORGE_SQL_DOCKER_IMAGE:-mcr.microsoft.com/mssql/server:2022-latest}"
+	local name="$FORGE_SQL_DOCKER_CONTAINER"
+	local image="${FORGE_SQL_DOCKER_IMAGE:-mcr.microsoft.com/mssql/server:2022-latest}"
 
-    # Make sure host volume root is defined
-    [[ -n "${FORGE_DOCKER_VOLUME_ROOT:-}" ]] \
-        || die "FORGE_DOCKER_VOLUME_ROOT is not set in forge.sh."
+	# Make sure host volume root is defined
+	[[ -n "${FORGE_DOCKER_VOLUME_ROOT:-}" ]] ||
+		die "FORGE_DOCKER_VOLUME_ROOT is not set in forge.sh."
 
-    # Ensure the host folder exists (on your external/shared storage)
-    mkdir -p "$FORGE_DOCKER_VOLUME_ROOT"
+	# Ensure the host folder exists (on your external/shared storage)
+	mkdir -p "$FORGE_DOCKER_VOLUME_ROOT"
 
-    # Does container exist at all?
-    if docker ps -a --format '{{.Names}}' | grep -q "^${name}\$"; then
-        echo "Container '$name' already exists."
+	# Does container exist at all?
+	if docker ps -a --format '{{.Names}}' | grep -q "^${name}\$"; then
+		echo "Container '$name' already exists."
 
-        # Is it running?
-        if docker ps --format '{{.Names}}' | grep -q "^${name}\$"; then
-            echo "Container '$name' is already running."
-        else
-            echo "Starting existing container '$name'..."
-            docker start "$name" >/dev/null
-        fi
-    else
-        echo "Container '$name' does not exist. Creating a new SQL Server container..."
+		# Is it running?
+		if docker ps --format '{{.Names}}' | grep -q "^${name}\$"; then
+			echo "Container '$name' is already running."
+		else
+			echo "Starting existing container '$name'..."
+			docker start "$name" >/dev/null
+		fi
+	else
+		echo "Container '$name' does not exist. Creating a new SQL Server container..."
 
-        docker run -d \
-            --name "$name" \
-            -e "ACCEPT_EULA=Y" \
-            -e "MSSQL_SA_PASSWORD=$sa_password" \
-            -e "SA_PASSWORD=$sa_password" \
-            -p "${host_port}:1433" \
-            -v "$FORGE_DOCKER_VOLUME_ROOT:$FORGE_SQL_DOCKER_ROOT" \
-            "$image" >/dev/null
+		docker run -d \
+			--name "$name" \
+			-e "ACCEPT_EULA=Y" \
+			-e "MSSQL_SA_PASSWORD=$sa_password" \
+			-e "SA_PASSWORD=$sa_password" \
+			-p "${host_port}:1433" \
+			-v "$FORGE_DOCKER_VOLUME_ROOT:$FORGE_SQL_DOCKER_ROOT" \
+			"$image" >/dev/null
 
-        echo "Container '$name' created and started from image '$image'."
-        echo "Host volume: $FORGE_DOCKER_VOLUME_ROOT  ->  Container: $FORGE_SQL_DOCKER_ROOT"
-        echo "Host port ${host_port} -> container port 1433"
-    fi
+		echo "Container '$name' created and started from image '$image'."
+		echo "Host volume: $FORGE_DOCKER_VOLUME_ROOT  ->  Container: $FORGE_SQL_DOCKER_ROOT"
+		echo "Host port ${host_port} -> container port 1433"
+	fi
 }
 
 #######################################
@@ -136,14 +135,19 @@ wait_for_sql_ready
 backups=()
 
 load_backups() {
-    local dir="$1"
-    backups=()
+	local dir="$1"
+	backups=()
 
-    [[ -d "$dir" ]] || return 0
+	[[ -d "$dir" ]] || return 0
 
-    mapfile -d '' backups < <(
-        find "$dir" -maxdepth 1 -type f -iname "*.bak" -print0 2>/dev/null
-    )
+	mapfile -d '' backups < <(
+		find "$dir" \
+			-maxdepth 1 \
+			-type f \
+			-iname "*.bak" \
+			! -name '._*' \
+			-print0 2>/dev/null
+	)
 }
 
 # Priority 0: current working directory
@@ -152,19 +156,19 @@ echo "Searching for .bak files in current directory: $CWD"
 load_backups "$CWD"
 
 # Priority 1: FORGE_SQL_PATH
-if (( ${#backups[@]} == 0 )) && [[ -n "${FORGE_SQL_PATH:-}" ]]; then
-    echo "No .bak files in current directory. Searching FORGE_SQL_PATH: $FORGE_SQL_PATH"
-    load_backups "$FORGE_SQL_PATH"
+if ((${#backups[@]} == 0)) && [[ -n "${FORGE_SQL_PATH:-}" ]]; then
+	echo "No .bak files in current directory. Searching FORGE_SQL_PATH: $FORGE_SQL_PATH"
+	load_backups "$FORGE_SQL_PATH"
 fi
 
 # Priority 2: FORGE_SQL_SNAPSHOTS_PATH
-if (( ${#backups[@]} == 0 )) && [[ -n "${FORGE_SQL_SNAPSHOTS_PATH:-}" ]]; then
-    echo "No .bak files in FORGE_SQL_PATH. Searching snapshots: $FORGE_SQL_SNAPSHOTS_PATH"
-    load_backups "$FORGE_SQL_SNAPSHOTS_PATH"
+if ((${#backups[@]} == 0)) && [[ -n "${FORGE_SQL_SNAPSHOTS_PATH:-}" ]]; then
+	echo "No .bak files in FORGE_SQL_PATH. Searching snapshots: $FORGE_SQL_SNAPSHOTS_PATH"
+	load_backups "$FORGE_SQL_SNAPSHOTS_PATH"
 fi
 
-if (( ${#backups[@]} == 0 )); then
-    die "No .bak files found in:
+if ((${#backups[@]} == 0)); then
+	die "No .bak files found in:
   - $CWD
   - ${FORGE_SQL_PATH:-<FORGE_SQL_PATH not set>}
   - ${FORGE_SQL_SNAPSHOTS_PATH:-<FORGE_SQL_SNAPSHOTS_PATH not set>}"
@@ -176,7 +180,7 @@ fi
 backup_paths=("${backups[@]}")
 
 selected_file="$(
-    printf '%s\n' "${backup_paths[@]}" | fzf --prompt='Select backup to restore > '
+	printf '%s\n' "${backup_paths[@]}" | fzf --prompt='Select backup to restore > '
 )" || die "No file selected."
 
 backup_basename="$(basename "$selected_file")"
@@ -184,9 +188,9 @@ backup_basename="$(basename "$selected_file")"
 #######################################
 # Step 3: Extract default DB name
 #######################################
-base="${backup_basename%.*}"     # remove extension
-base="${base%%.*}"               # cut at first dot
-default_db_name="${base%%_*}"    # cut at first underscore
+base="${backup_basename%.*}"  # remove extension
+base="${base%%.*}"            # cut at first dot
+default_db_name="${base%%_*}" # cut at first underscore
 
 [[ -n "$default_db_name" ]] || default_db_name="$base"
 
@@ -205,14 +209,14 @@ container_backup_name="$db_name"
 
 # ensure .bak extension
 if [[ ! "$container_backup_name" =~ \.bak$ ]]; then
-    container_backup_name="${container_backup_name}.bak"
+	container_backup_name="${container_backup_name}.bak"
 fi
 
 #######################################
 # Step 5: Final sanity: container running
 #######################################
 if ! docker ps --format '{{.Names}}' | grep -q "^${FORGE_SQL_DOCKER_CONTAINER}\$"; then
-    die "Container '$FORGE_SQL_DOCKER_CONTAINER' is not running even after ensure_sql_container."
+	die "Container '$FORGE_SQL_DOCKER_CONTAINER' is not running even after ensure_sql_container."
 fi
 
 #######################################
@@ -233,7 +237,7 @@ docker exec "$FORGE_SQL_DOCKER_CONTAINER" bash -lc "
 
 # Copy new backup file into container
 docker cp "$selected_file" \
-    "${FORGE_SQL_DOCKER_CONTAINER}:${FORGE_SQL_DOCKER_BACKUP_PATH}/${container_backup_name}"
+	"${FORGE_SQL_DOCKER_CONTAINER}:${FORGE_SQL_DOCKER_BACKUP_PATH}/${container_backup_name}"
 
 # Fix ownership and permissions as ROOT inside the container
 docker exec -u 0 "$FORGE_SQL_DOCKER_CONTAINER" bash -lc "
@@ -249,12 +253,12 @@ echo "✔ Copied backup into container (with overwrite handling) and adjusted pe
 echo "Starting restore of database [$db_name]..."
 
 docker exec -i "$FORGE_SQL_DOCKER_CONTAINER" \
-  /opt/mssql-tools18/bin/sqlcmd \
-    -S localhost \
-    -U "$FORGE_SQL_USER" \
-    -P "$FORGE_SQL_SA_PASSWORD" \
-    -C \
-    -b <<SQL_EOF
+	/opt/mssql-tools18/bin/sqlcmd \
+	-S localhost \
+	-U "$FORGE_SQL_USER" \
+	-P "$FORGE_SQL_SA_PASSWORD" \
+	-C \
+	-b <<SQL_EOF
 IF EXISTS (SELECT 1 FROM sys.databases WHERE name = N'$db_name')
 BEGIN
     PRINT 'Database $db_name exists → setting SINGLE_USER...';

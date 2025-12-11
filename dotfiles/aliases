@@ -59,10 +59,16 @@ alias vsql="cd /Volumes/shared/sql"
 alias cloudforge='cd "$HOME/Library/Mobile Documents/com~apple~CloudDocs/forge"'
 alias snapshots="cd /Volumes/shared/sql/docker/snapshots"
 alias snap=snapshots
+alias snapdel="snap && rm -rf ./*"
+alias locsnapshots="cd ~/sql/docker/snapshots"
+alias lcsnap=locsnapshots
+alias lcsnapdel="lcsnap && rm -rf ./*"
 
 # work aliases for commands
 alias ardis-migrate="~/mac-forge/scripts/ardis-migrate.sh"
-alias am="~/mac-forge/scripts/ardis-migrate.sh"
+alias am="ardis-migrate"
+alias ardis-complete="~/mac-forge/scripts/ardis-complete.sh"
+alias ac="ardis-complete"
 
 # ardis usefull scripts to run
 # Prepare prep different needs of perform.
