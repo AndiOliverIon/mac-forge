@@ -32,6 +32,7 @@ alias down="cd ~/Downloads"
 alias andi-notes="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
 alias an="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
 alias notes="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
+alias perflogs="cd ~/work/perform-output/logs/perform"
 
 # system commands
 alias reloadterm="source ~/.zshrc"
@@ -39,11 +40,12 @@ alias showeth='networksetup -listallhardwareports | awk "/Hardware Port|Device/"
 alias cdp='pwd | pbcopy'
 alias info="~/mac-forge/scripts/info.sh"
 alias winappclean="~/mac-forge/scripts/win-shortcut-clean.sh"
+alias dela="rm -rf ./*"
 
 # Applications
 alias rider="open -a 'Rider.app'"
 
-# forge script commands
+# Database work script commands
 alias dbs="~/mac-forge/scripts/docker-start.sh"
 alias dbr="~/mac-forge/scripts/db-restore.sh"
 alias dbsn="~/mac-forge/scripts/db-snapshot.sh"
@@ -53,7 +55,7 @@ alias binclear="~/mac-forge/scripts/bin-clear.sh"
 # work drives
 alias vsql="cd /Volumes/shared/sql"
 alias cloudforge='cd "$HOME/Library/Mobile Documents/com~apple~CloudDocs/forge"'
-alias snapshots="cd /Users/oliver/sql/docker/snapshots"
+alias snapshots="cd /Volumes/shared/sql/docker/snapshots"
 alias snap=snapshots
 
 # work aliases for commands
