@@ -17,6 +17,7 @@ alias gp="git pull"
 alias gfo="git fetch origin"
 alias gpu="git push"
 alias gb="git branch"
+alias gbd="~/mac-forge/scripts/branch-delete.sh"
 
 # Docker
 alias dps="docker ps"
@@ -32,7 +33,7 @@ alias down="cd ~/Downloads"
 alias andi-notes="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
 alias an="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
 alias notes="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
-alias perflogs="cd ~/work/perform-output/logs/perform"
+alias perflog="cd ~/work/perform-output/logs/perform"
 
 # system commands
 alias reloadterm="source ~/.zshrc"
@@ -41,6 +42,7 @@ alias cdp='pwd | pbcopy'
 alias info="~/mac-forge/scripts/info.sh"
 alias winappclean="~/mac-forge/scripts/win-shortcut-clean.sh"
 alias dela="rm -rf ./*"
+alias perflogclean="perflogs && rm -rf ./*"
 
 # Applications
 alias rider="open -a 'Rider.app'"
