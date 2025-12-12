@@ -35,6 +35,9 @@ alias an="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
 alias notes="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
 alias perflog="cd ~/work/perform-output/logs/perform"
 
+# Mounts
+alias shared="cd /Volumes/shared"
+
 # system commands
 alias reloadterm="source ~/.zshrc"
 alias showeth='networksetup -listallhardwareports | awk "/Hardware Port|Device/"; echo; for i in $(networksetup -listallhardwareports | awk "/Device/ {print \$2}"); do ip=$(ipconfig getifaddr $i 2>/dev/null); echo "$i : ${ip:-no-ip}"; done'
@@ -43,6 +46,10 @@ alias info="~/mac-forge/scripts/info.sh"
 alias winappclean="~/mac-forge/scripts/win-shortcut-clean.sh"
 alias dela="rm -rf ./*"
 alias perflogclean="perflogs && rm -rf ./*"
+alias screenshotclean="desk && rm -f *.png"
+alias eject-all="~/mac-forge/scripts/eject-all.sh"
+alias ejectall=eject-all
+alias ea=eject-all
 
 # Applications
 alias rider="open -a 'Rider.app'"
@@ -69,7 +76,3 @@ alias ardis-migrate="~/mac-forge/scripts/ardis-migrate.sh"
 alias am="ardis-migrate"
 alias ardis-complete="~/mac-forge/scripts/ardis-complete.sh"
 alias ac="ardis-complete"
-
-# ardis usefull scripts to run
-# Prepare prep different needs of perform.
-alias perform-prep="~/mac-forge/scripts/perform-prep.sh"
