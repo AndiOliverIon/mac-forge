@@ -45,11 +45,12 @@ alias cdp='pwd | pbcopy'
 alias info="~/mac-forge/scripts/info.sh"
 alias winappclean="~/mac-forge/scripts/win-shortcut-clean.sh"
 alias dela="rm -rf ./*"
-alias perflogclean="perflogs && rm -rf ./*"
+alias perflogclean="perflog && rm -rf ./*"
 alias screenshotclean="desk && rm -f *.png"
 alias eject-all="~/mac-forge/scripts/eject-all.sh"
 alias ejectall=eject-all
 alias ea=eject-all
+alias aliases="cat ~/mac-forge/dotfiles/aliases"
 
 # Applications
 alias rider="open -a 'Rider.app'"
