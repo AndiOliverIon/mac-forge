@@ -150,6 +150,9 @@ load_backups() {
 	)
 }
 
+# Display where the location for docker resources would be established
+echo -e "\033[33m⚠ Docker will be established at: $FORGE_SQL_PATH\033[0m"
+
 # Priority 0: current working directory
 CWD="$(pwd)"
 echo "Searching for .bak files in current directory: $CWD"
