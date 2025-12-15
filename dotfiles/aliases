@@ -8,7 +8,9 @@ alias gpt="cd ~/work/ardis.tools.extensions"
 alias gptbin="cd ~/work/ardis.tools.extensions/Ardis.Utils/bin/debug/net8.0"
 alias lc="cd ~/work/ardis-local-connector"
 alias localconnector="cd ~/work/ardis-local-connector"
+alias projects="cd ~/projects"
 alias fn="cd ~/projects/macos-frontnotes"
+alias inv="cd ~/projects/macos-invoice"
 alias web="~/mac-forge/scripts/web.sh"
 
 # Git
