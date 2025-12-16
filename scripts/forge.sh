@@ -1,44 +1,59 @@
 #!/usr/bin/env bash
 # forge.sh
-# Central config file for mac-forge scripts.
-# Other scripts must `source` this file.
 
 #######################################
-# General
+# Machine / repo
 #######################################
 FORGE_MACHINE_NAME="Hades"
 FORGE_ROOT="$HOME/mac-forge"
 
 #######################################
-# Paths
+# Storage roots (EDIT THESE ON DEMAND)
 #######################################
-# Detect SQL root dynamically
-if [[ -d "/Volumes/shared/sql" ]]; then
-	# Acasis connected
-	FORGE_SQL_PATH="/Volumes/shared/sql"
+# Acasis root (external)
+FORGE_SQL_ACASIS_ROOT="/Volumes/shared/sql"
+
+# Local root (internal storage)
+FORGE_SQL_LOCAL_ROOT="$HOME/sql" # (on your machine: /Users/oliver/sql)
+
+#######################################
+# Active root selection (Acasis if present, else local)
+#######################################
+if [[ -d "$FORGE_SQL_ACASIS_ROOT" ]]; then
+	FORGE_SQL_PATH="$FORGE_SQL_ACASIS_ROOT"
 else
-	# Fallback to local SQL folder
-	FORGE_SQL_PATH="$HOME/sql"
+	FORGE_SQL_PATH="$FORGE_SQL_LOCAL_ROOT"
 fi
 
+#######################################
 # iCloud forge folder (for private configs)
+#######################################
 FORGE_ICLOUD_ROOT="$HOME/Library/Mobile Documents/com~apple~CloudDocs"
 FORGE_ICLOUD_FORGE_DIR="$FORGE_ICLOUD_ROOT/forge"
 FORGE_SECRETS_FILE="$FORGE_ICLOUD_FORGE_DIR/forge-secrets.sh"
 
-# Host side: everything Docker-related lives under sql/docker on Acasis
+#######################################
+# Docker volume root (under the ACTIVE root)
+#######################################
 FORGE_DOCKER_VOLUME_ROOT="$FORGE_SQL_PATH/docker"
 
-# Host folders on Acasis
-FORGE_SQL_BACKUP_HOST_PATH="$FORGE_DOCKER_VOLUME_ROOT/backups"
+#######################################
+# Snapshots (ONLY canonical storage for restore/snapshot)
+#######################################
 FORGE_SQL_SNAPSHOTS_PATH="$FORGE_DOCKER_VOLUME_ROOT/snapshots"
 
-# Container side root
+# Container side root (mounted)
 FORGE_SQL_DOCKER_ROOT="/var/opt/mssql"
-FORGE_SQL_DOCKER_BACKUP_PATH="$FORGE_SQL_DOCKER_ROOT/backups"
+FORGE_SQL_DOCKER_SNAPSHOTS_PATH="$FORGE_SQL_DOCKER_ROOT/snapshots"
 
-# Paths inside the container
-FORGE_SQL_DOCKER_ROOT="/var/opt/mssql"
+#######################################
+# Restore import locations (EDIT THESE ON DEMAND)
+#######################################
+# If Acasis is present and snapshots folder has no .bak, look here next:
+FORGE_SQL_ACASIS_IMPORT_PATH="$FORGE_SQL_ACASIS_ROOT"
+
+# If Acasis is NOT present, look here:
+FORGE_SQL_LOCAL_IMPORT_PATH="$FORGE_SQL_LOCAL_ROOT"
 
 #######################################
 # Docker / SQL Server
@@ -55,35 +70,26 @@ ARDIS_MIGRATIONS_PATH="$HOME/work/ardis-perform/Ardis.Migrations.Console"
 ARDIS_MIGRATIONS_LIBRARY="Ardis.Migrations.Console.dll"
 
 #######################################
-# Perform
-#######################################
-PERFORM_ROOT="${PERFORM_ROOT:-$HOME/work/ardis-perform}"
-PERFORM_WEB_PROJECT="${PERFORM_WEB_PROJECT:-Asms2.Web}"
-
-#######################################
-# System paths
-#######################################
-# Path to libgdiplus from Homebrew (tweak if your brew path changes)
-LIBGDIPLUS_PATH="${LIBGDIPLUS_PATH:-/opt/homebrew/opt/mono-libgdiplus/lib/libgdiplus.dylib}"
-
-#######################################
 # Export
 #######################################
 export \
 	FORGE_MACHINE_NAME \
 	FORGE_ROOT \
+	FORGE_SQL_ACASIS_ROOT \
+	FORGE_SQL_LOCAL_ROOT \
 	FORGE_SQL_PATH \
 	FORGE_DOCKER_VOLUME_ROOT \
+	FORGE_SQL_SNAPSHOTS_PATH \
+	FORGE_SQL_DOCKER_ROOT \
+	FORGE_SQL_DOCKER_SNAPSHOTS_PATH \
+	FORGE_SQL_ACASIS_IMPORT_PATH \
+	FORGE_SQL_LOCAL_IMPORT_PATH \
 	FORGE_ICLOUD_ROOT \
 	FORGE_ICLOUD_FORGE_DIR \
 	FORGE_SECRETS_FILE \
 	FORGE_SQL_DOCKER_CONTAINER \
+	FORGE_SQL_USER \
 	FORGE_SQL_PORT \
-	FORGE_SQL_DOCKER_ROOT \
-	FORGE_SQL_DOCKER_BACKUP_PATH \
 	FORGE_SQL_DOCKER_IMAGE \
 	ARDIS_MIGRATIONS_PATH \
-	ARDIS_MIGRATIONS_LIBRARY \
-	PERFORM_ROOT \
-	PERFORM_WEB_PROJECT \
-	LIBGDIPLUS_PATH
+	ARDIS_MIGRATIONS_LIBRARY
