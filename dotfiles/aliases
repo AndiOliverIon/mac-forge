@@ -12,6 +12,7 @@ alias projects="cd ~/projects"
 alias fn="cd ~/projects/macos-frontnotes"
 alias inv="cd ~/projects/macos-invoice"
 alias web="~/mac-forge/scripts/web.sh"
+alias clients="cd /Volumes/shared/sql/clients"
 
 # Git
 alias gs="git status"
@@ -54,6 +55,8 @@ alias eject-all="~/mac-forge/scripts/eject-all.sh"
 alias ejectall=eject-all
 alias ea=eject-all
 alias aliases="cat ~/mac-forge/dotfiles/aliases"
+alias hdd-clean="~/mac-forge/scripts/hdd-clean.sh"
+alias hc=hdd-clean
 
 # Applications
 alias rider="open -a 'Rider.app'"
