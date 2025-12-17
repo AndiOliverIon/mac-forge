@@ -18,7 +18,7 @@ fi
 # Helpers
 #######################################
 die() {
-	echo "✖ $*" >&2
+	echo "ERROR: $*" >&2
 	exit 1
 }
 
@@ -34,7 +34,7 @@ load_secrets() {
 }
 
 log_step() {
-	echo "→ $*"
+	echo "-> $*"
 }
 
 #######################################
@@ -268,9 +268,58 @@ docker exec -u 0 "$FORGE_SQL_DOCKER_CONTAINER" /bin/bash -lc "
 [[ -f "$snapshot_host_path" ]] || die "Snapshot not found on host after staging: $snapshot_host_path"
 
 #######################################
-# Restore
+# Restore (WITH MOVE auto-generated from FILELISTONLY)
 #######################################
+log_step "Inspecting backup file list to generate WITH MOVE..."
+
+SQL_DATA_DIR="/var/opt/mssql/data"
+
+filelist_csv="$(
+	docker exec -i "$FORGE_SQL_DOCKER_CONTAINER" \
+		/opt/mssql-tools18/bin/sqlcmd \
+		-S localhost \
+		-U "$FORGE_SQL_USER" \
+		-P "$FORGE_SQL_SA_PASSWORD" \
+		-C \
+		-W -h -1 -s '|' <<SQL_EOF
+SET NOCOUNT ON;
+RESTORE FILELISTONLY
+FROM DISK = N'$snapshot_container_path';
+SQL_EOF
+)" || die "Failed to read FILELISTONLY from backup."
+
+move_clauses="$(
+	echo "$filelist_csv" | awk -F'|' -v db="$db_name" -v dir="$SQL_DATA_DIR" '
+		BEGIN { d=0; l=0; }
+		{
+			logical=$1;
+			type=$3;
+
+			# Trim whitespace
+			gsub(/^[ \t\r\n]+|[ \t\r\n]+$/, "", logical);
+			gsub(/^[ \t\r\n]+|[ \t\r\n]+$/, "", type);
+
+			if (type == "D") {
+				d++;
+				suffix = (d == 1 ? "" : "_" d);
+				target = dir "/" db suffix ".mdf";
+				printf("MOVE N'\''%s'\'' TO N'\''%s'\'',\n", logical, target);
+			}
+			else if (type == "L") {
+				l++;
+				suffix = (l == 1 ? "" : "_" l);
+				target = dir "/" db "_log" suffix ".ldf";
+				printf("MOVE N'\''%s'\'' TO N'\''%s'\'',\n", logical, target);
+			}
+		}
+	' | sed '$ s/,$//'
+)"
+
+[[ -n "$move_clauses" ]] || die "Could not generate MOVE clauses (FILELISTONLY output empty?)."
+
 log_step "Restoring database [$db_name] from snapshot: $snapshot_container_path"
+log_step "MOVE mapping:"
+echo "$move_clauses" | sed 's/^/  /'
 
 docker exec -i "$FORGE_SQL_DOCKER_CONTAINER" \
 	/opt/mssql-tools18/bin/sqlcmd \
@@ -279,22 +328,34 @@ docker exec -i "$FORGE_SQL_DOCKER_CONTAINER" \
 	-P "$FORGE_SQL_SA_PASSWORD" \
 	-C \
 	-b <<SQL_EOF
-IF EXISTS (SELECT 1 FROM sys.databases WHERE name = N'$db_name')
-BEGIN
-    PRINT 'Database $db_name exists -> setting SINGLE_USER...';
-    ALTER DATABASE [$db_name] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-END;
+SET NOCOUNT ON;
 
-PRINT 'Restoring database $db_name from $snapshot_container_path...';
+BEGIN TRY
+	IF EXISTS (SELECT 1 FROM sys.databases WHERE name = N'$db_name')
+	BEGIN
+		PRINT 'Database $db_name exists -> setting SINGLE_USER...';
+		ALTER DATABASE [$db_name] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+	END;
 
-RESTORE DATABASE [$db_name]
-FROM DISK = N'$snapshot_container_path'
-WITH REPLACE, RECOVERY;
+	PRINT 'Restoring database $db_name from $snapshot_container_path...';
 
-ALTER DATABASE [$db_name] SET MULTI_USER;
-PRINT 'Restore completed successfully.';
+	RESTORE DATABASE [$db_name]
+	FROM DISK = N'$snapshot_container_path'
+	WITH
+		REPLACE,
+		RECOVERY,
+		$move_clauses;
+
+	ALTER DATABASE [$db_name] SET MULTI_USER;
+	PRINT 'Restore completed successfully.';
+END TRY
+BEGIN CATCH
+	DECLARE @msg nvarchar(4000) = ERROR_MESSAGE();
+	PRINT 'RESTORE FAILED: ' + @msg;
+	RAISERROR(@msg, 16, 1);
+END CATCH
 SQL_EOF
 
-echo "✅ Database [$db_name] restored successfully."
-echo "✔ Snapshot used from:"
+echo "OK: Database [$db_name] restored successfully."
+echo "Snapshot used from:"
 echo "  $snapshot_host_path"
