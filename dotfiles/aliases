@@ -57,6 +57,7 @@ alias ea=eject-all
 alias aliases="cat ~/mac-forge/dotfiles/aliases"
 alias hdd-clean="~/mac-forge/scripts/hdd-clean.sh"
 alias hc=hdd-clean
+alias fixdock="killall Dock"
 
 # Applications
 alias rider="open -a 'Rider.app'"
