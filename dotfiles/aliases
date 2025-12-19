@@ -65,6 +65,7 @@ alias rider="open -a 'Rider.app'"
 # Database work script commands
 alias dba="~/mac-forge/scripts/db-admin.sh"
 alias dbs="~/mac-forge/scripts/docker-start.sh"
+alias dbu="~/mac-forge/scripts/db-upload-bak.sh"
 alias dbr="~/mac-forge/scripts/db-restore.sh"
 alias dbsn="~/mac-forge/scripts/db-snapshot.sh"
 alias dbc="~/mac-forge/scripts/db-clear.sh"
