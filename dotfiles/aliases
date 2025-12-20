@@ -22,6 +22,7 @@ alias gfo="git fetch origin"
 alias gpu="git push"
 alias gb="git branch"
 alias gbd="~/mac-forge/scripts/branch-delete.sh"
+alias gdel="~/mac-forge/scripts/git-del.sh"
 
 # Docker
 alias dps="docker ps"

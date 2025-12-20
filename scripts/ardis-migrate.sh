@@ -40,17 +40,52 @@ FORGE_SQL_USER="${FORGE_SQL_USER:-sa}"
 
 # Host & port to connect from the migration console (container exposed to host)
 FORGE_SQL_HOST="${FORGE_SQL_HOST:-localhost}"
-FORGE_SQL_PORT="${FORGE_SQL_PORT:-2022}" # forge.sh default is 2022; keep that as fallback
+FORGE_SQL_PORT="${FORGE_SQL_PORT:-2022}"
 
 #######################################
 # Tooling checks
 #######################################
-for cmd in docker fzf dotnet; do
+for cmd in docker fzf; do
 	if ! command -v "$cmd" >/dev/null 2>&1; then
 		echo "Required command '$cmd' not found in PATH." >&2
 		exit 1
 	fi
 done
+
+if ! command -v dotnet >/dev/null 2>&1; then
+	echo "Required command 'dotnet' not found in PATH." >&2
+	echo "Install .NET via Microsoft installer and ensure your shell sees it." >&2
+	exit 1
+fi
+
+DOTNET="$(command -v dotnet)"
+
+require_sdk_major() {
+	local major="$1"
+	# dotnet --list-sdks => "9.0.100 [/path]" etc
+	if ! dotnet --list-sdks 2>/dev/null | awk '{print $1}' | grep -Eq "^${major}\."; then
+		echo "Required .NET SDK ${major}.x not found." >&2
+		echo "Installed SDKs:" >&2
+		dotnet --list-sdks >&2 || true
+		exit 1
+	fi
+}
+
+require_runtime_major() {
+	local major="$1"
+	# dotnet --list-runtimes => "Microsoft.NETCore.App 8.0.xx [/path]"
+	if ! dotnet --list-runtimes 2>/dev/null | awk '{print $1" "$2}' | grep -Eq "^Microsoft\.NETCore\.App ${major}\."; then
+		echo "Required .NET runtime Microsoft.NETCore.App ${major}.x not found." >&2
+		echo "Installed runtimes:" >&2
+		dotnet --list-runtimes >&2 || true
+		exit 1
+	fi
+}
+
+# Your old script used 9 to build and 8 to run.
+# With MS installs, we keep the intent:
+require_sdk_major 9
+require_runtime_major 8
 
 #######################################
 # Helper: ensure SQL container is running
@@ -87,7 +122,6 @@ detect_target_framework() {
 
 #######################################
 # Helper: list databases via host sqlcmd
-# (keeps your current approach; requires sqlcmd on host)
 #######################################
 list_databases() {
 	sqlcmd \
@@ -133,6 +167,7 @@ main() {
 		exit 1
 	fi
 
+	echo "Using dotnet: $DOTNET"
 	echo "Detecting TargetFramework from $csproj..."
 	if ! tfm="$(detect_target_framework "$csproj")"; then
 		echo "Could not detect TargetFramework from $csproj" >&2
@@ -154,7 +189,8 @@ main() {
 	echo "Build output: $bin_dir"
 
 	if ! command -v sqlcmd >/dev/null 2>&1; then
-		echo "sqlcmd is required but not found in PATH. Install with: brew install sqlcmd" >&2
+		echo "sqlcmd is required but not found in PATH." >&2
+		echo "Install sqlcmd (ok via brew) or make it available in PATH." >&2
 		exit 1
 	fi
 
@@ -173,6 +209,7 @@ main() {
 	echo "Running migrations from: $bin_dir/$ARDIS_MIGRATIONS_LIBRARY"
 	(
 		cd "$bin_dir"
+		# Running a net8 app with "dotnet" is fine, as long as net8 runtime is installed.
 		dotnet "$ARDIS_MIGRATIONS_LIBRARY" --v --logs --demo
 	)
 }

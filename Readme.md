@@ -1,3 +1,6 @@
+### Important
+Do not install dotnet sdks from brew. Install them from Microsoft site. It screws arround with compilers from rider and so on. Especially when I need more then one sdk.
+
 # macOS Setup Notes
 
 Personal notes for setting up a new Mac and restoring my usual environment.

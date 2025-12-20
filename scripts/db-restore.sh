@@ -144,10 +144,18 @@ wait_for_sql_ready
 : "${FORGE_SQL_ACASIS_IMPORT_PATH:?FORGE_SQL_ACASIS_IMPORT_PATH must be set in forge.sh}"
 : "${FORGE_SQL_LOCAL_IMPORT_PATH:?FORGE_SQL_LOCAL_IMPORT_PATH must be set in forge.sh}"
 
-# Validate snapshots mount inside container
-docker exec "$FORGE_SQL_DOCKER_CONTAINER" /bin/bash -lc \
-	"test -d '$FORGE_SQL_DOCKER_SNAPSHOTS_PATH' -a -w '$FORGE_SQL_DOCKER_SNAPSHOTS_PATH'" ||
-	die "Snapshots path not writable in container (mount missing/misconfigured?): $FORGE_SQL_DOCKER_SNAPSHOTS_PATH"
+#######################################
+# Ensure snapshots folder exists + writable in container
+#######################################
+docker exec -u 0 "$FORGE_SQL_DOCKER_CONTAINER" /bin/bash -lc "
+  mkdir -p '$FORGE_SQL_DOCKER_SNAPSHOTS_PATH' &&
+  chown -R mssql:mssql '$FORGE_SQL_DOCKER_SNAPSHOTS_PATH' 2>/dev/null || true &&
+  chmod 775 '$FORGE_SQL_DOCKER_SNAPSHOTS_PATH' 2>/dev/null || true
+" || die "Failed to create/chown snapshots folder in container: $FORGE_SQL_DOCKER_SNAPSHOTS_PATH"
+
+docker exec "$FORGE_SQL_DOCKER_CONTAINER" /bin/bash -lc "
+  test -d '$FORGE_SQL_DOCKER_SNAPSHOTS_PATH' && test -w '$FORGE_SQL_DOCKER_SNAPSHOTS_PATH'
+" || die "Snapshots path not writable in container: $FORGE_SQL_DOCKER_SNAPSHOTS_PATH"
 
 #######################################
 # Priority fallback (0-4)
@@ -278,44 +286,57 @@ filelist_csv="$(
 	docker exec -i "$FORGE_SQL_DOCKER_CONTAINER" \
 		/opt/mssql-tools18/bin/sqlcmd \
 		-S localhost \
-		-U "$FORGE_SQL_USER" \
+		-U sa \
 		-P "$FORGE_SQL_SA_PASSWORD" \
 		-C \
-		-W -h -1 -s '|' <<SQL_EOF
+		-r 1 \
+		-W -h -1 -s '|' \
+		-w 65535 <<SQL_EOF
 SET NOCOUNT ON;
 RESTORE FILELISTONLY
 FROM DISK = N'$snapshot_container_path';
 SQL_EOF
 )" || die "Failed to read FILELISTONLY from backup."
 
+if [[ -z "${filelist_csv//$'\n'/}" ]]; then
+	die "FILELISTONLY returned no output. Check container access to: $snapshot_container_path (path/permissions/mount)."
+fi
+
 move_clauses="$(
 	echo "$filelist_csv" | awk -F'|' -v db="$db_name" -v dir="$SQL_DATA_DIR" '
+		function trim(s){ gsub(/^[ \t\r\n]+|[ \t\r\n]+$/, "", s); return s }
 		BEGIN { d=0; l=0; }
 		{
-			logical=$1;
-			type=$3;
+			if (NF < 2) next
 
-			# Trim whitespace
-			gsub(/^[ \t\r\n]+|[ \t\r\n]+$/, "", logical);
-			gsub(/^[ \t\r\n]+|[ \t\r\n]+$/, "", type);
+			logical = trim($1)
+
+			# Type is usually $3, but be defensive: find a field that is exactly D or L
+			type = ""
+			for (i=1; i<=NF; i++) {
+				f = trim($i)
+				if (f == "D" || f == "L") { type = f; break }
+			}
+
+			if (logical == "" || type == "") next
 
 			if (type == "D") {
-				d++;
-				suffix = (d == 1 ? "" : "_" d);
-				target = dir "/" db suffix ".mdf";
-				printf("MOVE N'\''%s'\'' TO N'\''%s'\'',\n", logical, target);
+				d++
+				suffix = (d == 1 ? "" : "_" d)
+				target = dir "/" db suffix ".mdf"
+				printf("MOVE N'\''%s'\'' TO N'\''%s'\'',\n", logical, target)
 			}
 			else if (type == "L") {
-				l++;
-				suffix = (l == 1 ? "" : "_" l);
-				target = dir "/" db "_log" suffix ".ldf";
-				printf("MOVE N'\''%s'\'' TO N'\''%s'\'',\n", logical, target);
+				l++
+				suffix = (l == 1 ? "" : "_" l)
+				target = dir "/" db "_log" suffix ".ldf"
+				printf("MOVE N'\''%s'\'' TO N'\''%s'\'',\n", logical, target)
 			}
 		}
 	' | sed '$ s/,$//'
 )"
 
-[[ -n "$move_clauses" ]] || die "Could not generate MOVE clauses (FILELISTONLY output empty?)."
+[[ -n "$move_clauses" ]] || die "Could not generate MOVE clauses (FILELISTONLY parse produced no D/L rows)."
 
 log_step "Restoring database [$db_name] from snapshot: $snapshot_container_path"
 log_step "MOVE mapping:"
@@ -324,7 +345,7 @@ echo "$move_clauses" | sed 's/^/  /'
 docker exec -i "$FORGE_SQL_DOCKER_CONTAINER" \
 	/opt/mssql-tools18/bin/sqlcmd \
 	-S localhost \
-	-U "$FORGE_SQL_USER" \
+	-U sa \
 	-P "$FORGE_SQL_SA_PASSWORD" \
 	-C \
 	-b <<SQL_EOF
