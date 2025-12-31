@@ -87,3 +87,10 @@ alias ardis-migrate="~/mac-forge/scripts/ardis-migrate.sh"
 alias am="ardis-migrate"
 alias ardis-complete="~/mac-forge/scripts/ardis-complete.sh"
 alias ac="ardis-complete"
+alias genopenapi="~/mac-forge/scripts/gen-open-api.sh"
+alias goa=genopenapi
+
+# remotes
+alias rmc="ssh -t oliver@masterchief"
+alias rth="ssh -t oliver@thanatos"
+alias rt=rth
