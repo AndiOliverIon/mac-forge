@@ -10,9 +10,10 @@ alias lc="cd ~/work/ardis-local-connector"
 alias localconnector="cd ~/work/ardis-local-connector"
 alias projects="cd ~/projects"
 alias fn="cd ~/projects/macos-frontnotes"
-alias inv="cd ~/projects/macos-invoice"
 alias web="~/mac-forge/scripts/web.sh"
 alias clients="cd /Volumes/shared/sql/clients"
+alias invoice="cd ~/tni-invoice"
+alias inv=invoice
 
 # Git
 alias gs="git status"
