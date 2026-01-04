@@ -14,6 +14,7 @@ alias web="~/mac-forge/scripts/web.sh"
 alias clients="cd /Volumes/shared/sql/clients"
 alias invoice="cd ~/tni-invoice"
 alias inv=invoice
+alias borg="cd ~/dev/borg"
 
 # Git
 alias gs="git status"
