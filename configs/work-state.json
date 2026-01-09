@@ -59,10 +59,17 @@
       "extensions": [
         "json"
       ]
+    },
+    {
+      "folder": "licenses",
+      "extensions": [
+        "alx", "def"
+      ]
     }
   ],
   "organize-folders": [
     "~/Downloads",
-    "~/Desktop"
+    "~/Desktop",
+    "~/work/stuff"
   ]
 }
