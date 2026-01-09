@@ -98,6 +98,10 @@ alias ardis-complete="~/mac-forge/scripts/ardis-complete.sh"
 alias ac="ardis-complete"
 alias genopenapi="~/mac-forge/scripts/gen-open-api.sh"
 alias goa=genopenapi
+alias genopenapi="~/mac-forge/scripts/gen-open-api.sh"
+alias organizer="~/mac-forge/scripts/organizer.sh"
+alias org=organizer
+alias o=organizer
 
 # remotes
 alias rmc="ssh -t oliver@masterchief"
