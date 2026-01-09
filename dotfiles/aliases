@@ -83,10 +83,15 @@ alias snapdel="snap && rm -rf ./*"
 alias locsql="cd ~/sql"
 alias lcsql=locsql
 alias locsnapshots="cd ~/sql/docker/snapshots"
+alias lcsnaphots=locsnapshots
 alias lcsnap=locsnapshots
 alias lcsnapdel="lcsnap && rm -rf ./*"
 
 # work aliases for commands
+alias work="~/mac-forge/scripts/work.sh"
+alias w=work
+alias workinfo="~/mac-forge/scripts/work.sh --info"
+alias wi=workinfo
 alias ardis-migrate="~/mac-forge/scripts/ardis-migrate.sh"
 alias am="ardis-migrate"
 alias ardis-complete="~/mac-forge/scripts/ardis-complete.sh"
