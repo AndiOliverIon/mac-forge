@@ -98,20 +98,40 @@ write_state() {
   now="$(date -Is 2>/dev/null || date "+%Y-%m-%dT%H:%M:%S%z")"
 
   mkdir -p "${CONFIG_DIR}"
+  ensure_state_file_exists
+
   if command -v jq >/dev/null 2>&1; then
-    jq -n --arg storage "$storage" --arg container "$container" --arg updated_at "$now" \
-      '{storage:$storage, container:$container, updated_at:$updated_at}' > "${STATE_FILE}"
+    # Preserve all existing keys; only update the three we manage.
+    jq --arg storage "$storage" \
+       --arg container "$container" \
+       --arg updated_at "$now" \
+       '.storage=$storage | .container=$container | .updated_at=$updated_at' \
+       "${STATE_FILE}" > "${STATE_FILE}.tmp"
+    mv "${STATE_FILE}.tmp" "${STATE_FILE}"
   else
-    cat > "${STATE_FILE}" <<JSON
-{
-  "storage": "${storage}",
-  "container": "${container}",
-  "updated_at": "${now}"
-}
-JSON
+    # Python fallback: preserve existing JSON, only update those keys.
+    python3 - "$STATE_FILE" "$storage" "$container" "$now" <<'PY'
+import json, sys
+path, storage, container, updated = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+with open(path, "r", encoding="utf-8") as f:
+    obj = json.load(f)
+if not isinstance(obj, dict):
+    obj = {}
+obj["storage"] = storage
+obj["container"] = container
+obj["updated_at"] = updated
+tmp = path + ".tmp"
+with open(tmp, "w", encoding="utf-8") as f:
+    json.dump(obj, f, indent=2, ensure_ascii=False)
+    f.write("\n")
+import os
+os.replace(tmp, path)
+PY
   fi
+
   echo "✓ Saved: ${STATE_FILE}"
 }
+
 
 wizard() {
   need_cmd fzf
