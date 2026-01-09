@@ -1,55 +1,5 @@
 {
-  "storage": "offline",
-  "container": "internal",
-  "updated_at": "2026-01-09T07:05:26.125687+00:00",
-  "organize-categories": [
-    {
-      "folder": "images",
-      "extensions": [
-        "jpeg",
-        "jpg",
-        "png",
-        "gif",
-        "webp",
-        "heic"
-      ]
-    },
-    {
-      "folder": "scripts",
-      "extensions": [
-        "sh",
-        "zsh"
-      ]
-    },
-    {
-      "folder": "archives",
-      "extensions": [
-        "zip",
-        "rar",
-        "7z",
-        "tar",
-        "gz"
-      ]
-    },
-    {
-      "folder": "documents",
-      "extensions": [
-        "pdf",
-        "doc",
-        "docx",
-        "txt",
-        "md"
-      ]
-    },
-    {
-      "folder": "queries",
-      "extensions": [
-        "sql"
-      ]
-    }
-  ],
-  "organize-folders": [
-    "~/Downloads",
-    "~/Desktop"
-  ]
+  "storage": "external",
+  "container": "external",
+  "updated_at": "2026-01-09T11:55:29+0200"
 }
