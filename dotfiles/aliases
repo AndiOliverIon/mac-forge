@@ -89,6 +89,8 @@ alias lcs=locsnapshots
 alias lcsnapdel="lcsnap && rm -rf ./*"
 
 # work aliases for commands
+alias al="~/mac-forge/scripts/aliases.sh"
+alias a=al
 alias work="~/mac-forge/scripts/work.sh"
 alias w=work
 alias workinfo="~/mac-forge/scripts/work.sh --info"
