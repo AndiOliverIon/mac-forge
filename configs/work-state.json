@@ -1,7 +1,28 @@
 {
-  "storage": "offline",
-  "container": "external",
-  "updated_at": "2026-01-09T13:33:56+0200",
+  "docker-path": "/Volumes/dsql",
+  "docker-snapshot-path": "/Volumes/dsql/snapshots",
+  "docker-locations": [
+    {
+      "title": "Internal storage",
+      "path": "/Users/oliver/sql/docker",
+      "snapshot-path": "/Users/oliver/sql/snapshot"
+    },
+    {
+      "title": "MasterChief D",
+      "path": "/Volumes/dsql/docker",
+      "snapshot-path": "/Volumes/dsql/snapshots"
+    },
+    {
+      "title": "MasterChief Acassis",
+      "path": "/Volumes/acasis/sql",
+      "snapshot-path": "/Volumes/acasis/sql/snapshots"
+    },
+    {
+      "title": "Thanatos storage",
+      "path": "/Volumes/thanatos/acasis/sql/docker",
+      "snapshot-path": "/Volumes/thanatos/acasis/sql/docker/snapshots"
+    }
+  ],
   "organize-categories": [
     {
       "folder": "images",
@@ -18,7 +39,8 @@
       "folder": "scripts",
       "extensions": [
         "sh",
-        "zsh"
+        "zsh",
+        "ps1"
       ]
     },
     {
@@ -42,13 +64,6 @@
       ]
     },
     {
-      "folder": "scripts",
-      "extensions": [
-        "sh",
-        "ps1"
-      ]
-    },
-    {
       "folder": "queries",
       "extensions": [
         "sql"
@@ -63,7 +78,8 @@
     {
       "folder": "licenses",
       "extensions": [
-        "alx", "def"
+        "alx",
+        "def"
       ]
     }
   ],

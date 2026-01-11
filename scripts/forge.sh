@@ -74,120 +74,52 @@ FORGE_SQL_DOCKER_IMAGE="${FORGE_SQL_DOCKER_IMAGE:-mcr.microsoft.com/mssql/server
 FORGE_SQL_DATA_VOLUME_NAME="${FORGE_SQL_DATA_VOLUME_NAME:-forge-sql-data}"
 
 #######################################
-# Work state (derived)
+# Work state (paths only)
 #
 # These are set based on configs/work-state.json:
-#   FORGE_WORK_STORAGE: external | network | offline
-#   FORGE_WORK_CONTAINER: external | internal
+#   docker-path           -> FORGE_SQL_DATA_BIND_PATH
+#   docker-snapshot-path  -> FORGE_SQL_SNAPSHOTS_PATH
 #
-# And then effective paths:
-#   FORGE_SQL_SNAPSHOTS_PATH
-#   FORGE_SQL_DATA_MOUNT_KIND: bind | named
-#   FORGE_SQL_DATA_BIND_PATH (when bind)
+# Contract:
+# - docker data is ALWAYS bind-mounted from FORGE_SQL_DATA_BIND_PATH
+# - snapshots are ALWAYS bind-mounted from FORGE_SQL_SNAPSHOTS_PATH
 #######################################
-FORGE_WORK_STORAGE="${FORGE_WORK_STORAGE:-offline}"
-FORGE_WORK_CONTAINER="${FORGE_WORK_CONTAINER:-internal}"
 
-# Defaults (offline + internal container)
-FORGE_SQL_SNAPSHOTS_PATH="${FORGE_SQL_LOCAL_SNAPSHOTS_PATH}"
-FORGE_SQL_DATA_MOUNT_KIND="named"
-FORGE_SQL_DATA_BIND_PATH=""
-
-#######################################
-# Helpers (used by scripts that source forge.sh)
-#######################################
-forge__detect_acasis_sql_root() {
-  # Try to find ".../acasis" under /Volumes and return ".../acasis/sql" if present.
-  # This is intentionally conservative (fast, shallow).
-  local candidate=""
-  for d in /Volumes/*; do
-    [[ -d "$d" ]] || continue
-    if [[ -d "$d/acasis" ]]; then
-      candidate="$d/acasis/sql"
-      break
-    fi
-    # also handle when the volume itself is named "acasis"
-    if [[ "$(basename "$d")" == "acasis" ]]; then
-      candidate="$d/sql"
-      break
-    fi
-  done
-
-  if [[ -n "$candidate" && -d "$candidate" ]]; then
-    echo "$candidate"
-  fi
-}
+# Defaults (empty until work-state.json is set via work.sh)
+FORGE_SQL_SNAPSHOTS_PATH="${FORGE_SQL_SNAPSHOTS_PATH:-}"
+FORGE_SQL_DATA_MOUNT_KIND="bind"
+FORGE_SQL_DATA_BIND_PATH="${FORGE_SQL_DATA_BIND_PATH:-}"
 
 forge__read_work_state() {
   local f="$FORGE_WORK_STATE_FILE"
   [[ -f "$f" ]] || return 0
 
   # Use python3 to read JSON (avoid jq dependency).
-  local parsed
-  parsed="$(python3 - <<'PY' "$f" 2>/dev/null || true
+  python3 - <<'PY' "$f" 2>/dev/null || true
 import json, sys
 p = sys.argv[1]
 try:
   with open(p, "r", encoding="utf-8") as fp:
     j = json.load(fp)
-  storage = (j.get("storage") or "").strip()
-  container = (j.get("container") or "").strip()
-  print(storage + "\n" + container)
+  docker_path = (j.get("docker-path") or "").strip()
+  snap_path = (j.get("docker-snapshot-path") or "").strip()
+  if docker_path:
+    print("FORGE_SQL_DATA_BIND_PATH=" + docker_path)
+  if snap_path:
+    print("FORGE_SQL_SNAPSHOTS_PATH=" + snap_path)
 except Exception:
   pass
 PY
-)"
-  [[ -n "${parsed//$'\n'/}" ]] || return 0
-
-  local storage container
-  storage="$(printf '%s' "$parsed" | sed -n '1p')"
-  container="$(printf '%s' "$parsed" | sed -n '2p')"
-
-  [[ -n "$storage" ]] && FORGE_WORK_STORAGE="$storage"
-  [[ -n "$container" ]] && FORGE_WORK_CONTAINER="$container"
 }
 
 forge__apply_work_state() {
-  # 1) Load last saved state (if present)
-  forge__read_work_state
+  local parsed
+  parsed="$(forge__read_work_state)"
+  [[ -n "${parsed//$'\n'/}" ]] || return 0
+  eval "$parsed"
 
-  # 2) Resolve storage -> effective snapshots + external docker-data roots
-  case "$FORGE_WORK_STORAGE" in
-    external)
-      # auto-detect if your default isn't mounted
-      if [[ ! -d "$FORGE_SQL_EXTERNAL_ROOT" ]]; then
-        local detected
-        detected="$(forge__detect_acasis_sql_root || true)"
-        if [[ -n "$detected" ]]; then
-          FORGE_SQL_EXTERNAL_ROOT="$detected"
-          FORGE_SQL_EXTERNAL_SNAPSHOTS_PATH="${FORGE_SQL_EXTERNAL_ROOT}/snapshots"
-          FORGE_SQL_EXTERNAL_DOCKER_DATA_PATH="${FORGE_SQL_EXTERNAL_ROOT}/docker-mssql"
-        fi
-      fi
-      FORGE_SQL_SNAPSHOTS_PATH="$FORGE_SQL_EXTERNAL_SNAPSHOTS_PATH"
-      FORGE_SQL_DATA_BIND_PATH="$FORGE_SQL_EXTERNAL_DOCKER_DATA_PATH"
-      ;;
-    network)
-      FORGE_SQL_SNAPSHOTS_PATH="$FORGE_SQL_NETWORK_SNAPSHOTS_PATH"
-      FORGE_SQL_DATA_BIND_PATH="$FORGE_SQL_NETWORK_DOCKER_DATA_PATH"
-      ;;
-    offline|*)
-      FORGE_WORK_STORAGE="offline"
-      FORGE_SQL_SNAPSHOTS_PATH="$FORGE_SQL_LOCAL_SNAPSHOTS_PATH"
-      FORGE_SQL_DATA_BIND_PATH="$FORGE_SQL_LOCAL_DOCKER_DATA_PATH"
-      ;;
-  esac
-
-  # 3) Resolve container mode -> mount kind
-  case "$FORGE_WORK_CONTAINER" in
-    external)
-      FORGE_SQL_DATA_MOUNT_KIND="bind"
-      ;;
-    internal|*)
-      FORGE_WORK_CONTAINER="internal"
-      FORGE_SQL_DATA_MOUNT_KIND="named"
-      ;;
-  esac
+  # Enforce mount kind for this workflow.
+  FORGE_SQL_DATA_MOUNT_KIND="bind"
 }
 
 # Apply the state immediately on source so every script gets consistent vars.
@@ -207,8 +139,6 @@ export \
   FORGE_ROOT \
   FORGE_CONFIG_DIR \
   FORGE_WORK_STATE_FILE \
-  FORGE_WORK_STORAGE \
-  FORGE_WORK_CONTAINER \
   FORGE_SQL_LOCAL_ROOT \
   FORGE_SQL_EXTERNAL_ROOT \
   FORGE_SQL_NETWORK_ROOT \
