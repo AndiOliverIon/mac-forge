@@ -25,6 +25,8 @@ alias gpu="git push"
 alias gb="git branch"
 alias gbd="~/mac-forge/scripts/branch-delete.sh"
 alias gdel="~/mac-forge/scripts/git-del.sh"
+alias branch-clean="~/mac-forge/scripts/branch-local-clean.sh"
+alias bc=branch-clean
 
 # Docker
 alias dps="docker ps"
