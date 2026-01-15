@@ -1,5 +1,5 @@
 {
-  "docker-path": "/Volumes/dsql",
+  "docker-path": "/Volumes/dsql/docker",
   "docker-snapshot-path": "/Volumes/dsql/snapshots",
   "docker-locations": [
     {
@@ -73,6 +73,12 @@
       "folder": "jsons",
       "extensions": [
         "json"
+      ]
+    },
+    {
+      "folder": "csv",
+      "extensions": [
+        "csv"
       ]
     },
     {
