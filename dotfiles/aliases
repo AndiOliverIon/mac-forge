@@ -1,96 +1,32 @@
-# Navigation shortcuts
-alias forge="cd ~/mac-forge"
-alias work="cd ~/work"
-alias perf="cd ~/work/ardis-perform"
-alias perfclient="cd ~/work/ardis-perform/ardis.perform.client"
-alias demo="cd ~/work/ardis-demo"
-alias gpt="cd ~/work/ardis.tools.extensions"
-alias gptbin="cd ~/work/ardis.tools.extensions/Ardis.Utils/bin/debug/net8.0"
-alias lc="cd ~/work/ardis-local-connector"
-alias localconnector="cd ~/work/ardis-local-connector"
-alias projects="cd ~/projects"
-alias fn="cd ~/projects/macos-frontnotes"
-alias web="~/mac-forge/scripts/web.sh"
-alias clients="cd /Volumes/shared/sql/clients"
-alias invoice="cd ~/tni-invoice"
-alias inv=invoice
-alias borg="cd ~/dev/borg"
+# ------------------------------------------------------------------------------
+# Navigation & System
+# ------------------------------------------------------------------------------
+# Shortcuts for frequently used directories and system commands.
 
-# Git
-alias gs="git status"
-alias gco="git checkout"
-alias gp="git pull"
-alias gfo="git fetch origin"
-alias gpu="git push"
-alias gb="git branch"
-alias gbd="~/mac-forge/scripts/branch-delete.sh"
-alias gdel="~/mac-forge/scripts/git-del.sh"
-alias branch-clean="~/mac-forge/scripts/branch-local-clean.sh"
-alias bc=branch-clean
-
-# Docker
-alias dps="docker ps"
-alias dcu="docker compose up"
-alias dcd="docker compose down"
-
-# Common folders
+alias oliver="cd ~/"
 alias doc="cd ~/Documents"
 alias desk="cd ~/Desktop"
 alias dev="cd ~/dev"
-alias oliver="cd ~/"
 alias down="cd ~/Downloads"
-alias andi-notes="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
-alias an="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
-alias notes="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
-alias perflog="cd ~/work/perform-output/logs/perform"
-
-# Mounts
-alias shared="cd /Volumes/shared"
-
-# system commands
-alias reloadterm="source ~/.zshrc"
-alias showeth='networksetup -listallhardwareports | awk "/Hardware Port|Device/"; echo; for i in $(networksetup -listallhardwareports | awk "/Device/ {print \$2}"); do ip=$(ipconfig getifaddr $i 2>/dev/null); echo "$i : ${ip:-no-ip}"; done'
+alias projects="cd ~/projects"
 alias cdp='pwd | pbcopy'
+alias reloadterm="source ~/.zshrc"
+alias fixdock="killall Dock"
+
+# ------------------------------------------------------------------------------
+# mac-forge Scripts
+# ------------------------------------------------------------------------------
+# Aliases for scripts located in the '~/mac-forge/scripts' directory.
+
 alias info="~/mac-forge/scripts/info.sh"
+alias web="~/mac-forge/scripts/web.sh"
 alias winappclean="~/mac-forge/scripts/win-shortcut-clean.sh"
-alias dela="rm -rf ./*"
-alias perflogclean="perflog && rm -rf ./*"
-alias screenshotclean="desk && rm -f *.png"
 alias eject-all="~/mac-forge/scripts/eject-all.sh"
 alias ejectall=eject-all
 alias ea=eject-all
-alias aliases="cat ~/mac-forge/dotfiles/aliases"
 alias hdd-clean="~/mac-forge/scripts/hdd-clean.sh"
 alias hc=hdd-clean
-alias fixdock="killall Dock"
-
-# Applications
-alias rider="open -a 'Rider.app'"
-
-# Database work script commands
-alias dba="~/mac-forge/scripts/db-admin.sh"
-alias dbs="~/mac-forge/scripts/docker-start.sh"
-alias dbu="~/mac-forge/scripts/db-upload-bak.sh"
-alias dbr="~/mac-forge/scripts/db-restore.sh"
-alias dbsn="~/mac-forge/scripts/db-snapshot.sh"
-alias dbc="~/mac-forge/scripts/db-clear.sh"
 alias binclear="~/mac-forge/scripts/bin-clear.sh"
-
-# work drives
-alias vsql="cd /Volumes/shared/sql"
-alias cloudforge='cd "$HOME/Library/Mobile Documents/com~apple~CloudDocs/forge"'
-alias snapshots="cd /Volumes/shared/sql/docker/snapshots"
-alias snap=snapshots
-alias snapdel="snap && rm -rf ./*"
-alias locsql="cd ~/sql"
-alias lcsql=locsql
-alias locsnapshots="cd ~/sql/snapshots"
-alias lcsnaphots=locsnapshots
-alias lcsnap=locsnapshots
-alias lcs=locsnapshots
-alias lcsnapdel="lcsnap && rm -rf ./*"
-
-# work aliases for commands
 alias al="~/mac-forge/scripts/aliases.sh"
 alias a=al
 alias work="~/mac-forge/scripts/work.sh"
@@ -103,12 +39,120 @@ alias ardis-complete="~/mac-forge/scripts/ardis-complete.sh"
 alias ac="ardis-complete"
 alias genopenapi="~/mac-forge/scripts/gen-open-api.sh"
 alias goa=genopenapi
-alias genopenapi="~/mac-forge/scripts/gen-open-api.sh"
 alias organizer="~/mac-forge/scripts/organizer.sh"
 alias org=organizer
 alias o=organizer
 
-# remotes
+# ------------------------------------------------------------------------------
+# Git
+# ------------------------------------------------------------------------------
+# Aliases for Git commands to streamline version control workflows.
+
+alias gs="git status"
+alias gco="git checkout"
+alias gp="git pull"
+alias gfo="git fetch origin"
+alias gpu="git push"
+alias gb="git branch"
+alias gbd="~/mac-forge/scripts/branch-delete.sh"
+alias gdel="~/mac-forge/scripts/git-del.sh"
+alias branch-clean="~/mac-forge/scripts/branch-local-clean.sh"
+alias bc=branch-clean
+
+# ------------------------------------------------------------------------------
+# Docker
+# ------------------------------------------------------------------------------
+# Aliases for Docker commands.
+
+alias dps="docker ps"
+alias dcu="docker compose up"
+alias dcd="docker compose down"
+
+# ------------------------------------------------------------------------------
+# Database Management
+# ------------------------------------------------------------------------------
+# Aliases for database management scripts.
+
+alias dba="~/mac-forge/scripts/db-admin.sh"
+alias dbs="~/mac-forge/scripts/docker-start.sh"
+alias dbu="~/mac-forge/scripts/db-upload-bak.sh"
+alias dbr="~/mac-forge/scripts/db-restore.sh"
+alias dbsn="~/mac-forge/scripts/db-snapshot.sh"
+alias dbc="~/mac-forge/scripts/db-clear.sh"
+
+# ------------------------------------------------------------------------------
+# Work & Project Specific
+# ------------------------------------------------------------------------------
+# Aliases for navigating to specific work-related projects and directories.
+
+alias forge="cd ~/mac-forge"
+alias work="cd ~/work"
+alias perf="cd ~/work/ardis-perform"
+alias perfclient="cd ~/work/ardis-perform/ardis.perform.client"
+alias demo="cd ~/work/ardis-demo"
+alias gpt="cd ~/work/ardis.tools.extensions"
+alias gptbin="cd ~/work/ardis.tools.extensions/Ardis.Utils/bin/debug/net8.0"
+alias lc="cd ~/work/ardis-local-connector"
+alias localconnector="cd ~/work/ardis-local-connector"
+alias fn="cd ~/projects/macos-frontnotes"
+alias clients="cd /Volumes/shared/sql/clients"
+alias invoice="cd ~/tni-invoice"
+alias inv=invoice
+alias borg="cd ~/dev/borg"
+alias perflog="cd ~/work/perform-output/logs/perform"
+alias andi-notes="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
+alias an="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
+alias notes="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
+alias vsql="cd /Volumes/shared/sql"
+alias cloudforge='cd "$HOME/Library/Mobile Documents/com~apple~CloudDocs/forge"'
+alias snapshots="cd /Volumes/shared/sql/docker/snapshots"
+alias snap=snapshots
+alias snapdel="snap && rm -rf ./*"
+alias locsql="cd ~/sql"
+alias lcsql=locsql
+alias locsnapshots="cd ~/sql/snapshots"
+alias lcsnaphots=locsnapshots
+alias lcsnap=locsnapshots
+alias lcs=locsnapshots
+alias lcsnapdel="lcsnap && rm -rf ./*"
+alias shared="cd /Volumes/shared"
+
+
+# ------------------------------------------------------------------------------
+# Cleanup
+# ------------------------------------------------------------------------------
+# Aliases for cleaning up files and directories.
+
+alias dela="rm -rf ./*"
+alias perflogclean="perflog && rm -rf ./*"
+alias screenshotclean="desk && rm -f *.png"
+
+# ------------------------------------------------------------------------------
+# Remote Connections
+# ------------------------------------------------------------------------------
+# Aliases for SSH connections to remote machines.
+
 alias rmc="ssh -t oliver@masterchief"
 alias rth="ssh -t oliver@thanatos"
 alias rt=rth
+
+# ------------------------------------------------------------------------------
+# Applications
+# ------------------------------------------------------------------------------
+# Aliases for opening applications.
+
+alias rider="open -a 'Rider.app'"
+alias aliases="cat ~/mac-forge/dotfiles/aliases"
+
+# ------------------------------------------------------------------------------
+# Network
+# ------------------------------------------------------------------------------
+# Aliases for network related commands.
+alias showeth='networksetup -listallhardwareports | awk "/Hardware Port|Device/"; echo; for i in $(networksetup -listallhardwareports | awk "/Device/ {print \$2}"); do ip=$(ipconfig getifaddr $i 2>/dev/null); echo "$i : ${ip:-no-ip}"; done'
+
+# ------------------------------------------------------------------------------
+# CLI Tools
+# ------------------------------------------------------------------------------
+# Aliases for command-line interface tools.
+
+alias g="gemini"
