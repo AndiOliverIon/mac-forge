@@ -99,6 +99,54 @@ list_project_tickets() {
   }'
 }
 
+# Function to list tickets assigned to the current user for a project
+list_my_project_tickets() {
+    local project_key=$1
+    if [ -z "$project_key" ]; then
+        echo "Error: Project key is required."
+        usage
+    fi
+
+    echo "Fetching open tickets assigned to you for project ${project_key}..."
+    # JQL to find open issues in the project assigned to the current user
+    local jql="project = ${project_key} AND assignee = currentUser() AND status != Done"
+    local response
+    response=$(jira_api_request "search?jql=${jql}")
+
+    if echo "$response" | jq -e '.errorMessages' > /dev/null; then
+        echo "Error fetching tickets:"
+        echo "$response" | jq '.errorMessages[]'
+        exit 1
+    fi
+
+    # Customize the output for the list
+    echo "$response" | jq '.issues[] | {
+        key: .key,
+        summary: .fields.summary,
+        status: .fields.status.name,
+        assignee: .fields.assignee.displayName
+    }'
+}
+
+# Function to list all projects
+list_projects() {
+    echo "Fetching all projects..."
+    local response
+    response=$(jira_api_request "project")
+
+    if echo "$response" | jq -e '.errorMessages' > /dev/null; then
+        echo "Error fetching projects:"
+        echo "$response" | jq '.errorMessages[]'
+        exit 1
+    fi
+
+    # Customize the output for the list
+    echo "$response" | jq '.[] | {
+        key: .key,
+        name: .name
+    }'
+}
+
 # --- Main Logic ---
 
 COMMAND=$1
@@ -110,6 +158,12 @@ case "$COMMAND" in
     ;;
   list)
     list_project_tickets "$@"
+    ;;
+  list-mine)
+    list_my_project_tickets "$@"
+    ;;
+  list-projects)
+    list_projects "$@"
     ;;
   *)
     usage

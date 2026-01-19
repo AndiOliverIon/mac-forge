@@ -126,20 +126,3 @@ source <(ng completion script)
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 export PATH="$HOME/Library/Python/3.9/bin:$PATH"
-
-
-# My own credentials
-
-# It is recommended to store credentials in a separate file that is not checked into version control.
-# For example, you can create a file named .env in your home directory and add the following lines:
-#
-# export JIRA_URL="your_jira_url"
-# export JIRA_USER="your_jira_username"
-# export JIRA_API_TOKEN="your_jira_api_token"
-#
-# Then, you can source this file in your .zshrc with the following line:
-#
-# source ~/.env
-#
-# Make sure to add .env to your .gitignore file to prevent it from being committed to your repository.
-
