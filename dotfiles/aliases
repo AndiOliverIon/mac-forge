@@ -116,7 +116,8 @@ alias lcsnap=locsnapshots
 alias lcs=locsnapshots
 alias lcsnapdel="lcsnap && rm -rf ./*"
 alias shared="cd /Volumes/shared"
-
+alias cloud="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs"
+alias gdrive="cd ~/Library/CloudStorage/GoogleDrive-andioliverion@gmail.com/My\ Drive"
 
 # ------------------------------------------------------------------------------
 # Cleanup
