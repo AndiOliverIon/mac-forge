@@ -66,3 +66,21 @@ The behavior of many scripts is controlled by the JSON files in the `/configs` d
 ## User Preferences & Environment
 
 The `Readme.md` file contains personal notes for setting up a new Mac, including preferences for the Dock, Git configuration, keyboard settings, and installation of tools like `pyenv` and FortiClient VPN. This provides valuable context for the user's environment.
+
+## Querying PERFORM Jira Tasks
+
+To retrieve unassigned "PERFORM" tasks with a specific priority and status using `jira.sh`:
+
+1.  **Ensure Environment Variables are Set:**
+    Make sure `JIRA_URL`, `JIRA_USER`, and `JIRA_API_TOKEN` are set in your environment (e.g., by sourcing `~/.env` in your `~/.zshrc`).
+
+2.  **Use the `list-unassigned` command:**
+    The `jira.sh` script has been updated to support querying unassigned tasks with criteria matching the webpage view.
+
+    Example command to get the top 5 unassigned "PERFORM" tasks in "Ready For Development" status with High, Highest, or Medium priority:
+    ```bash
+    scripts/jira.sh list-unassigned PERFORM
+    ```
+    This command will return the `key`, `summary`, and `status` for the matching tasks.
+
+    *Note: The script currently targets the '/rest/api/3/search/jql' endpoint and includes JQL URL-encoding and specific field requests for detailed output.*

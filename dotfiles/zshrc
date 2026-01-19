@@ -126,3 +126,6 @@ source <(ng completion script)
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 export PATH="$HOME/Library/Python/3.9/bin:$PATH"
+
+# load environment variables
+source ~/.env
