@@ -35,9 +35,16 @@ usage() {
 # Function to make authenticated API requests
 jira_api_request() {
   local endpoint=$1
+  local fields=${2:-} # Optional fields parameter, default to empty
+  local url="${JIRA_URL}/rest/api/3/${endpoint}"
+
+  if [ -n "$fields" ]; then
+    url="${url}&fields=${fields}"
+  fi
+
   curl -s -u "${JIRA_USER}:${JIRA_API_TOKEN}" \
        -H "Content-Type: application/json" \
-       "${JIRA_URL}/rest/api/3/${endpoint}"
+       "${url}"
 }
 
 # Function to get a specific ticket
@@ -80,8 +87,7 @@ list_project_tickets() {
 
   echo "Fetching open tickets for project ${project_key}..."
   # JQL to find open issues in the project
-  local jql="project = ${project_key} AND status != Done"
-  local response
+  local jql_raw="project = ${project_key} AND status != Done"
   response=$(jira_api_request "search?jql=${jql}")
 
   if echo "$response" | jq -e '.errorMessages' > /dev/null; then
@@ -180,9 +186,10 @@ list_unassigned_tickets() {
 
     echo "Fetching unassigned tickets for project ${project_key}..."
     # JQL to find unassigned open issues in the project
-    local jql="project = ${project_key} AND assignee is EMPTY AND status = 'Ready For Development'"
+    local jql_raw="project = ${project_key} AND assignee is EMPTY AND status = 'Ready For Development' AND priority IN (High, Highest, Medium)"
+    local jql=$(echo "$jql_raw" | jq -sRr @uri)
     local response
-    response=$(jira_api_request "search?jql=${jql}&maxResults=5")
+    response=$(jira_api_request "search/jql?jql=${jql}&maxResults=5" "key,summary,status")
 
     if echo "$response" | jq -e '.errorMessages' > /dev/null; then
         echo "Error fetching tickets:"
@@ -211,7 +218,7 @@ list_project_statuses() {
     local response
     response=$(jira_api_request "project/${project_key}/statuses")
 
-    if echo "$response" | jq -e 'if type=="object" and .errorMessages then .errorMessages else empty end' > /dev/null; then
+    if echo "$response" | jq 'if type=="object" and .errorMessages then .errorMessages else empty end' > /dev/null; then
         echo "Error fetching statuses:"
         echo "$response" | jq '.errorMessages[]'
         exit 1
@@ -237,7 +244,7 @@ list_project_components() {
     local response
     response=$(jira_api_request "project/${project_key}/components")
 
-    if echo "$response" | jq -e 'if type=="object" and .errorMessages then .errorMessages else empty end' > /dev/null; then
+    if echo "$response" | jq 'if type=="object" and .errorMessages then .errorMessages else empty end' > /dev/null; then
         echo "Error fetching components:"
         echo "$response" | jq '.errorMessages[]'
         exit 1
