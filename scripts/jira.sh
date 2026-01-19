@@ -134,7 +134,7 @@ list_projects() {
     local response
     response=$(jira_api_request "project")
 
-    if echo "$response" | jq -e '.errorMessages' > /dev/null; then
+    if echo "$response" | jq -e 'if type=="object" and .errorMessages then .errorMessages else empty end' > /dev/null; then
         echo "Error fetching projects:"
         echo "$response" | jq '.errorMessages[]'
         exit 1
@@ -144,6 +144,109 @@ list_projects() {
     echo "$response" | jq '.[] | {
         key: .key,
         name: .name
+    }'
+}
+
+
+# Function to list all tickets assigned to the current user across all projects
+list_all_my_tickets() {
+    echo "Fetching all projects..."
+    local projects_response
+    projects_response=$(jira_api_request "project")
+
+    if echo "$projects_response" | jq -e 'if type=="object" and .errorMessages then .errorMessages else empty end' > /dev/null; then
+        echo "Error fetching projects:"
+        echo "$projects_response" | jq '.errorMessages[]'
+        exit 1
+    fi
+
+    # Extract project keys
+    local project_keys
+    project_keys=$(echo "$projects_response" | jq -r '.[].key')
+
+    for key in $project_keys; do
+        list_my_project_tickets "$key"
+    done
+}
+
+
+# Function to list unassigned tickets for a project
+list_unassigned_tickets() {
+    local project_key=$1
+    if [ -z "$project_key" ]; then
+        echo "Error: Project key is required."
+        usage
+    fi
+
+    echo "Fetching unassigned tickets for project ${project_key}..."
+    # JQL to find unassigned open issues in the project
+    local jql="project = ${project_key} AND assignee is EMPTY AND status = 'Ready For Development'"
+    local response
+    response=$(jira_api_request "search?jql=${jql}&maxResults=5")
+
+    if echo "$response" | jq -e '.errorMessages' > /dev/null; then
+        echo "Error fetching tickets:"
+        echo "$response" | jq '.errorMessages[]'
+        exit 1
+    fi
+
+    # Customize the output for the list
+    echo "$response" | jq '.issues[] | {
+        key: .key,
+        summary: .fields.summary,
+        status: .fields.status.name
+    }'
+}
+
+
+# Function to list all statuses for a project
+list_project_statuses() {
+    local project_key=$1
+    if [ -z "$project_key" ]; then
+        echo "Error: Project key is required."
+        usage
+    fi
+
+    echo "Fetching statuses for project ${project_key}..."
+    local response
+    response=$(jira_api_request "project/${project_key}/statuses")
+
+    if echo "$response" | jq -e 'if type=="object" and .errorMessages then .errorMessages else empty end' > /dev/null; then
+        echo "Error fetching statuses:"
+        echo "$response" | jq '.errorMessages[]'
+        exit 1
+    fi
+
+    # Customize the output for the list
+    echo "$response" | jq '.[] | .statuses[] | {
+        name: .name,
+        id: .id
+    }'
+}
+
+
+# Function to list all components for a project
+list_project_components() {
+    local project_key=$1
+    if [ -z "$project_key" ]; then
+        echo "Error: Project key is required."
+        usage
+    fi
+
+    echo "Fetching components for project ${project_key}..."
+    local response
+    response=$(jira_api_request "project/${project_key}/components")
+
+    if echo "$response" | jq -e 'if type=="object" and .errorMessages then .errorMessages else empty end' > /dev/null; then
+        echo "Error fetching components:"
+        echo "$response" | jq '.errorMessages[]'
+        exit 1
+    fi
+
+    # Customize the output for the list
+    echo "$response" | jq '.[] | {
+        name: .name,
+        id: .id
     }'
 }
 
@@ -164,6 +267,18 @@ case "$COMMAND" in
     ;;
   list-projects)
     list_projects "$@"
+    ;;
+  list-all-mine)
+    list_all_my_tickets "$@"
+    ;;
+  list-unassigned)
+    list_unassigned_tickets "$@"
+    ;;
+  list-project-statuses)
+    list_project_statuses "$@"
+    ;;
+  list-project-components)
+    list_project_components "$@"
     ;;
   *)
     usage
