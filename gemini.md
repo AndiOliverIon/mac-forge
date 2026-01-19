@@ -29,6 +29,7 @@ This is not an exhaustive list, but it covers some of the main functionalities p
 - **`organizer.sh`**: Cleans up specified folders (like Downloads and Desktop) by moving files into categorized subdirectories based on rules in `configs/work-state.json`.
 - **`info.sh`**: Displays system information.
 - **`arc.sh`**: Likely related to Arcanist (a code review tool from Phabricator).
+- **`jira.sh`**: A script to interact with Jira from the command line. It can be used to get ticket details and list open tickets for a project.
 
 ### Docker & Database Management
 
