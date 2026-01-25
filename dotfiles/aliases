@@ -42,6 +42,8 @@ alias goa=genopenapi
 alias organizer="~/mac-forge/scripts/organizer.sh"
 alias org=organizer
 alias o=organizer
+alias dotnet-clean="~/mac-forge/scripts/dotnet-clean.sh"
+alias dnc=dotnet-clean
 
 # ------------------------------------------------------------------------------
 # Git
