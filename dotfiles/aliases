@@ -152,6 +152,8 @@ alias aliases="cat ~/mac-forge/dotfiles/aliases"
 # ------------------------------------------------------------------------------
 # Aliases for network related commands.
 alias showeth='networksetup -listallhardwareports | awk "/Hardware Port|Device/"; echo; for i in $(networksetup -listallhardwareports | awk "/Device/ {print \$2}"); do ip=$(ipconfig getifaddr $i 2>/dev/null); echo "$i : ${ip:-no-ip}"; done'
+alias stio="~/mac-forge/scripts/station-io.sh"
+alias sio=stio
 
 # ------------------------------------------------------------------------------
 # CLI Tools

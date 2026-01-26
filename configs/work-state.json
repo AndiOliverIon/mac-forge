@@ -93,5 +93,15 @@
     "~/Downloads",
     "~/Desktop",
     "~/work/stuff"
+  ],
+  "station-destinations":[
+    {
+      "title":"Network dsql",
+      "path":"/Volumes/dsql"
+    },
+    {
+      "title":"Network temp",
+      "path":"/Volumes/sttemp"
+    }
   ]
 }
