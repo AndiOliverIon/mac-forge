@@ -1,86 +1,110 @@
 # Gemini Workspace Documentation
 
-This document provides an overview of the `mac-forge` repository, its structure, and the purpose of its scripts and configuration files.
+This document serves as the primary context for the Gemini AI agent when working within the `mac-forge` repository. It consolidates user preferences, system architecture, and script documentation.
 
-## Project Overview
+## 1. User Persona & Context
 
-`mac-forge` is a personal collection of scripts and configuration files designed to automate and streamline the user's development and system management workflow on macOS. The repository includes tools for managing Docker, databases, git branches, system settings, and organizing files.
+*   **User Name:** Andi Ion Oliver
+*   **Emails:** `andioliverion@gmail.com` (Personal), `andi@ardis.eu` (Work)
+*   **Workstation:** "Hades" (macOS)
+*   **Role:** Software Engineer (focus on .NET/SQL/Web)
+*   **Key Philosophy:** "Partner" relationship with AI.
+*   **Critical Preferences:**
+    *   **Dotnet:** Install SDKs via Microsoft installers, *not* Homebrew (avoids compiler issues).
+    *   **VPN:** Install *only* FortiClient VPN (no full suite).
+    *   **Docker:** Uses a custom "Forge" setup to switch SQL data locations (Local/External/Network).
 
-## Directory Structure
+## 2. Project Architecture
 
-- **`/configs`**: Contains JSON configuration files for various scripts.
-  - `web.json`: A list of URLs for quick access, likely used by `scripts/web.sh`.
-  - `work-state.json`: Defines paths for Docker, database snapshots, and rules for the file organizer script.
-- **`/dotfiles`**: Contains shell configuration files.
-  - `zshrc`: Configuration for the Zsh shell.
-  - `p10k.zsh`: Configuration for the Powerlevel10k Zsh theme.
-  - `aliases`: Custom shell aliases.
-- **`/scripts`**: A collection of shell scripts for various tasks.
-- **`/work`**: A directory for work-related files.
+`mac-forge` is a central automation hub. Its primary goal is to abstract away the complexity of managing SQL Server on macOS (via Docker) and to provide shortcuts for daily development tasks (Ardis/Perform projects).
 
-## Key Scripts
+### Core Components
 
-This is not an exhaustive list, but it covers some of the main functionalities provided by the scripts in the `scripts` directory.
+*   **`scripts/forge.sh`**: The "Kernel". This script is sourced by almost all other scripts. It:
+    *   Sets environment variables (`FORGE_SQL_USER`, `FORGE_SQL_PORT`).
+    *   Reads `configs/work-state.json` to determine *active* storage paths.
+    *   Defines paths for the "Ardis" project.
+*   **`configs/work-state.json`**: The "State". Defines where the Docker container should look for data *right now*.
+    *   `docker-path`: Host path for SQL data (bind-mounted).
+    *   `docker-snapshot-path`: Host path for `.bak` files.
 
-### Workflow & Automation
+## 3. Key Workflows & Scripts
 
-- **`forge.sh`**: A master script that seems to be the main entry point for many operations.
-- **`work.sh`**: A script to manage work-related tasks, possibly setting up a work environment.
-- **`organizer.sh`**: Cleans up specified folders (like Downloads and Desktop) by moving files into categorized subdirectories based on rules in `configs/work-state.json`.
-- **`info.sh`**: Displays system information.
-- **`arc.sh`**: Likely related to Arcanist (a code review tool from Phabricator).
-- **`jira.sh`**: A script to interact with Jira from the command line. It can be used to get ticket details and list open tickets for a project.
+### Ardis / Perform Development (Work)
 
-### Docker & Database Management
+These scripts are specific to the user's employment at Ardis.
 
-- **`docker-start.sh`**: Starts Docker containers.
-- **`db-admin.sh`**: Opens a database administration tool.
-- **`db-snapshot.sh`**: Creates a snapshot of a database.
-- **`db-restore.sh`**: Restores a database from a snapshot.
-- **`db-clear.sh`**: Clears a database.
-- **`db-upload-bak.sh`**: Uploads a database backup file.
+*   **`scripts/perform-prep.sh [Config]`**
+    *   **Purpose:** Prepares the `Asms2.Web` project for local execution.
+    *   **Critical Action:** Copies `libgdiplus.dylib` (from Homebrew/System) into the project's `bin/...` directory. This resolves `System.Drawing` errors on macOS.
+    *   **Usage:** `scripts/perform-prep.sh` (Defaults to `DebugUnitTestLocal`).
 
-### Git & Branch Management
+*   **`scripts/ardis-migrate.sh`**
+    *   **Purpose:** Interactive tool to apply database migrations.
+    *   **Flow:**
+        1.  Builds `Ardis.Migrations.Console`.
+        2.  Checks if `forge-sql` container is running.
+        3.  Uses `fzf` to let the user select a target database from the container.
+        4.  Runs the migration tool against that DB.
 
-- **`branch-delete.sh`**: Deletes Git branches.
-- **`branch-local-clean.sh`**: Cleans up local Git branches.
-- **`git-del.sh`**: A script for deleting git-related things.
+### Database & Docker (The "Forge" System)
 
-### System & Cleanup
+The user employs a specific cyclical workflow for database management: **Restore -> Work -> Scrap**.
+1.  **Restore:** A development or client database is restored into the Docker container.
+2.  **Work:** The user performs tasks, runs migrations, or debugs against this instance.
+3.  **Scrap:** The database is completely removed/cleared to prepare for the next task.
 
-- **`win-shortcut-clean.sh`**: Removes unwanted Windows application shortcuts created by Parallels.
-- **`hdd-clean.sh`**: Cleans up a hard drive.
-- **`eject-all.sh`**: Ejects all connected external drives.
-- **`bin-clear.sh`**: Clears a `bin` directory.
+The user runs SQL Server 2022 in a Docker container named `forge-sql` on port `2022`.
 
-## Configuration
+*   **`scripts/docker-start.sh`**: Starts the `forge-sql` container using paths defined in `work-state.json`.
+*   **`scripts/db-restore.sh`**: Restores a database from a snapshot (The "Restore" phase).
+*   **`scripts/db-snapshot.sh`**: Creates a backup (`.bak`) of a database (optional, for saving intermediate state).
+*   **`scripts/db-clear.sh`**: Implements the "Scrap" phase.
+    *   **Default (Hard):** Stops/Removes container and wipes data (preserving snapshots).
+    *   **`--soft`:** Drops all user databases but keeps the container running.
+*   **`scripts/db-admin.sh`**: Launches a DB management tool (likely Azure Data Studio or similar, depending on alias).
 
-The behavior of many scripts is controlled by the JSON files in the `/configs` directory.
+### Jira Integration
 
-- **`web.json`**: Add or remove URLs to be opened by the `web.sh` script.
-- **`work-state.json`**:
-  - `docker-locations`: Configure different locations for Docker files and snapshots. This is useful for switching between different machines or external drives.
-  - `organize-categories`: Define file extensions and their corresponding folders for the `organizer.sh` script.
-  - `organize-folders`: Specify which folders the `organizer.sh` script should process.
-
-## User Preferences & Environment
-
-The `Readme.md` file contains personal notes for setting up a new Mac, including preferences for the Dock, Git configuration, keyboard settings, and installation of tools like `pyenv` and FortiClient VPN. This provides valuable context for the user's environment.
-
-## Querying PERFORM Jira Tasks
-
-To retrieve unassigned "PERFORM" tasks with a specific priority and status using `jira.sh`:
-
-1.  **Ensure Environment Variables are Set:**
-    Make sure `JIRA_URL`, `JIRA_USER`, and `JIRA_API_TOKEN` are set in your environment (e.g., by sourcing `~/.env` in your `~/.zshrc`).
-
-2.  **Use the `list-unassigned` command:**
-    The `jira.sh` script has been updated to support querying unassigned tasks with criteria matching the webpage view.
-
-    Example command to get the top 5 unassigned "PERFORM" tasks in "Ready For Development" status with High, Highest, or Medium priority:
+*   **`scripts/jira.sh`**: CLI wrapper for Jira API.
+*   **Common Command:** List unassigned tasks for the "PERFORM" project.
     ```bash
     scripts/jira.sh list-unassigned PERFORM
     ```
-    This command will return the `key`, `summary`, and `status` for the matching tasks.
+*   **Setup:** Requires `JIRA_URL`, `JIRA_USER`, `JIRA_API_TOKEN` (usually loaded from `~/.zshrc` or `forge-secrets.sh`).
 
-    *Note: The script currently targets the '/rest/api/3/search/jql' endpoint and includes JQL URL-encoding and specific field requests for detailed output.*
+### System Maintenance
+
+*   **`scripts/organizer.sh`**: Moves files from Downloads/Desktop into categorized folders (Images, Archives, SQL, etc.) defined in `configs/work-state.json`.
+*   **`scripts/win-shortcut-clean.sh`**: Removes the Windows app shortcuts that Parallels creates in the macOS Launchpad.
+*   **`scripts/forge.sh` Secrets**: Looks for secrets in `$HOME/Library/Mobile Documents/com~apple~CloudDocs/forge/forge-secrets.sh`.
+
+## 4. Configuration Reference
+
+### `configs/work-state.json` Schema
+```json
+{
+  "docker-path": "/current/active/path/to/sql/data",
+  "docker-snapshot-path": "/current/active/path/to/snapshots",
+  "docker-locations": [ ... list of known locations (Local, Acasis, etc.) ... ],
+  "organize-categories": [ ... file extension rules ... ]
+}
+```
+
+### Important Environment Variables (Exported by `forge.sh`)
+*   `FORGE_SQL_DOCKER_CONTAINER`: `forge-sql`
+*   `FORGE_SQL_PORT`: `2022`
+*   `FORGE_SQL_USER`: `sa`
+*   `ARDIS_MIGRATIONS_PATH`: `$HOME/work/ardis-perform/Ardis.Migrations.Console`
+
+## 5. Quick Checklist for AI Agent
+1.  **Context:** Always check `configs/work-state.json` if debugging Docker/path issues.
+2.  **Safety:** Do not overwrite `configs/work-state.json` manually unless instructed; it's likely managed by `work.sh`.
+3.  **Secrets:** Never output the contents of `forge-secrets.sh`.
+
+## 6. Git & Repository Operations
+
+To maintain the integrity of this repository, the following rules apply:
+*   **No Auto-Commits:** Never `git commit`, `git push`, `git reset`, or `git stash` unless explicitly instructed by the user.
+*   **Context Discovery:** You are encouraged to use read-only commands (`git log`, `git diff`, `git show`, `git status`) to understand recent changes, commit patterns, and the current state of the repository.
+*   **Recommendations:** When suggesting code changes, provide them as tool calls or code blocks for review rather than committing them automatically.
