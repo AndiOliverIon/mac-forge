@@ -35,6 +35,8 @@ alias workinfo="~/mac-forge/scripts/work.sh --info"
 alias wi=workinfo
 alias ardis-migrate="~/mac-forge/scripts/ardis-migrate.sh"
 alias am="ardis-migrate"
+alias ardis-patch="~/mac-forge/scripts/ardis-patch.sh"
+alias ap="ardis-patch"
 alias ardis-complete="~/mac-forge/scripts/ardis-complete.sh"
 alias ac="ardis-complete"
 alias genopenapi="~/mac-forge/scripts/gen-open-api.sh"
@@ -46,6 +48,7 @@ alias dotnet-clean="~/mac-forge/scripts/dotnet-clean.sh"
 alias dnc=dotnet-clean
 alias present="~/mac-forge/scripts/present.sh"
 alias prs=present
+alias patch="~/mac-forge/scripts/patch.sh"
 
 # ------------------------------------------------------------------------------
 # Git

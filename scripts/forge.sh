@@ -11,6 +11,7 @@ FORGE_ROOT="$HOME/mac-forge"
 # Config (work state)
 #######################################
 FORGE_CONFIG_DIR="${FORGE_ROOT}/configs"
+FORGE_CONFIG_LOCAL_DIR="${FORGE_ROOT}/config-local"
 FORGE_WORK_STATE_FILE="${FORGE_CONFIG_DIR}/work-state.json"
 
 #######################################
@@ -138,6 +139,7 @@ export \
   FORGE_MACHINE_NAME \
   FORGE_ROOT \
   FORGE_CONFIG_DIR \
+  FORGE_CONFIG_LOCAL_DIR \
   FORGE_WORK_STATE_FILE \
   FORGE_SQL_LOCAL_ROOT \
   FORGE_SQL_EXTERNAL_ROOT \
