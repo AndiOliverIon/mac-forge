@@ -105,19 +105,29 @@ try:
   docker_path = (j.get("docker-path") or "").strip()
   snap_path = (j.get("docker-snapshot-path") or "").strip()
   if docker_path:
-    print("FORGE_SQL_DATA_BIND_PATH=" + docker_path)
+    print("FORGE_SQL_DATA_BIND_PATH\t" + docker_path)
   if snap_path:
-    print("FORGE_SQL_SNAPSHOTS_PATH=" + snap_path)
+    print("FORGE_SQL_SNAPSHOTS_PATH\t" + snap_path)
 except Exception:
   pass
 PY
 }
 
 forge__apply_work_state() {
-  local parsed
+  local parsed key value
   parsed="$(forge__read_work_state)"
   [[ -n "${parsed//$'\n'/}" ]] || return 0
-  eval "$parsed"
+
+  while IFS=$'\t' read -r key value; do
+    case "$key" in
+      FORGE_SQL_DATA_BIND_PATH)
+        [[ -n "$value" ]] && FORGE_SQL_DATA_BIND_PATH="$value"
+        ;;
+      FORGE_SQL_SNAPSHOTS_PATH)
+        [[ -n "$value" ]] && FORGE_SQL_SNAPSHOTS_PATH="$value"
+        ;;
+    esac
+  done <<< "$parsed"
 
   # Enforce mount kind for this workflow.
   FORGE_SQL_DATA_MOUNT_KIND="bind"

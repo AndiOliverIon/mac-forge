@@ -15,7 +15,7 @@ die() { echo "❌ $*" >&2; exit 1; }
 usage() {
   cat <<EOF
 Usage:
-  $0 [--config <path>] {apply|-P|remove|-R|status}
+  $0 [--config <path>] [apply|p|-P|remove|r|-R|status|s]
 
 Defaults:
   - Config path: \$FORGE_CONFIG_LOCAL_DIR/local-overrides.json
@@ -76,10 +76,12 @@ fi
 #######################################
 # Command parsing
 #######################################
-COMMAND="${1:-}"
-[[ -n "$COMMAND" ]] || { usage; exit 1; }
-[[ "$COMMAND" == "-P" ]] && COMMAND="apply"
-[[ "$COMMAND" == "-R" ]] && COMMAND="remove"
+COMMAND="${1:-apply}"
+case "$COMMAND" in
+  p|-P) COMMAND="apply" ;;
+  r|-R) COMMAND="remove" ;;
+  s)    COMMAND="status" ;;
+esac
 
 case "$COMMAND" in
   apply|remove|status) ;;
@@ -508,69 +510,120 @@ restore_targets() {
 #######################################
 cmd_status() {
   load_interventions
-  echo "Repo:   $REPO_ROOT"
-  echo "Config: $CONFIG_FILE"
-  echo
+  local total="${#IDS[@]}"
+  local inject_total=0 comment_total=0
+  local applied_count=0 not_applied_count=0 partial_count=0 missing_count=0 invalid_count=0
+  local unique_targets="" pending_targets="" issue_targets=""
+  local exception_lines=""
+  local exception_count=0
 
-  local any_applied=0
+  add_unique_line() {
+    local list="$1"
+    local value="$2"
+    if [[ -z "$list" ]]; then
+      printf '%s' "$value"
+      return
+    fi
+    if grep -Fqx "$value" <<< "$list"; then
+      printf '%s' "$list"
+    else
+      printf '%s\n%s' "$list" "$value"
+    fi
+  }
+
+  count_lines() {
+    local text="$1"
+    [[ -n "$text" ]] || { echo 0; return; }
+    printf '%s\n' "$text" | wc -l | tr -d ' '
+  }
+
   for i in "${!IDS[@]}"; do
     local id="${IDS[$i]}"
     local rel="${FILES[$i]}"
     local type="${TYPES[$i]}"
     local target="$REPO_ROOT/$rel"
+    local st=""
+
+    unique_targets="$(add_unique_line "$unique_targets" "$rel")"
+
+    [[ "$type" == "inject" ]] && ((inject_total+=1))
+    [[ "$type" == "comment" ]] && ((comment_total+=1))
 
     if [[ ! -f "$target" ]]; then
-      echo "✖ $id  (missing file: $rel)"
-      continue
-    fi
-
-    if [[ "$type" == "inject" ]]; then
+      st="missing"
+    elif [[ "$type" == "inject" ]]; then
       if block_exists "$target" "$id"; then
-        echo "✔ $id  (applied) -> $rel"
-        any_applied=1
+        st="applied"
       else
-        echo "· $id  (not applied) -> $rel"
+        st="not_applied"
       fi
     elif [[ "$type" == "comment" ]]; then
       local mode="${COMMENT_MODES[$i]}"
       local prefix="${COMMENT_PREFIXES[$i]}"
       local max_matches="${MAX_MATCHES[$i]}"
-      local st=""
       if [[ "$mode" == "line" ]]; then
         st="$(comment_line_status "$target" "${IDENTIFIERS[$i]}" "$prefix" "$max_matches")"
       else
         st="$(comment_block_status "$target" "${BLOCK_STARTS[$i]}" "${BLOCK_ENDS[$i]}" "$prefix" "$max_matches")"
       fi
-
-      case "$st" in
-        applied)
-          echo "✔ $id  (applied) -> $rel"
-          any_applied=1
-          ;;
-        not_applied)
-          echo "· $id  (not applied) -> $rel"
-          ;;
-        partial)
-          echo "⚠ $id  (partial) -> $rel"
-          any_applied=1
-          ;;
-        missing)
-          echo "✖ $id  (identifier/block not found) -> $rel"
-          ;;
-        *)
-          echo "✖ $id  (invalid/multi-match state) -> $rel"
-          ;;
-      esac
     else
-      echo "✖ $id  (unsupported type '$type') -> $rel"
+      st="invalid"
     fi
+
+    case "$st" in
+      applied)
+        ((applied_count+=1))
+        ;;
+      not_applied)
+        ((not_applied_count+=1))
+        pending_targets="$(add_unique_line "$pending_targets" "$rel")"
+        ;;
+      partial)
+        ((partial_count+=1))
+        exception_count=$((exception_count + 1))
+        issue_targets="$(add_unique_line "$issue_targets" "$rel")"
+        exception_lines+=$'\n'"- $id ($rel): partial"
+        ;;
+      missing)
+        ((missing_count+=1))
+        exception_count=$((exception_count + 1))
+        issue_targets="$(add_unique_line "$issue_targets" "$rel")"
+        exception_lines+=$'\n'"- $id ($rel): missing target/identifier/block"
+        ;;
+      *)
+        ((invalid_count+=1))
+        exception_count=$((exception_count + 1))
+        issue_targets="$(add_unique_line "$issue_targets" "$rel")"
+        exception_lines+=$'\n'"- $id ($rel): invalid or unsupported"
+        ;;
+    esac
   done
 
+  local unique_target_count pending_target_count issue_target_count
+  unique_target_count="$(count_lines "$unique_targets")"
+  pending_target_count="$(count_lines "$pending_targets")"
+  issue_target_count="$(count_lines "$issue_targets")"
+
+  echo "Patch status"
+  echo "Repo:   $REPO_ROOT"
+  echo "Config: $CONFIG_FILE"
   echo
-  if [[ "$any_applied" -eq 1 ]]; then
-    echo "Local overrides: APPLIED"
-  else
-    echo "Local overrides: NOT applied"
+  echo "Interventions: $total (inject: $inject_total, comment: $comment_total)"
+  echo "Target files:  $unique_target_count"
+  echo
+  echo "State:"
+  echo "- Applied:     $applied_count"
+  echo "- Pending:     $not_applied_count"
+  echo "- Exceptions:  $exception_count (partial: $partial_count, missing: $missing_count, invalid: $invalid_count)"
+  echo
+  echo "Impact:"
+  echo "- Files to touch for apply: $pending_target_count"
+  echo "- Files needing attention:  $issue_target_count"
+
+  if [[ -n "$exception_lines" ]]; then
+    echo
+    echo "Exceptions:"
+    echo "${exception_lines#"$'\n'"}"
   fi
 }
 

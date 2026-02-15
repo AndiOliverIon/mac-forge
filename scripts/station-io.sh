@@ -8,9 +8,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [[ -f "$SCRIPT_DIR/forge.sh" ]]; then
   # shellcheck disable=SC1091
   source "$SCRIPT_DIR/forge.sh"
-else
+elif [[ -f "$HOME/mac-forge/scripts/forge.sh" ]]; then
   # shellcheck disable=SC1091
-  source "$HOME/mac-forge/forge.sh"
+  source "$HOME/mac-forge/scripts/forge.sh"
+else
+  echo "ERROR: forge.sh not found (checked: $SCRIPT_DIR/forge.sh, $HOME/mac-forge/scripts/forge.sh)" >&2
+  exit 1
 fi
 
 #######################################
@@ -22,7 +25,7 @@ require_cmd() { command -v "$1" >/dev/null 2>&1 || die "Required command '$1' no
 usage() {
   cat <<'EOF'
 Usage:
-  cross-station.sh [--move]
+  station-io.sh [--move]
 
 Behavior:
   1) Shows files + folders under the current directory via fzf.

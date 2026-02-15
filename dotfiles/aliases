@@ -161,7 +161,7 @@ alias showeth='networksetup -listallhardwareports | awk "/Hardware Port|Device/"
 alias stio="~/mac-forge/scripts/station-io.sh"
 alias sio=stio
 # remain to be checked if I can broadcast this command on ssh connection.
-alias mcshutdown="shutdown /s /f /t 0"
+alias mcshutdown='ssh -t oliver@masterchief "cmd /c shutdown /s /f /t 0"'
 
 # ------------------------------------------------------------------------------
 # CLI Tools

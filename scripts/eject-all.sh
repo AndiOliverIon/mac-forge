@@ -6,12 +6,15 @@ set -euo pipefail
 #######################################
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-if [[ -f "$SCRIPT_DIR/../forge.sh" ]]; then
+if [[ -f "$SCRIPT_DIR/forge.sh" ]]; then
 	# shellcheck disable=SC1091
-	source "$SCRIPT_DIR/../forge.sh"
-elif [[ -f "$HOME/mac-forge/forge.sh" ]]; then
+	source "$SCRIPT_DIR/forge.sh"
+elif [[ -f "$HOME/mac-forge/scripts/forge.sh" ]]; then
 	# shellcheck disable=SC1091
-	source "$HOME/mac-forge/forge.sh"
+	source "$HOME/mac-forge/scripts/forge.sh"
+else
+	echo "ERROR: forge.sh not found (checked: $SCRIPT_DIR/forge.sh, $HOME/mac-forge/scripts/forge.sh)." >&2
+	exit 1
 fi
 
 #######################################
@@ -53,9 +56,11 @@ done
 
 run() {
 	if [[ "$DRY_RUN" -eq 1 ]]; then
-		echo "[dry-run] $*"
+		printf "[dry-run]"
+		printf " %q" "$@"
+		echo
 	else
-		eval "$@"
+		"$@" >/dev/null 2>&1 || true
 	fi
 }
 
@@ -146,17 +151,17 @@ for vpath in "${VOLUMES_TO_EJECT[@]}"; do
 	echo "Ejecting volume: $vpath"
 
 	if [[ "$FORCE" -eq 1 ]]; then
-		run "diskutil unmount force \"$vpath\" >/dev/null 2>&1 || true"
+		run diskutil unmount force "$vpath"
 	else
-		run "diskutil unmount \"$vpath\" >/dev/null 2>&1 || true"
+		run diskutil unmount "$vpath"
 	fi
 
-	run "diskutil eject \"$vpath\" >/dev/null 2>&1 || true"
+	run diskutil eject "$vpath"
 done
 
 for disk in "${DISKS_TO_EJECT[@]}"; do
 	echo "Ejecting disk: $disk"
-	run "diskutil eject \"$disk\" >/dev/null 2>&1 || true"
+	run diskutil eject "$disk"
 done
 
 echo "Done."
