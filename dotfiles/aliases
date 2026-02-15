@@ -29,8 +29,8 @@ alias hc=hdd-clean
 alias binclear="~/mac-forge/scripts/bin-clear.sh"
 alias al="~/mac-forge/scripts/aliases.sh"
 alias a=al
-alias work="~/mac-forge/scripts/work.sh"
-alias w=work
+alias workset="~/mac-forge/scripts/work.sh"
+alias ws=workset
 alias workinfo="~/mac-forge/scripts/work.sh --info"
 alias wi=workinfo
 alias ardis-migrate="~/mac-forge/scripts/ardis-migrate.sh"
@@ -160,6 +160,8 @@ alias aliases="cat ~/mac-forge/dotfiles/aliases"
 alias showeth='networksetup -listallhardwareports | awk "/Hardware Port|Device/"; echo; for i in $(networksetup -listallhardwareports | awk "/Device/ {print \$2}"); do ip=$(ipconfig getifaddr $i 2>/dev/null); echo "$i : ${ip:-no-ip}"; done'
 alias stio="~/mac-forge/scripts/station-io.sh"
 alias sio=stio
+# remain to be checked if I can broadcast this command on ssh connection.
+alias mcshutdown="shutdown /s /f /t 0"
 
 # ------------------------------------------------------------------------------
 # CLI Tools
