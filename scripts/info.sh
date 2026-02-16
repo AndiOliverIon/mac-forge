@@ -8,7 +8,25 @@ echo "$TOP_OUTPUT" | awk '/PhysMem/ {print}'
 echo
 
 echo "=== Disk usage ==="
-df -h / | awk 'NR==1 || NR==2'
+format_size() {
+  awk -v kib="$1" '
+    BEGIN {
+      bytes = kib * 1024
+      split("B KB MB GB TB PB", units, " ")
+      i = 1
+      while (bytes >= 1000 && i < 6) {
+        bytes /= 1000
+        i++
+      }
+      printf "%.1f %s", bytes, units[i]
+    }'
+}
+
+read -r DISK_NAME DISK_TOTAL_KIB DISK_USED_KIB DISK_FREE_KIB _ < <(df -k / | awk 'NR==2 {print $1, $2, $3, $4, $5}')
+echo "Disk name: $DISK_NAME"
+echo "Total: $(format_size "$DISK_TOTAL_KIB")"
+echo "Free: $(format_size "$DISK_FREE_KIB")"
+echo "Occupied: $(format_size "$DISK_USED_KIB")"
 echo
 
 echo "=== Battery ==="
