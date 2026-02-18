@@ -64,15 +64,6 @@ The user runs SQL Server 2022 in a Docker container named `forge-sql` on port `2
     *   **`--soft`:** Drops all user databases but keeps the container running.
 *   **`scripts/db-admin.sh`**: Launches a DB management tool (likely Azure Data Studio or similar, depending on alias).
 
-### Jira Integration
-
-*   **`scripts/jira.sh`**: CLI wrapper for Jira API.
-*   **Common Command:** List unassigned tasks for the "PERFORM" project.
-    ```bash
-    scripts/jira.sh list-unassigned PERFORM
-    ```
-*   **Setup:** Requires `JIRA_URL`, `JIRA_USER`, `JIRA_API_TOKEN` (usually loaded from `~/.zshrc` or `forge-secrets.sh`).
-
 ### System Maintenance
 
 *   **`scripts/organizer.sh`**: Moves files from Downloads/Desktop into categorized folders (Images, Archives, SQL, etc.) defined in `configs/work-state.json`.
