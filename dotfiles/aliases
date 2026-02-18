@@ -1,8 +1,6 @@
 # ------------------------------------------------------------------------------
-# Navigation & System
+# Core Navigation
 # ------------------------------------------------------------------------------
-# Shortcuts for frequently used directories and system commands.
-
 alias oliver="cd ~/"
 alias doc="cd ~/Documents"
 alias desk="cd ~/Desktop"
@@ -16,9 +14,8 @@ alias fixdock="killall Dock"
 # ------------------------------------------------------------------------------
 # mac-forge Scripts
 # ------------------------------------------------------------------------------
-# Aliases for scripts located in the '~/mac-forge/scripts' directory.
-
 alias info="~/mac-forge/scripts/info.sh"
+alias help="~/mac-forge/scripts/help.sh"
 alias web="~/mac-forge/scripts/web.sh"
 alias winappclean="~/mac-forge/scripts/win-shortcut-clean.sh"
 alias eject-all="~/mac-forge/scripts/eject-all.sh"
@@ -49,12 +46,12 @@ alias dnc=dotnet-clean
 alias present="~/mac-forge/scripts/present.sh"
 alias prs=present
 alias patch="~/mac-forge/scripts/patch.sh"
+alias stio="~/mac-forge/scripts/station-io.sh"
+alias sio=stio
 
 # ------------------------------------------------------------------------------
-# Git
+# Git Shortcuts
 # ------------------------------------------------------------------------------
-# Aliases for Git commands to streamline version control workflows.
-
 alias gs="git status"
 alias gco="git checkout"
 alias gp="git pull"
@@ -71,17 +68,13 @@ alias bc=branch-clean
 # ------------------------------------------------------------------------------
 # Docker
 # ------------------------------------------------------------------------------
-# Aliases for Docker commands.
-
 alias dps="docker ps"
 alias dcu="docker compose up"
 alias dcd="docker compose down"
 
 # ------------------------------------------------------------------------------
-# Database Management
+# Database Scripts
 # ------------------------------------------------------------------------------
-# Aliases for database management scripts.
-
 alias dba="~/mac-forge/scripts/db-admin.sh"
 alias dbs="~/mac-forge/scripts/docker-start.sh"
 alias dbu="~/mac-forge/scripts/db-upload-bak.sh"
@@ -91,10 +84,8 @@ alias dbc="~/mac-forge/scripts/db-clear.sh"
 alias dbo="~/mac-forge/scripts/db-optimize.sh"
 
 # ------------------------------------------------------------------------------
-# Work & Project Specific
+# Workspaces & Paths
 # ------------------------------------------------------------------------------
-# Aliases for navigating to specific work-related projects and directories.
-
 alias forge="cd ~/mac-forge"
 alias work="cd ~/work"
 alias perf="cd ~/work/ardis-perform"
@@ -132,42 +123,22 @@ alias gdrive="cd ~/Library/CloudStorage/GoogleDrive-andioliverion@gmail.com/My\ 
 # ------------------------------------------------------------------------------
 # Cleanup
 # ------------------------------------------------------------------------------
-# Aliases for cleaning up files and directories.
-
 alias dela="rm -rf ./*"
 alias perflogclean="perflog && rm -rf ./*"
 alias screenshotclean="desk && rm -f *.png"
 
 # ------------------------------------------------------------------------------
-# Remote Connections
+# Remote & Network
 # ------------------------------------------------------------------------------
-# Aliases for SSH connections to remote machines.
-
 alias rmc="ssh -t oliver@masterchief"
 alias rth="ssh -t oliver@thanatos"
 alias rt=rth
-
-# ------------------------------------------------------------------------------
-# Applications
-# ------------------------------------------------------------------------------
-# Aliases for opening applications.
-
-alias rider="open -a 'Rider.app'"
-alias aliases="cat ~/mac-forge/dotfiles/aliases"
-
-# ------------------------------------------------------------------------------
-# Network
-# ------------------------------------------------------------------------------
-# Aliases for network related commands.
 alias showeth='networksetup -listallhardwareports | awk "/Hardware Port|Device/"; echo; for i in $(networksetup -listallhardwareports | awk "/Device/ {print \$2}"); do ip=$(ipconfig getifaddr $i 2>/dev/null); echo "$i : ${ip:-no-ip}"; done'
-alias stio="~/mac-forge/scripts/station-io.sh"
-alias sio=stio
-# remain to be checked if I can broadcast this command on ssh connection.
 alias mcshutdown='ssh -t oliver@masterchief "cmd /c shutdown /s /f /t 0"'
 
 # ------------------------------------------------------------------------------
-# CLI Tools
+# Apps & Utilities
 # ------------------------------------------------------------------------------
-# Aliases for command-line interface tools.
-
+alias rider="open -a 'Rider.app'"
+alias aliases="cat ~/mac-forge/dotfiles/aliases"
 alias g="gemini"
