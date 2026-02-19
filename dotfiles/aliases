@@ -16,6 +16,8 @@ alias fixdock="killall Dock"
 # ------------------------------------------------------------------------------
 alias info="~/mac-forge/scripts/info.sh"
 alias help="~/mac-forge/scripts/help.sh"
+alias port-release="~/mac-forge/scripts/port-release.sh"
+alias prl=port-release
 alias web="~/mac-forge/scripts/web.sh"
 alias winappclean="~/mac-forge/scripts/win-shortcut-clean.sh"
 alias eject-all="~/mac-forge/scripts/eject-all.sh"
