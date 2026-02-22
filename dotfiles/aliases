@@ -48,6 +48,8 @@ alias dnc=dotnet-clean
 alias present="~/mac-forge/scripts/present.sh"
 alias prs=present
 alias patch="~/mac-forge/scripts/patch.sh"
+alias p=patch
+alias pr="patch -R"
 alias stio="~/mac-forge/scripts/station-io.sh"
 alias sio=stio
 
@@ -92,6 +94,7 @@ alias forge="cd ~/mac-forge"
 alias work="cd ~/work"
 alias perf="cd ~/work/ardis-perform"
 alias perfclient="cd ~/work/ardis-perform/ardis.perform.client"
+alias perf228="cd ~/work/ardis-perform-228"
 alias perf230="cd ~/work/ardis-perform-230"
 alias perfclient230="cd ~/work/ardis-perform-230/ardis.perform.client"
 alias demo="cd ~/work/ardis-demo"

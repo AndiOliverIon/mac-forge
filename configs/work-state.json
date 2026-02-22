@@ -94,14 +94,14 @@
     "~/Desktop",
     "~/work/stuff"
   ],
-  "station-destinations":[
+  "station-destinations": [
     {
-      "title":"Network dsql",
-      "path":"/Volumes/dsql"
+      "title": "Network dsql",
+      "path": "/Volumes/dsql"
     },
     {
-      "title":"Network temp",
-      "path":"/Volumes/sttemp"
+      "title": "Network temp",
+      "path": "/Volumes/sttemp"
     }
   ]
 }
