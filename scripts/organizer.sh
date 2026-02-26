@@ -19,6 +19,7 @@ warn() { echo "WARN: $*" >&2; }
 : "${FORGE_WORK_STATE_FILE:?FORGE_WORK_STATE_FILE must be set by forge.sh}"
 STATE_FILE="$FORGE_WORK_STATE_FILE"
 [[ -f "$STATE_FILE" ]] || die "work-state.json not found at: $STATE_FILE"
+LOCAL_STORE_FILE="${FORGE_CONFIG_LOCAL_DIR:-$HOME/mac-forge/config-local}/local-store.json"
 
 command -v python3 >/dev/null 2>&1 || die "python3 is required."
 
@@ -90,6 +91,173 @@ for p in folders:
     # Normalize without requiring existence
     print(os.path.abspath(p))
 PY
+}
+
+#######################################
+# Read organizer.retention_days from local-store
+#######################################
+read_retention_days() {
+  if [[ ! -f "$LOCAL_STORE_FILE" ]]; then
+    return 0
+  fi
+
+  python3 - "$LOCAL_STORE_FILE" <<'PY'
+import json, sys
+
+path = sys.argv[1]
+with open(path, "r", encoding="utf-8") as f:
+    data = json.load(f)
+
+organizer = data.get("organizer", {})
+if not isinstance(organizer, dict):
+    raise SystemExit(0)
+
+days = organizer.get("retention_days")
+if isinstance(days, int) and days > 0:
+    print(days)
+PY
+}
+
+#######################################
+# List old files by access time in folders (recursive)
+# Output lines: atime_iso<TAB>absolute_path
+#######################################
+list_old_files() {
+  local retention_days="$1"
+  local local_store_file="$2"
+  shift
+  shift
+
+  python3 - "$retention_days" "$local_store_file" "$@" <<'PY'
+import fnmatch
+import json
+import os
+import sys
+import time
+from datetime import datetime
+
+days = int(sys.argv[1])
+local_store = sys.argv[2]
+targets = sys.argv[3:]
+cutoff = time.time() - (days * 86400)
+
+skip_patterns = []
+if local_store and os.path.isfile(local_store):
+    with open(local_store, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    organizer = data.get("organizer", {})
+    if isinstance(organizer, dict):
+        patterns = organizer.get("skip_patterns", [])
+        if isinstance(patterns, list):
+            for p in patterns:
+                if isinstance(p, str):
+                    p = p.strip()
+                    if p:
+                        skip_patterns.append(p)
+
+rows = []
+for target in targets:
+    if not os.path.isdir(target):
+        continue
+    for root, _, files in os.walk(target):
+        for name in files:
+            path = os.path.join(root, name)
+            abs_path = os.path.abspath(path)
+            rel_path = os.path.relpath(abs_path, target)
+            if any(
+                fnmatch.fnmatch(name, pat)
+                or fnmatch.fnmatch(rel_path, pat)
+                or fnmatch.fnmatch(abs_path, pat)
+                for pat in skip_patterns
+            ):
+                continue
+            try:
+                st = os.stat(path, follow_symlinks=False)
+            except OSError:
+                continue
+            atime = st.st_atime
+            if atime < cutoff:
+                dt = datetime.fromtimestamp(atime).strftime("%Y-%m-%d %H:%M:%S")
+                rows.append((atime, dt, abs_path))
+
+rows.sort(key=lambda x: x[0])
+for _, dt, path in rows:
+    print(f"{dt}\t{path}")
+PY
+}
+
+#######################################
+# Delete files passed as args
+#######################################
+delete_files() {
+  python3 - "$@" <<'PY'
+import os
+import sys
+
+deleted = 0
+failed = 0
+
+for p in sys.argv[1:]:
+    try:
+        if os.path.isfile(p):
+            os.remove(p)
+            deleted += 1
+    except OSError:
+        failed += 1
+
+print(f"{deleted}\t{failed}")
+PY
+}
+
+#######################################
+# Retention cleanup (prompted)
+#######################################
+run_retention_cleanup() {
+  local retention_days="$1"
+  shift
+  local targets=("$@")
+
+  [[ "$retention_days" =~ ^[0-9]+$ ]] || return 0
+  (( retention_days > 0 )) || return 0
+  (( ${#targets[@]} > 0 )) || return 0
+
+  local old_entries=()
+  mapfile -t old_entries < <(list_old_files "$retention_days" "$LOCAL_STORE_FILE" "${targets[@]}")
+
+  if (( ${#old_entries[@]} == 0 )); then
+    echo "Retention: no files older than ${retention_days} day(s) by last access time."
+    return 0
+  fi
+
+  echo
+  echo "Retention candidates (last access older than ${retention_days} day(s)):"
+
+  local old_paths=()
+  local entry atime path
+  for entry in "${old_entries[@]}"; do
+    IFS=$'\t' read -r atime path <<< "$entry"
+    [[ -n "$path" ]] || continue
+    old_paths+=("$path")
+    echo " - $path (last access: $atime)"
+  done
+
+  (( ${#old_paths[@]} > 0 )) || return 0
+
+  local answer
+  printf "Delete these %d file(s)? (y/n): " "${#old_paths[@]}"
+  read -r answer
+
+  case "$answer" in
+    y|Y)
+      local result deleted failed
+      result="$(delete_files "${old_paths[@]}")"
+      IFS=$'\t' read -r deleted failed <<< "$result"
+      echo "Retention: deleted ${deleted:-0} file(s). Failed: ${failed:-0}."
+      ;;
+    *)
+      echo "Retention: skipped deletion."
+      ;;
+  esac
 }
 
 #######################################
@@ -192,3 +360,10 @@ for d in "${targets[@]}"; do
 done
 
 echo "Done. Processed ${total} folder(s) from organize-folders."
+
+retention_days="$(read_retention_days || true)"
+if [[ -n "${retention_days:-}" ]]; then
+  run_retention_cleanup "$retention_days" "${targets[@]}"
+else
+  warn "Retention cleanup disabled (organizer.retention_days missing/invalid in local-store.json)."
+fi
