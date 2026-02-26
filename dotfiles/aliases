@@ -84,6 +84,7 @@ alias dbs="~/mac-forge/scripts/docker-start.sh"
 alias dbu="~/mac-forge/scripts/db-upload-bak.sh"
 alias dbr="~/mac-forge/scripts/db-restore.sh"
 alias dbsn="~/mac-forge/scripts/db-snapshot.sh"
+alias dbrb="~/mac-forge/scripts/db-remote-backup.sh"
 alias dbc="~/mac-forge/scripts/db-clear.sh"
 alias dbo="~/mac-forge/scripts/db-optimize.sh"
 
