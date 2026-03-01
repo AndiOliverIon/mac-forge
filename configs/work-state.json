@@ -1,6 +1,6 @@
 {
-  "docker-path": "/Volumes/dsql/docker",
-  "docker-snapshot-path": "/Volumes/dsql/snapshots",
+  "docker-path": "/Users/oliver/sql/docker",
+  "docker-snapshot-path": "/Users/oliver/sql/snapshot",
   "docker-locations": [
     {
       "title": "Internal storage",

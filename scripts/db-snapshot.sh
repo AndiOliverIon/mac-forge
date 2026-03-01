@@ -145,5 +145,9 @@ docker exec "$FORGE_SQL_DOCKER_CONTAINER" \
 # Verify on host (since it's a mount)
 [[ -f "$SNAPSHOT_PATH_HOST" ]] || die "Backup reported success but snapshot not found on host: $SNAPSHOT_PATH_HOST"
 
-echo "✔ Snapshot created at:"
-echo "  $SNAPSHOT_PATH_HOST"
+echo
+echo "✔ Snapshot completed"
+echo "  File name      : $SNAPSHOT_NAME"
+echo "  Host directory : $FORGE_SQL_SNAPSHOTS_PATH"
+echo "  Host full path : $SNAPSHOT_PATH_HOST"
+echo "  Container path : $SNAPSHOT_PATH_CONTAINER"
