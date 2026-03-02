@@ -110,31 +110,56 @@ drop_user_databases() {
 }
 
 clear_container_data_dir() {
-    # Only clear contents, not the root directory, with safety guard
-    if [[ -z "${FORGE_DOCKER_VOLUME_ROOT:-}" || ! -d "$FORGE_DOCKER_VOLUME_ROOT" ]]; then
-        echo "Skip data cleanup: FORGE_DOCKER_VOLUME_ROOT not set or missing."
-        return 0
-    fi
+    local data_root snapshots_root keep_name
 
-    case "$FORGE_DOCKER_VOLUME_ROOT" in
-        /|/home|/home/*|/Users|/Users/*)
-            # Still allow, but avoid accidental root wipe by requiring deeper path
-            :
+    data_root="${FORGE_SQL_DATA_BIND_PATH:-}"
+    snapshots_root="${FORGE_SQL_SNAPSHOTS_PATH:-}"
+
+    [[ -n "$data_root" ]] || die "FORGE_SQL_DATA_BIND_PATH is empty; run workset first."
+    [[ -d "$data_root" ]] || die "SQL data path does not exist: $data_root"
+
+    data_root="$(cd "$data_root" && pwd)"
+
+    case "$data_root" in
+        /|/Users|/home|"$HOME")
+            die "Refusing to clear unsafe SQL data path: $data_root"
             ;;
     esac
 
-    echo "Clearing data under: $FORGE_DOCKER_VOLUME_ROOT (preserving snapshots/)"
+    keep_name=""
+    if [[ -n "$snapshots_root" && -d "$snapshots_root" ]]; then
+        snapshots_root="$(cd "$snapshots_root" && pwd)"
+        if [[ "$snapshots_root" == "$data_root/"* ]]; then
+            keep_name="${snapshots_root#$data_root/}"
+            keep_name="${keep_name%%/*}"
+        fi
+    fi
+
+    echo "Clearing SQL data under: $data_root${keep_name:+ (preserving '$keep_name/')}"
 
     shopt -s nullglob dotglob
-    for entry in "$FORGE_DOCKER_VOLUME_ROOT"/*; do
-        # Preserve snapshots directory so backups survive a clear
-        if [[ "$entry" == "$FORGE_DOCKER_VOLUME_ROOT/snapshots" ]]; then
+    for entry in "$data_root"/*; do
+        if [[ -n "$keep_name" && "$entry" == "$data_root/$keep_name" ]]; then
             continue
         fi
-
         rm -rf "$entry" 2>/dev/null || die "Failed to remove $entry."
     done
     shopt -u nullglob dotglob
+}
+
+confirm_hard_clear() {
+    local token
+    token="CLEAR ${FORGE_SQL_DOCKER_CONTAINER}"
+
+    echo "Hard clear will:"
+    echo "  1) Stop/remove container: ${FORGE_SQL_DOCKER_CONTAINER}"
+    echo "  2) Delete SQL data under: ${FORGE_SQL_DATA_BIND_PATH:-<unset>}"
+    echo
+    echo "Type exactly '$token' to continue."
+
+    local answer
+    read -r -p "> " answer
+    [[ "$answer" == "$token" ]] || die "Confirmation mismatch. Aborted."
 }
 
 usage() {
@@ -142,6 +167,10 @@ usage() {
 Usage: db-clear.sh [--soft]
   (no flag) : Drop all user databases, remove container, clear data directory.
   --soft    : Drop user databases only (container stays).
+
+Hard clear uses:
+  - FORGE_SQL_DATA_BIND_PATH as the delete root
+  - FORGE_SQL_SNAPSHOTS_PATH is preserved only if nested inside data path
 USAGE
     exit 1
 }
@@ -174,6 +203,9 @@ main() {
     fi
 
     # Hard clear
+    [[ -n "${FORGE_SQL_DATA_BIND_PATH:-}" ]] || die "FORGE_SQL_DATA_BIND_PATH is required for hard clear."
+    confirm_hard_clear
+
     echo "Performing hard clear (drop DBs, remove container, clear data)..."
 
     if container_running; then
