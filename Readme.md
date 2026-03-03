@@ -1,9 +1,77 @@
 ### Important
-Do not install dotnet sdks from brew. Install them from Microsoft site. It screws arround with compilers from rider and so on. Especially when I need more then one sdk.
+This machine baseline uses Homebrew for .NET SDK management, including multiple side-by-side SDK casks. Keep this approach on future Macs for consistency.
 
 # macOS Setup Notes
 
 Personal notes for setting up a new Mac and restoring my usual environment.
+
+---
+
+## 0. Baseline Software (Current Machine)
+
+### 0.1 Homebrew Formulae (installed and required)
+
+- bash
+- displayplacer
+- fzf
+- gh
+- git
+- jq
+- mas
+- mono-libgdiplus
+- ncdu
+- nvm
+- pyenv
+- shfmt
+- sqlcmd
+- tree
+- unzip
+- wget
+- yarn
+
+Install all formulae at once:
+
+```bash
+brew install bash displayplacer fzf gh git jq mas mono-libgdiplus ncdu nvm pyenv shfmt sqlcmd tree unzip wget yarn
+```
+
+### 0.2 Homebrew Casks (installed and required)
+
+- arc
+- bitwarden
+- codex
+- docker-desktop
+- dotnet-sdk
+- dotnet-sdk8
+- dotnet-sdk8-0-400
+- dotnet-sdk9
+- dotnet-sdk9-0-300
+- font-jetbrains-mono
+- google-chrome
+- google-drive
+- iterm2
+- jetbrains-toolbox
+- microsoft-teams
+- raycast
+- rectangle
+- rustdesk
+- visual-studio-code
+- zed
+
+Install all casks at once:
+
+```bash
+brew install --cask arc bitwarden codex docker-desktop dotnet-sdk dotnet-sdk8 dotnet-sdk8-0-400 dotnet-sdk9 dotnet-sdk9-0-300 font-jetbrains-mono google-chrome google-drive iterm2 jetbrains-toolbox microsoft-teams raycast rectangle rustdesk visual-studio-code zed
+```
+
+### 0.3 Other Software (not from Homebrew)
+
+Install these separately from vendor sources:
+
+- FortiClient VPN (Fortinet): install only VPN component.
+- CodeMeter Runtime (Wibu): for local license handling.
+- Parallels Desktop: needed when using Windows-side tools and shortcut cleanup workflow.
+- Oh My Zsh: install from official GitHub project for shell profile baseline.
 
 ---
 
@@ -75,8 +143,8 @@ git config --global user.email "andi@ardis.eu"
 
 I previously experimented with very aggressive key repeat and delay settings and did **not** like the result.
 
-**Note to self:**  
-Do **not** reapply the “extreme” key repeat tweaks. Keep default or only make mild adjustments if really necessary.
+**Note to self:**
+Do **not** reapply the extreme key repeat tweaks. Keep default or only make mild adjustments if really necessary.
 
 ---
 
@@ -101,10 +169,8 @@ Keep this script handy and re-run it after Parallels updates or when new shortcu
 
 When installing FortiClient:
 
-- Install **only** the **FortiClient VPN** component.
-- Avoid installing the full Fortinet suite or any additional “extras” that come with their bigger bundle.
-
-If the installer offers multiple options, deselect everything except the VPN client.
+- Install only the VPN component.
+- Avoid installing the full Fortinet suite or additional extras.
 
 ---
 
@@ -113,20 +179,14 @@ If the installer offers multiple options, deselect everything except the VPN cli
 Install Python using `pyenv` managed by Homebrew for better version control and isolation.
 
 ```bash
-# Install pyenv
 brew install pyenv
 ```
 
 Then use `pyenv` to manage Python versions, for example:
 
 ```bash
-# List available versions
 pyenv install -l
-
-# Install a specific version
 pyenv install 3.12.0
-
-# Set global/default Python version
 pyenv global 3.12.0
 ```
 
@@ -149,13 +209,8 @@ Run this if CodeMeter behaves strangely or licensed apps stop detecting the lice
 Basic maintenance commands:
 
 ```bash
-# See which packages are outdated
 brew outdated
-
-# Upgrade all outdated packages
 brew upgrade
-
-# Check for potential issues and suggestions
 brew doctor
 ```
 
@@ -165,26 +220,21 @@ Run `brew doctor` from time to time to check the health of the Homebrew installa
 
 ## 9. Quick Checklist for New Mac
 
-1. **Dock**
+1. Dock
    - [ ] Restore default behavior or set instant show/hide.
-
-2. **Git**
+2. Core software
+   - [ ] Install baseline Homebrew formulae and casks from section 0.
+   - [ ] Install non-Homebrew software from section 0.3.
+3. Git
    - [ ] Configure global `.gitignore` with `.DS_Store`.
    - [ ] Set correct `user.name` and `user.email` (personal vs work).
-
-3. **Raycast / Parallels**
+4. Raycast / Parallels
    - [ ] Run `win-shortcut-clean.sh` to remove unwanted Windows shortcuts.
-
-4. **VPN**
-   - [ ] Install **FortiClient VPN only**, not the full suite.
-
-5. **Python**
+5. Python
    - [ ] Install `pyenv` via Homebrew.
    - [ ] Install and set a default Python version.
-
-6. **Licensing**
+6. Licensing
    - [ ] If needed, verify CodeMeter is running; use restart command if not.
-
-7. **Homebrew**
+7. Homebrew
    - [ ] Run `brew doctor`.
    - [ ] Run `brew outdated` and `brew upgrade` as needed.
