@@ -19,6 +19,7 @@ alias forge="cd ~/mac-forge"
 alias aliases="sed -n '1,240p' ~/mac-forge/linux/aliases.zsh"
 alias link-dotfiles="~/mac-forge/linux/scripts/link-dotfiles.sh"
 alias ldf=link-dotfiles
+alias inf="~/mac-forge/linux/scripts/inf.sh"
 
 # ------------------------------------------------------------------------------
 # Git Shortcuts
@@ -42,6 +43,11 @@ alias bc=branch-clean
 alias dps="docker ps"
 alias dcu="docker compose up"
 alias dcd="docker compose down"
+
+# ------------------------------------------------------------------------------
+# Database Scripts
+# ------------------------------------------------------------------------------
+alias dbr="~/mac-forge/linux/scripts/db-restore.sh"
 
 # ------------------------------------------------------------------------------
 # Workspaces & Paths

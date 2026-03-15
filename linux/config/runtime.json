@@ -1,0 +1,15 @@
+{
+  "docker": {
+    "container_name": "forge-sql",
+    "image": "mcr.microsoft.com/mssql/server:2022-latest",
+    "host_port": 2022,
+    "sql_user": "sa",
+    "container_root": "/var/opt/mssql",
+    "container_snapshots_path": "/var/opt/mssql/snapshots",
+    "sqlcmd_path": "/opt/mssql-tools18/bin/sqlcmd"
+  },
+  "paths": {
+    "data_bind_path": "state/mssql/data",
+    "restore_stage_path": "state/mssql/snapshots"
+  }
+}
