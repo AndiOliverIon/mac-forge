@@ -9,7 +9,8 @@
     "sqlcmd_path": "/opt/mssql-tools18/bin/sqlcmd"
   },
   "paths": {
-    "data_bind_path": "state/mssql/data",
-    "restore_stage_path": "state/mssql/snapshots"
+    "sql_storage_root": "state/mssql",
+    "data_bind_path": "data",
+    "restore_stage_path": "snapshots"
   }
 }

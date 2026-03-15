@@ -68,9 +68,27 @@ forge_get() {
   forge__json_get "$key_path" text || forge_die "Missing config key: $key_path"
 }
 
+forge_get_optional() {
+  local key_path="$1"
+  forge__json_get "$key_path" text 2>/dev/null || true
+}
+
 forge_get_json() {
   local key_path="$1"
   forge__json_get "$key_path" json || forge_die "Missing config key: $key_path"
+}
+
+forge_resolve_path() {
+  local value="$1"
+  local base_path="${2:-$FORGE_LINUX_ROOT}"
+
+  if [[ "$value" == /* ]]; then
+    printf '%s\n' "$value"
+  elif [[ "$base_path" == /* ]]; then
+    printf '%s\n' "${base_path}/${value}"
+  else
+    printf '%s\n' "${FORGE_LINUX_ROOT}/${base_path}/${value}"
+  fi
 }
 
 forge_get_path() {
@@ -78,11 +96,23 @@ forge_get_path() {
   local value
   value="$(forge_get "$key_path")"
 
-  if [[ "$value" == /* ]]; then
-    printf '%s\n' "$value"
-  else
-    printf '%s\n' "${FORGE_LINUX_ROOT}/${value}"
+  forge_resolve_path "$value"
+}
+
+forge_get_path_from_root() {
+  local key_path="$1"
+  local root_key_path="$2"
+  local value root_value
+
+  value="$(forge_get "$key_path")"
+  root_value="$(forge_get_optional "$root_key_path")"
+
+  if [[ -n "$root_value" ]]; then
+    forge_resolve_path "$value" "$root_value"
+    return 0
   fi
+
+  forge_resolve_path "$value"
 }
 
 forge_assert_sensitive_config() {
