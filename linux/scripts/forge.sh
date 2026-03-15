@@ -78,6 +78,11 @@ forge_get_json() {
   forge__json_get "$key_path" json || forge_die "Missing config key: $key_path"
 }
 
+forge_get_json_optional() {
+  local key_path="$1"
+  forge__json_get "$key_path" json 2>/dev/null || true
+}
+
 forge_resolve_path() {
   local value="$1"
   local base_path="${2:-$FORGE_LINUX_ROOT}"

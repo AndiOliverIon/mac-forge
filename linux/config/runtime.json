@@ -12,5 +12,12 @@
     "sql_storage_root": "state/mssql",
     "data_bind_path": "data",
     "restore_stage_path": "snapshots"
+  },
+  "ardis": {
+    "migrations_paths": [
+      "/home/oliver/work/ardis-perform/Ardis.Migrations.Console",
+      "/home/oliver/work/ardis-perform-230/Ardis.Migrations.Console"
+    ],
+    "migrations_library": "Ardis.Migrations.Console.dll"
   }
 }
