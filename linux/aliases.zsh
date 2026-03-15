@@ -48,6 +48,7 @@ alias dcd="docker compose down"
 # Database Scripts
 # ------------------------------------------------------------------------------
 alias dbr="~/mac-forge/linux/scripts/db-restore.sh"
+alias dbsn="~/mac-forge/linux/scripts/db-snapshot.sh"
 
 # ------------------------------------------------------------------------------
 # Workspaces & Paths
