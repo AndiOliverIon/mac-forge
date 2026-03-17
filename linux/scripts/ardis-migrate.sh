@@ -203,6 +203,7 @@ main() {
 
   conn_str="Server=localhost,${host_port};Database=${db_name};User ID=${sql_user};Password=${sa_password};TrustServerCertificate=True;Encrypt=False;"
   export MIGRATIONS_DatabaseConnectionString="$conn_str"
+  export MIGRATIONS_DatasourceValidation="false"
 
   section "Running"
   log_step "Launching migrations..."

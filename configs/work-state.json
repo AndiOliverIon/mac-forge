@@ -23,6 +23,16 @@
       "snapshot-path": "/Volumes/thanatos/acasis/sql/docker/snapshots"
     }
   ],
+  "ardis-migration-paths": [
+    {
+      "title": "Ardis Perform DEV",
+      "path": "/Users/oliver/work/ardis-perform/Ardis.Migrations.Console"
+    },
+    {
+      "title": "Ardis Perform 230",
+      "path": "/Users/oliver/work/ardis-perform-230/Ardis.Migrations.Console"
+    }
+  ],
   "organize-categories": [
     {
       "folder": "images",

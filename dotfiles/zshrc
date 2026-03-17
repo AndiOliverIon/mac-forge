@@ -129,3 +129,8 @@ export PATH="$HOME/Library/Python/3.9/bin:$PATH"
 
 # load environment variables
 source ~/.env
+
+# Added by LM Studio CLI (lms)
+export PATH="$PATH:/Users/oliver/.lmstudio/bin"
+# End of LM Studio CLI section
+

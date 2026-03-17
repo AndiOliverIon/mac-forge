@@ -30,7 +30,6 @@ fi
 #######################################
 # Required variables
 #######################################
-: "${ARDIS_MIGRATIONS_PATH:?ARDIS_MIGRATIONS_PATH must be set in forge.sh}"
 : "${ARDIS_MIGRATIONS_LIBRARY:?ARDIS_MIGRATIONS_LIBRARY must be set in forge.sh}"
 : "${FORGE_SQL_DOCKER_CONTAINER:?FORGE_SQL_DOCKER_CONTAINER must be set in forge.sh}"
 : "${FORGE_SQL_SA_PASSWORD:?FORGE_SQL_SA_PASSWORD must be set (probably in forge-secrets.sh)}"
@@ -121,6 +120,49 @@ detect_target_framework() {
 }
 
 #######################################
+# Helper: choose migrations path from state json
+#######################################
+choose_migrations_path() {
+	local selected
+
+	if [[ -n "${FORGE_WORK_STATE_FILE:-}" && -f "${FORGE_WORK_STATE_FILE}" ]]; then
+		selected="$(
+			python3 - "$FORGE_WORK_STATE_FILE" <<'PY' | fzf --prompt='Select migrations path: ' --with-nth=1,2 --delimiter=$'\t' --height=20 --border
+import json
+import sys
+
+state_file = sys.argv[1]
+
+with open(state_file, "r", encoding="utf-8") as fp:
+    state = json.load(fp)
+
+for entry in state.get("ardis-migration-paths", []):
+    title = (entry.get("title") or "").strip()
+    path = (entry.get("path") or "").strip()
+    if path:
+        print(f"{title}\t{path}")
+PY
+		)" || {
+			echo "No migrations path selected. Aborting." >&2
+			return 1
+		}
+
+		if [[ -n "${selected:-}" ]]; then
+			printf '%s\n' "${selected#*$'\t'}"
+			return 0
+		fi
+	fi
+
+	if [[ -n "${ARDIS_MIGRATIONS_PATH:-}" ]]; then
+		printf '%s\n' "$ARDIS_MIGRATIONS_PATH"
+		return 0
+	fi
+
+	echo "No migrations paths configured. Add 'ardis-migration-paths' to ${FORGE_WORK_STATE_FILE:-configs/work-state.json}." >&2
+	return 1
+}
+
+#######################################
 # Helper: list databases via host sqlcmd
 #######################################
 list_databases() {
@@ -159,14 +201,17 @@ choose_database() {
 # Main
 #######################################
 main() {
-	local csproj tfm bin_dir db conn_str
+	local migrations_path csproj tfm bin_dir db conn_str
 
-	csproj="$ARDIS_MIGRATIONS_PATH/Ardis.Migrations.Console.csproj"
+	migrations_path="$(choose_migrations_path)" || exit 1
+
+	csproj="$migrations_path/Ardis.Migrations.Console.csproj"
 	if [[ ! -f "$csproj" ]]; then
 		echo "csproj not found at $csproj" >&2
 		exit 1
 	fi
 
+	echo "Selected migrations path: $migrations_path"
 	echo "Using dotnet: $DOTNET"
 	echo "Detecting TargetFramework from $csproj..."
 	if ! tfm="$(detect_target_framework "$csproj")"; then
@@ -177,11 +222,11 @@ main() {
 
 	echo "Building migrations project..."
 	(
-		cd "$ARDIS_MIGRATIONS_PATH"
+		cd "$migrations_path"
 		dotnet build "$csproj" --configuration Debug
 	)
 
-	bin_dir="$ARDIS_MIGRATIONS_PATH/bin/Debug/$tfm"
+	bin_dir="$migrations_path/bin/Debug/$tfm"
 	if [[ ! -d "$bin_dir" ]]; then
 		echo "Build output folder not found: $bin_dir" >&2
 		exit 1
@@ -201,9 +246,11 @@ main() {
 
 	conn_str="Server=${FORGE_SQL_HOST},${FORGE_SQL_PORT};Database=${db};User ID=${FORGE_SQL_USER};Password=${FORGE_SQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=False;"
 	export MIGRATIONS_DatabaseConnectionString="$conn_str"
+	export MIGRATIONS_DatasourceValidation="false"
 
 	echo "Using MIGRATIONS_DatabaseConnectionString (password hidden):"
 	echo "  Server=${FORGE_SQL_HOST},${FORGE_SQL_PORT};Database=${db};User ID=${FORGE_SQL_USER};Password=********;TrustServerCertificate=True;Encrypt=False;"
+	echo "Using MIGRATIONS_DatasourceValidation=false"
 	echo
 
 	echo "Running migrations from: $bin_dir/$ARDIS_MIGRATIONS_LIBRARY"
