@@ -20,6 +20,11 @@ alias aliases="sed -n '1,240p' ~/mac-forge/linux/aliases.zsh"
 alias link-dotfiles="~/mac-forge/linux/scripts/link-dotfiles.sh"
 alias ldf=link-dotfiles
 alias inf="~/mac-forge/linux/scripts/inf.sh"
+alias ardis-patch="~/mac-forge/linux/scripts/patch.sh"
+alias ap="ardis-patch"
+alias patch="~/mac-forge/linux/scripts/patch.sh"
+alias p=patch
+alias pr="patch -R"
 
 # ------------------------------------------------------------------------------
 # Git Shortcuts
