@@ -20,3 +20,4 @@ fi
 [[ -f "$HOME/mac-forge/linux/aliases.zsh" ]] && source "$HOME/mac-forge/linux/aliases.zsh"
 [[ -f ~/.fzf.zsh ]] && source ~/.fzf.zsh
 [[ -f ~/.env ]] && source ~/.env
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
