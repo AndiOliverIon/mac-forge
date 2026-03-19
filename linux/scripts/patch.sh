@@ -13,7 +13,8 @@ Usage:
   $0 [--config <path>] [apply|p|-P|remove|r|-R|status|s]
 
 Defaults:
-  - Config path: \$FORGE_HOME_ROOT/local-overrides.json
+  - Config path: ${LINUX_ROOT}/../config-local/local-overrides.json
+  - Legacy path: \$FORGE_HOME_ROOT/local-overrides.json
   - Fallback:    ${LINUX_ROOT}/config/local-overrides.example.json
 
 Notes:
@@ -21,6 +22,7 @@ Notes:
 EOF
 }
 
+CONFIG_FILE_REPO_DEFAULT="${LINUX_ROOT}/../config-local/local-overrides.json"
 CONFIG_FILE_DEFAULT="${FORGE_HOME_ROOT}/local-overrides.json"
 CONFIG_FILE_EXAMPLE="${LINUX_ROOT}/config/local-overrides.example.json"
 
@@ -43,9 +45,11 @@ if [[ "${1:-}" == "--config" ]]; then
 
   shift 2
 else
-  CONFIG_FILE="$CONFIG_FILE_DEFAULT"
-
-  if [[ ! -f "$CONFIG_FILE_DEFAULT" && -f "$CONFIG_FILE_EXAMPLE" ]]; then
+  if [[ -f "$CONFIG_FILE_REPO_DEFAULT" ]]; then
+    CONFIG_FILE="$CONFIG_FILE_REPO_DEFAULT"
+  elif [[ -f "$CONFIG_FILE_DEFAULT" ]]; then
+    CONFIG_FILE="$CONFIG_FILE_DEFAULT"
+  else
     CONFIG_FILE="$CONFIG_FILE_EXAMPLE"
   fi
 fi
