@@ -29,6 +29,8 @@ alias pr="patch -R"
 # ------------------------------------------------------------------------------
 # Git Shortcuts
 # ------------------------------------------------------------------------------
+unalias g 2>/dev/null
+alias g="gemini"
 alias gs="git status"
 alias gco="git checkout"
 alias gp="git pull"
