@@ -21,3 +21,12 @@ fi
 [[ -f ~/.fzf.zsh ]] && source ~/.fzf.zsh
 [[ -f ~/.env ]] && source ~/.env
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+# Make sure the ssh keys are in
+# Start ssh-agent if not running
+if ! pgrep -u "$USER" ssh-agent > /dev/null; then
+  eval "$(ssh-agent -s)" > /dev/null
+fi
+
+# Add keys if not already added
+ssh-add -l >/dev/null 2>&1 || ssh-add ~/.ssh/id_ed25519_ardis ~/.ssh/id_ed25519_github
