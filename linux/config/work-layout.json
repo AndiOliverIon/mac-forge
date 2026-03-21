@@ -25,16 +25,16 @@
                     "layout": "splith",
                     "percent": 0.5,
                     "nodes": [
-                        { "swallows": [ { "instance": "^Forge-TL$" } ] },
-                        { "swallows": [ { "instance": "^Forge-TR$" } ] }
+                        { "swallows": [ { "title": "^Forge-TL$" } ] },
+                        { "swallows": [ { "title": "^Forge-TR$" } ] }
                     ]
                 },
                 {
                     "layout": "splith",
                     "percent": 0.5,
                     "nodes": [
-                        { "swallows": [ { "instance": "^Forge-BL$" } ] },
-                        { "swallows": [ { "instance": "^Forge-BR$" } ] }
+                        { "swallows": [ { "title": "^Forge-BL$" } ] },
+                        { "swallows": [ { "title": "^Forge-BR$" } ] }
                     ]
                 }
             ]

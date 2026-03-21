@@ -62,7 +62,8 @@ alias am="ardis-migrate"
 # ------------------------------------------------------------------------------
 # Workspaces & Paths
 # ------------------------------------------------------------------------------
-alias workspace="~/mac-forge/linux/scripts/load-workspace.sh"
+alias workspace-primary="~/mac-forge/linux/scripts/load-workspace.sh"
+alias wp=workspace-primary
 alias work="cd ~/work"
 alias perf="cd ~/work/ardis-perform"
 alias perfclient="cd ~/work/ardis-perform/ardis.perform.client"
