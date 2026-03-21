@@ -62,6 +62,7 @@ alias am="ardis-migrate"
 # ------------------------------------------------------------------------------
 # Workspaces & Paths
 # ------------------------------------------------------------------------------
+alias workspace="~/mac-forge/linux/scripts/load-workspace.sh"
 alias work="cd ~/work"
 alias perf="cd ~/work/ardis-perform"
 alias perfclient="cd ~/work/ardis-perform/ardis.perform.client"
@@ -78,6 +79,7 @@ alias dela="rm -rf ./*"
 # ------------------------------------------------------------------------------
 # Remote & Network
 # ------------------------------------------------------------------------------
+alias display="~/mac-forge/linux/scripts/setup-display.sh"
 alias mnthadesw='~/mac-forge/linux/scripts/hades-mount.sh'
 alias mnthw=mnthadesw
 alias umnthadesw='~/mac-forge/linux/scripts/hades-umount.sh'

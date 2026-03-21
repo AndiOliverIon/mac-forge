@@ -1,0 +1,43 @@
+{
+    // Root container: Tabbed
+    "layout": "tabbed",
+    "percent": 1,
+    "nodes": [
+        {
+            // Tab 1: IDEs (Stacked)
+            "layout": "stacked",
+            "percent": 0.5,
+            "nodes": [
+                {
+                    "swallows": [ { "class": "^jetbrains-rider$" } ]
+                },
+                {
+                    "swallows": [ { "class": "^Code$" } ]
+                }
+            ]
+        },
+        {
+            // Tab 2: Terminals (2x2 Grid)
+            "layout": "splitv",
+            "percent": 0.5,
+            "nodes": [
+                {
+                    "layout": "splith",
+                    "percent": 0.5,
+                    "nodes": [
+                        { "swallows": [ { "instance": "^Forge-TL$" } ] },
+                        { "swallows": [ { "instance": "^Forge-TR$" } ] }
+                    ]
+                },
+                {
+                    "layout": "splith",
+                    "percent": 0.5,
+                    "nodes": [
+                        { "swallows": [ { "instance": "^Forge-BL$" } ] },
+                        { "swallows": [ { "instance": "^Forge-BR$" } ] }
+                    ]
+                }
+            ]
+        }
+    ]
+}
