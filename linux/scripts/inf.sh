@@ -58,6 +58,9 @@ printf '\n'
 printf 'Forge Linux Info\n'
 printf '================\n'
 printf '\n'
+printf 'System\n'
+printf '  Uptime      %s\n' "$(uptime -p | sed 's/^up //')"
+printf '\n'
 printf 'CPU\n'
 printf '  Effort      %s\n' "${CPU_EFFORT:-Unavailable}"
 printf '  Temperature %s\n' "${CPU_TEMP:-Unavailable}"

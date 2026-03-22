@@ -1,6 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Source forge kernel
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "$SCRIPT_DIR/forge.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "$SCRIPT_DIR/forge.sh"
+fi
+
+echo "=== System info ==="
+UPTIME=$(uptime | awk -F'up ' '{print $2}' | sed 's/, [0-9] user.*//')
+echo "Uptime: $UPTIME"
+echo
+
 echo "=== CPU & RAM (snapshot) ==="
 TOP_OUTPUT="$(top -l 1 -n 0)"
 echo "$TOP_OUTPUT" | awk '/CPU usage/ {print}'
