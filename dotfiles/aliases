@@ -15,6 +15,7 @@ alias fixdock="killall Dock"
 # mac-forge Scripts
 # ------------------------------------------------------------------------------
 alias info="~/mac-forge/scripts/info.sh"
+alias inf=info
 alias help="~/mac-forge/scripts/help.sh"
 alias port-release="~/mac-forge/scripts/port-release.sh"
 alias prl=port-release
