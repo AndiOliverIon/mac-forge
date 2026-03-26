@@ -22,12 +22,30 @@ require_cmd rsync
 
 # Configuration
 MOUNT_PATH="/Volumes/shared-files"
+SMB_URL="smb://portainer.ardis.eu/shared-files"
 
-# Pre-check: Is it mounted?
+# Pre-check: Is it mounted? If not, try to mount it.
 if [[ ! -d "$MOUNT_PATH" ]]; then
-  echo "⚠ Mount not found: $MOUNT_PATH"
-  echo "  Please connect to: smb://portainer.ardis.eu/shared-files"
-  exit 1
+  echo "📡 Mount not found. Attempting to connect to $SMB_URL..."
+  
+  # On macOS, 'open' is the cleanest way to trigger a mount with keychain credentials
+  open "$SMB_URL"
+  
+  # Wait up to 10 seconds for the mount to appear
+  echo -n "⏳ Waiting for mount..."
+  for i in {1..10}; do
+    if [[ -d "$MOUNT_PATH" ]]; then
+      echo " OK!"
+      break
+    fi
+    echo -n "."
+    sleep 1
+  done
+
+  if [[ ! -d "$MOUNT_PATH" ]]; then
+    echo
+    die "Failed to mount $MOUNT_PATH. Please check your connection or connect manually in Finder once."
+  fi
 fi
 
 #######################################
