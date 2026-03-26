@@ -42,6 +42,11 @@
       "path": "/Users/oliver/work/ardis-perform-230/Ardis.Migrations.Console"
     }
   ],
+  "download-destinations": [
+    { "title": "Local SQL Snapshots", "path": "~/sql/snapshots" },
+    { "title": "Shared SQL Snapshots", "path": "/Volumes/shared/sql/docker/snapshots" },
+    { "title": "Downloads", "path": "~/Downloads" }
+  ],
   "organize-categories": [
     {
       "folder": "images",
