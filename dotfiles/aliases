@@ -91,6 +91,7 @@ alias dbr="~/mac-forge/scripts/db-restore.sh"
 alias dbsn="~/mac-forge/scripts/db-snapshot.sh"
 alias rdbsn="~/mac-forge/scripts/db-remote-backup.sh"
 alias rdown="~/mac-forge/scripts/db-remote-download.sh"
+alias rup="~/mac-forge/scripts/db-remote-upload.sh"
 alias dbc="~/mac-forge/scripts/db-clear.sh"
 alias dbo="~/mac-forge/scripts/db-optimize.sh"
 
