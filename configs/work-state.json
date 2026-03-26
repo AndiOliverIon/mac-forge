@@ -23,6 +23,15 @@
       "snapshot-path": "/Volumes/thanatos/acasis/sql/docker/snapshots"
     }
   ],
+  "vpn-connections": [
+    {
+      "title": "Ardis VPN",
+      "url": "sslvpn.ardis.eu:443",
+      "user": "andi",
+      "id": "ARDIS",
+      "servercert": "pin-sha256:QR3DjforpDS+RkdB570H7UX7ZYfGhQID7a0VfJzBzh0="
+    }
+  ],
   "ardis-migration-paths": [
     {
       "title": "Ardis Perform DEV",
