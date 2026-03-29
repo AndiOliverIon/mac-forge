@@ -2,6 +2,7 @@
 # Core Navigation
 # ------------------------------------------------------------------------------
 alias oliver="cd ~/"
+alias pc="cd /Users/oliver/Library/Mobile\ Documents/com\~apple\~CloudDocs/personal-organizer"
 alias doc="cd ~/Documents"
 alias desk="cd ~/Desktop"
 alias dev="cd ~/dev"
@@ -94,6 +95,7 @@ alias rdown="~/mac-forge/scripts/db-remote-download.sh"
 alias rup="~/mac-forge/scripts/db-remote-upload.sh"
 alias dbc="~/mac-forge/scripts/db-clear.sh"
 alias dbo="~/mac-forge/scripts/db-optimize.sh"
+alias sdb="~/mac-forge/scripts/switch-db.sh"
 
 # ------------------------------------------------------------------------------
 # Workspaces & Paths

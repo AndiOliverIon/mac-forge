@@ -14,5 +14,9 @@
     {
         "name": "Portainer QA MB 8131",
         "url": "https://portainer.ardis.eu:8131"
+    },
+    {
+        "name": "Portainer GPT 7001",
+        "url": "https://portainer.ardis.eu:7001"
     }
 ]

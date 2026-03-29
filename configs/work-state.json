@@ -127,5 +127,19 @@
       "title": "Network temp",
       "path": "/Volumes/sttemp"
     }
+  ],
+  "db-switch-projects": [
+    {
+      "title": "Ardis Perform",
+      "path": "/Users/oliver/work/ardis-perform"
+    },
+    {
+      "title": "Ardis Perform 230",
+      "path": "/Users/oliver/work/ardis-perform-230"
+    },
+    {
+      "title": "Ardis Tools Extensions",
+      "path": "/Users/oliver/work/ardis.tools.extensions"
+    }
   ]
 }
