@@ -14,6 +14,9 @@ CONFIG_FILE="$ROOT_DIR/configs/web.json"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/forge.sh"
 
+# Default browser from forge if not set
+BROWSER="${FORGE_BROWSER:-Arc}"
+
 #######################################
 # Helpers
 #######################################
@@ -34,6 +37,33 @@ require_cmd fzf
 require_cmd osascript
 
 [[ -f "$CONFIG_FILE" ]] || die "Missing config file: $CONFIG_FILE"
+
+#######################################
+# Handle parameters
+#######################################
+ACTION="${1:-go}"
+
+if [[ "$ACTION" == "change" ]]; then
+  # Settle a default browser
+  echo "Select a default browser for 'web' command:"
+  selected_browser=$(echo -e "Arc\nGoogle Chrome\nSafari\nFirefox\nMicrosoft Edge" | fzf --prompt="browser > ")
+  
+  if [[ -n "$selected_browser" ]]; then
+    python3 - "$FORGE_WORK_STATE_FILE" "$selected_browser" <<'PY'
+import json, sys
+path, browser = sys.argv[1], sys.argv[2]
+with open(path, "r", encoding="utf-8") as f:
+    j = json.load(f)
+j["browser"] = browser
+with open(path, "w", encoding="utf-8") as f:
+    json.dump(j, f, indent=2, ensure_ascii=False)
+    f.write("\n")
+PY
+    echo "✓ Default browser set to: $selected_browser"
+    exit 0
+  fi
+  exit 0
+fi
 
 #######################################
 # Pick entry
@@ -58,13 +88,14 @@ space="$(
   ' "$CONFIG_FILE"
 )"
 
-echo "Opening in Arc${space:+ on space $space}: $url"
+echo "Opening in $BROWSER${space:+ on space $space}: $url"
 
 #######################################
-# Open in Arc
+# Open in Browser
 #######################################
-# Use argv passing so quotes/spaces don't break AppleScript
-if ! osascript - "$url" "$space" <<'APPLESCRIPT'
+if [[ "$BROWSER" == "Arc" ]]; then
+  # Use argv passing so quotes/spaces don't break AppleScript
+  if ! osascript - "$url" "$space" <<'APPLESCRIPT'
 on run argv
   set theURL to item 1 of argv
   set theSpace to ""
@@ -100,9 +131,13 @@ on run argv
   end tell
 end run
 APPLESCRIPT
-then
-  # Fallback if AppleScript fails (Arc scripting changed, space missing, etc.)
-  open -a "Arc" "$url"
+  then
+    # Fallback if AppleScript fails (Arc scripting changed, space missing, etc.)
+    open -a "Arc" "$url"
+  fi
+else
+  # Generic browser open
+  open -a "$BROWSER" "$url"
 fi
 
 echo "Opened: $name"

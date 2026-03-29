@@ -104,10 +104,13 @@ try:
     j = json.load(fp)
   docker_path = (j.get("docker-path") or "").strip()
   snap_path = (j.get("docker-snapshot-path") or "").strip()
+  browser = (j.get("browser") or "Arc").strip()
   if docker_path:
     print("FORGE_SQL_DATA_BIND_PATH\t" + docker_path)
   if snap_path:
     print("FORGE_SQL_SNAPSHOTS_PATH\t" + snap_path)
+  if browser:
+    print("FORGE_BROWSER\t" + browser)
 except Exception:
   pass
 PY
@@ -125,6 +128,9 @@ forge__apply_work_state() {
         ;;
       FORGE_SQL_SNAPSHOTS_PATH)
         [[ -n "$value" ]] && FORGE_SQL_SNAPSHOTS_PATH="$value"
+        ;;
+      FORGE_BROWSER)
+        [[ -n "$value" ]] && FORGE_BROWSER="$value"
         ;;
     esac
   done <<< "$parsed"
@@ -173,5 +179,6 @@ export \
   FORGE_SQL_USER \
   FORGE_SQL_PORT \
   FORGE_SQL_DOCKER_IMAGE \
+  FORGE_BROWSER \
   ARDIS_MIGRATIONS_PATH \
   ARDIS_MIGRATIONS_LIBRARY

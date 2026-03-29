@@ -1,4 +1,5 @@
 {
+  "browser": "Google Chrome",
   "docker-path": "/Users/oliver/sql/docker",
   "docker-snapshot-path": "/Users/oliver/sql/snapshot",
   "docker-locations": [
@@ -43,9 +44,18 @@
     }
   ],
   "download-destinations": [
-    { "title": "Local SQL Snapshots", "path": "~/sql/snapshots" },
-    { "title": "Shared SQL Snapshots", "path": "/Volumes/shared/sql/docker/snapshots" },
-    { "title": "Downloads", "path": "~/Downloads" }
+    {
+      "title": "Local SQL Snapshots",
+      "path": "~/sql/snapshots"
+    },
+    {
+      "title": "Shared SQL Snapshots",
+      "path": "/Volumes/shared/sql/docker/snapshots"
+    },
+    {
+      "title": "Downloads",
+      "path": "~/Downloads"
+    }
   ],
   "organize-categories": [
     {
