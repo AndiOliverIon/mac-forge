@@ -108,9 +108,10 @@ select_sql_file() {
     local current_dir="$1"
     while true; do
         local selection
-        selection=$(ls -F "$current_dir" | fzf --prompt="Select (Root: $(basename "$SQLS_ROOT")) > " --height=40% --border)
+        # Add EXIT option to the list
+        selection=$( (ls -F "$current_dir"; echo "EXIT") | fzf --prompt="Select (Root: $(basename "$SQLS_ROOT")) > " --height=40% --border)
         
-        if [[ -z "$selection" ]]; then
+        if [[ -z "$selection" || "$selection" == "EXIT" ]]; then
             return 1
         fi
 
@@ -165,16 +166,16 @@ if [[ -z "$selected_db" ]]; then
     exit 0
 fi
 
-# 3. Select SQL Script
-selected_file=$(select_sql_file "$SQLS_ROOT" || true)
-if [[ -z "$selected_file" ]]; then
-    exit 0
-fi
+# 3. Select and Execute SQL Scripts Loop
+echo "==> Select SQL scripts to run (ESC to exit):"
+while true; do
+    selected_file=$(select_sql_file "$SQLS_ROOT" || true)
+    
+    if [[ -z "$selected_file" ]]; then
+        echo "Exiting."
+        break
+    fi
 
-# 4. Confirm and Execute
-read -r -p "Run $(basename "$selected_file") on $selected_db? [y/N] " confirm
-if [[ "$confirm" =~ ^[Yy]$ ]]; then
     run_sql_file "$server" "$user" "$pwd" "$selected_db" "$selected_file" "$trusted"
-else
-    echo "Aborted."
-fi
+    echo "----------------------------------------"
+done
