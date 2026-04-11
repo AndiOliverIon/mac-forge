@@ -97,6 +97,8 @@ alias dbc="~/mac-forge/scripts/db-clear.sh"
 alias dbo="~/mac-forge/scripts/db-optimize.sh"
 alias dbfix="~/mac-forge/scripts/db-fix.sh"
 alias sdb="~/mac-forge/scripts/switch-db.sh"
+alias sqlexec="~/mac-forge/scripts/sql-execute.sh"
+alias se=sqlexec
 
 # ------------------------------------------------------------------------------
 # Workspaces & Paths
