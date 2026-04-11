@@ -138,6 +138,7 @@ alias cloud="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs"
 alias gdrive="cd ~/Library/CloudStorage/GoogleDrive-andioliverion@gmail.com/My\ Drive"
 alias demo="cd /Volumes/work-cerber/ardis-demo"
 alias work-cerb="cd /Volumes/work-cerber"
+alias copilot="gh copilot"
 
 # ------------------------------------------------------------------------------
 # Cleanup
