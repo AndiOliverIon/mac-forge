@@ -128,6 +128,20 @@
     "~/Desktop",
     "~/work/stuff"
   ],
+  "stations": [
+    {
+      "name": "MasterChief",
+      "ip": "192.168.68.115",
+      "mac": "C4:03:A8:37:38:81",
+      "os": "Windows"
+    },
+    {
+      "name": "Thanatos",
+      "ip": "192.168.100.46",
+      "mac": "E8:9C:25:38:4C:63",
+      "os": "Windows"
+    }
+  ],
   "station-destinations": [
     {
       "title": "Network dsql",

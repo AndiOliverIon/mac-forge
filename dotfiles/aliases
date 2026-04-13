@@ -156,7 +156,23 @@ alias rmc="ssh -t oliver@masterchief"
 alias rth="ssh -t oliver@thanatos"
 alias rt=rth
 alias showeth='networksetup -listallhardwareports | awk "/Hardware Port|Device/"; echo; for i in $(networksetup -listallhardwareports | awk "/Device/ {print \$2}"); do ip=$(ipconfig getifaddr $i 2>/dev/null); echo "$i : ${ip:-no-ip}"; done'
-alias mcshutdown='ssh -t oliver@masterchief "cmd /c shutdown /s /f /t 0"'
+alias mcshutdown='ssh -t oliver@masterchief "powershell -Command \"Stop-Computer -Force\""'
+alias thshutdown='ssh -t oliver@thanatos "powershell -Command \"Stop-Computer -Force\""'
+alias tsshutdown=thshutdown
+alias mcsleep='~/mac-forge/scripts/mcsleep.sh'
+alias ms=mcsleep
+alias tssleep='~/mac-forge/scripts/thsleep.sh'
+alias thsleep=tssleep
+alias ts=tssleep
+alias tshut=thshutdown
+alias thshut=thshutdown
+
+alias mcboot='~/mac-forge/scripts/mcboot.sh'
+alias mcbt=mcboot
+alias mb=mcboot
+alias thboot='~/mac-forge/scripts/thboot.sh'
+alias tboot=thboot
+alias thb=thboot
 
 # ------------------------------------------------------------------------------
 # Apps & Utilities
