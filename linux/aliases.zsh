@@ -31,6 +31,7 @@ alias pr="patch -R"
 # ------------------------------------------------------------------------------
 unalias g 2>/dev/null
 alias g="gemini"
+alias aiusage='~/mac-forge/scripts/agents/usage.sh'
 alias gs="git status"
 alias gco="git checkout"
 alias gp="git pull"

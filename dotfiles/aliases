@@ -141,6 +141,7 @@ alias gdrive="cd ~/Library/CloudStorage/GoogleDrive-andioliverion@gmail.com/My\ 
 alias demo="cd /Volumes/work-cerber/ardis-demo"
 alias work-cerb="cd /Volumes/work-cerber"
 alias copilot="gh copilot"
+alias aiusage='~/mac-forge/scripts/agents/usage.sh'
 
 # ------------------------------------------------------------------------------
 # Cleanup
