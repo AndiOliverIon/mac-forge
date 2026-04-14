@@ -51,6 +51,7 @@ alias org=organizer
 alias o=organizer
 alias dotnet-clean="~/mac-forge/scripts/dotnet-clean.sh"
 alias dnc=dotnet-clean
+alias clean="~/mac-forge/scripts/clean.sh"
 alias present="~/mac-forge/scripts/present.sh"
 alias prs=present
 alias patch="~/mac-forge/scripts/patch.sh"

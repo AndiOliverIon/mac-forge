@@ -165,5 +165,15 @@
       "title": "Ardis Tools Extensions",
       "path": "/Users/oliver/work/ardis.tools.extensions"
     }
+  ],
+  "clean": [
+    {
+      "friendly name": "perform-angular-cache",
+      "path": "/Users/oliver/work/ardis-perform/ardis.perform.client/.angular/cache"
+    },
+    {
+      "friendly name": "ardis logs",
+      "path": "/Users/oliver/work/logs"
+    }
   ]
 }

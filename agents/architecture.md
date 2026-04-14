@@ -30,6 +30,7 @@ It currently controls:
 - active SQL Docker data path;
 - active SQL snapshot path;
 - known storage location presets;
+- clean target presets;
 - organizer folder categories;
 - folders to organize;
 - station metadata such as IP, MAC, and OS;
@@ -67,6 +68,7 @@ Default SQL container identity:
 - `scripts/organizer.sh`: organizes files from configured folders by extension rules.
 - `scripts/help.sh`: interactive launcher over aliases and scripts.
 - `scripts/info.sh`: machine health snapshot.
+- `scripts/clean.sh`: interactive cleaner for configured target directories.
 - `scripts/perform-prep.sh`, `scripts/ardis-migrate.sh`, `scripts/gen-open-api.sh`: work-specific Ardis/Perform helpers.
 
 ## Operational context
