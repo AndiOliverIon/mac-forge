@@ -1,0 +1,74 @@
+{
+  "defaultProfile": "perf",
+  "alwaysH2cPaths": [],
+  "profiles": {
+    "perf": {
+      "description": "PERFORM main development checkout",
+      "macRoot": "/Users/oliver/work/ardis-perform",
+      "winRoot": "C:/work/ardis-perform",
+      "sshHost": "cerber-win",
+      "rcloneRemote": "cerber",
+      "baseBranch": "development",
+      "afterH2c": "perform-vs-localize",
+      "afterC2h": "clean",
+      "alwaysH2cPaths": [
+        "Ardis.Perform.UnitTest/Helpers/MockLicenseService.cs"
+      ],
+      "alwaysH2cDirectories": [
+        "local-overrides",
+        "Asms2.Web/local-overrides"
+      ],
+      "localOnlyIgnorePaths": [
+        "Asms2.Web.cerber.sln",
+        "Asms2.Web.cerber.slnf",
+        "Asms2.Web/Asms2.Web.csproj",
+        "Ardis.Checklist.Worker/Ardis.Checklist.Worker.csproj",
+        "Ardis.Perform.UnitTest/Helpers/MockLicenseService.cs",
+        "local-overrides",
+        "Asms2.Web/local-overrides"
+      ]
+    },
+    "perf228": {
+      "description": "PERFORM release/2.28 checkout",
+      "macRoot": "/Users/oliver/work/ardis-perform-228",
+      "winRoot": "C:/work/ardis-perform-228",
+      "sshHost": "cerber-win",
+      "rcloneRemote": "cerber",
+      "baseBranch": "release/2.28",
+      "afterH2c": "perform-vs-localize",
+      "afterC2h": "clean",
+      "localOnlyIgnorePaths": [
+        "Asms2.Web.cerber.sln",
+        "Asms2.Web.cerber.slnf",
+        "Asms2.Web/Asms2.Web.csproj",
+        "Ardis.Checklist.Worker/Ardis.Checklist.Worker.csproj"
+      ]
+    },
+    "perf230": {
+      "description": "PERFORM release/2.30 checkout",
+      "macRoot": "/Users/oliver/work/ardis-perform-230",
+      "winRoot": "C:/work/ardis-perform-230",
+      "sshHost": "cerber-win",
+      "rcloneRemote": "cerber",
+      "baseBranch": "release/2.30",
+      "afterH2c": "perform-vs-localize",
+      "afterC2h": "clean",
+      "alwaysH2cPaths": [
+        "Ardis.Perform.UnitTest/Helpers/MockLicenseService.cs"
+      ],
+      "alwaysH2cDirectories": [
+        "local-overrides",
+        "Asms2.Web/local-overrides"
+      ],
+      "localOnlyIgnorePaths": [
+        "Asms2.Web.cerber.sln",
+        "Asms2.Web.cerber.slnf",
+        "Asms2.Web/Asms2.Web.csproj",
+        "Ardis.Checklist.Worker/Ardis.Checklist.Worker.csproj",
+        "Ardis.Perform.UnitTest/Helpers/MockLicenseService.cs",
+        "local-overrides",
+        "Asms2.Web/local-overrides"
+      ]
+    }
+  }
+}

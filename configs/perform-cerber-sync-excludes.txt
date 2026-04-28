@@ -1,0 +1,47 @@
+# These rules are meant to prevent rclone from spending time inside generated
+# folders. They are not just "do not copy"; these directory globs also keep
+# the sync scan away from the heavy trees.
+
+# Git state is intentionally separate on Hades and Cerber.
+.git/**
+**/.git/**
+
+# IDE/editor state.
+.vs/**
+**/.vs/**
+.vscode/**
+**/.vscode/**
+.idea/**
+**/.idea/**
+.claude/**
+.codex-notes/**
+.run/**
+*.user
+*.suo
+*.rsuser
+*.ncrunch*
+_ReSharper*/**
+
+# Build/test output.
+bin/**
+**/bin/**
+obj/**
+**/obj/**
+TestResults/**
+**/TestResults/**
+dist/**
+**/dist/**
+build/**
+**/build/**
+coverage/**
+**/coverage/**
+.angular/**
+**/.angular/**
+
+# Package caches and generated dependency trees.
+node_modules/**
+**/node_modules/**
+
+# OS noise.
+.DS_Store
+Thumbs.db

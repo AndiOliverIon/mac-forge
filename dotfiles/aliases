@@ -59,6 +59,14 @@ alias p=patch
 alias pr="patch -R"
 alias stio="~/mac-forge/scripts/station-io.sh"
 alias sio=stio
+alias h2c="~/mac-forge/scripts/perform-cerber-sync.sh up"
+alias c2h="~/mac-forge/scripts/perform-cerber-sync.sh down"
+alias h2c-preview="~/mac-forge/scripts/perform-cerber-sync.sh preview-up"
+alias c2h-preview="~/mac-forge/scripts/perform-cerber-sync.sh preview-down"
+alias perf-to-cerber="~/mac-forge/scripts/perform-cerber-sync.sh up perf"
+alias perf-from-cerber="~/mac-forge/scripts/perform-cerber-sync.sh down perf"
+alias perf-to-cerber-preview="~/mac-forge/scripts/perform-cerber-sync.sh preview-up perf"
+alias perf-from-cerber-preview="~/mac-forge/scripts/perform-cerber-sync.sh preview-down perf"
 
 # ------------------------------------------------------------------------------
 # Git Shortcuts
@@ -116,6 +124,8 @@ alias gptbin="cd ~/work/ardis.tools.extensions/Ardis.Utils/bin/debug/net8.0"
 alias lc="cd ~/work/ardis-local-connector"
 alias localconnector="cd ~/work/ardis-local-connector"
 alias fn="cd ~/projects/macos-frontnotes"
+alias barber="cd ~/projects/barberlounge"
+alias bl="cd ~/projects/barberlounge"
 alias clients="cd /Volumes/shared/sql/clients"
 alias invoice="cd ~/tni-invoice"
 alias inv=invoice
