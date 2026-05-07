@@ -28,6 +28,21 @@ require_cmd ssh
 
 mode="${1:-}"
 profile_arg="${2:-}"
+operation_arg="${3:-}"
+
+if [[ "$profile_arg" == "update" || "$profile_arg" == "--update" ]]; then
+	operation_arg="$profile_arg"
+	profile_arg=""
+fi
+
+update_mode=0
+case "$operation_arg" in
+"") ;;
+update | --update) update_mode=1 ;;
+*)
+	die "Unknown operation: $operation_arg"
+	;;
+esac
 
 is_help_arg() {
 	case "${1:-}" in
@@ -61,8 +76,11 @@ print("Hades/Cerber manual sync")
 print()
 print("Commands:")
 print("  h2c [profile]          Hades -> Cerber, after preparing Cerber from the profile base branch")
+print("  h2c [profile] update   Hades -> Cerber, without resetting Cerber; only pushes new Hades changes")
 print("  c2h [profile]          Cerber -> Hades, then clean Cerber when the profile asks for it")
 print("  h2c-preview [profile]  Show Hades working-tree changes that would go to Cerber")
+print("  h2c-preview [profile] update")
+print("                         Show only Hades changes not yet pushed to Cerber")
 print("  c2h-preview [profile]  Show Cerber working-tree changes that would come to Hades")
 print()
 print(f"Current command: {command}")
@@ -85,12 +103,13 @@ for name, profile in profiles.items():
     print()
 print("Examples:")
 print("  h2c perf")
+print("  h2c perf update")
 print("  c2h perf")
 print("  h2c-preview perf228")
 PY
 }
 
-if [[ -z "$mode" ]] || is_help_arg "$mode" || is_help_arg "$profile_arg"; then
+if [[ -z "$mode" ]] || is_help_arg "$mode" || is_help_arg "$profile_arg" || is_help_arg "$operation_arg"; then
 	usage
 	exit 0
 fi
@@ -642,6 +661,129 @@ if skipped:
 PY
 }
 
+filter_h2c_update_actions() {
+	local input_actions="$1"
+	local output_actions="$2"
+
+	if ! rclone cat "$(remote_path "$REMOTE_H2C_BASELINE_PATH")" >"$remote_h2c_paths_file" 2>/dev/null; then
+		die "No Hades-to-Cerber baseline found on Cerber. Run a full 'h2c $PROFILE_NAME' first."
+	fi
+
+	python3 - "$input_actions" "$output_actions" "$remote_h2c_paths_file" "$SSH_HOST" "$WIN_GIT_ROOT" "$MAC_ROOT" <<'PY'
+import hashlib
+import os
+import subprocess
+import sys
+
+actions_path, output_path, baseline_path, ssh_host, win_git_root, mac_root = sys.argv[1:]
+
+baseline = {}
+with open(baseline_path, "r", encoding="utf-8", errors="surrogateescape") as f:
+    for raw in f:
+        line = raw.rstrip("\n")
+        if not line:
+            continue
+        expected_hash, path = line.split("\t", 1)
+        baseline[path.replace("\\", "/").strip("/")] = expected_hash.lower()
+
+def local_hash(path):
+    full_path = os.path.join(mac_root, path)
+    if not os.path.isfile(full_path):
+        return None
+    digest = hashlib.sha256()
+    with open(full_path, "rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+def ps_single_quote(value):
+    return "'" + value.replace("'", "''") + "'"
+
+def remote_hash(path):
+    full_path = f"{win_git_root.rstrip('/')}/{path}"
+    command = (
+        "$p = " + ps_single_quote(full_path) + "; "
+        "if (Test-Path -LiteralPath $p -PathType Leaf) { "
+        "(Get-FileHash -Algorithm SHA256 -LiteralPath $p).Hash.ToLowerInvariant() "
+        "}"
+    )
+    result = subprocess.run(
+        ["ssh", ssh_host, "powershell", "-NoProfile", "-Command", command],
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+    )
+    if result.returncode != 0:
+        return None
+    value = result.stdout.strip().lower()
+    return value or None
+
+kept = []
+skipped = 0
+conflicts = []
+
+with open(actions_path, "r", encoding="utf-8", errors="surrogateescape") as f:
+    for raw in f:
+        line = raw.rstrip("\n")
+        if not line:
+            continue
+
+        action, path = line.split("\t", 1)
+        normalized = path.replace("\\", "/").strip("/")
+        previous_hash = baseline.get(normalized)
+
+        if action == "copy":
+            current_local_hash = local_hash(normalized)
+            if current_local_hash is None:
+                continue
+
+            if previous_hash == current_local_hash:
+                skipped += 1
+                continue
+
+            current_remote_hash = remote_hash(normalized)
+            if previous_hash and current_remote_hash != previous_hash:
+                conflicts.append(normalized)
+                continue
+
+            if not previous_hash and current_remote_hash and current_remote_hash != current_local_hash:
+                conflicts.append(normalized)
+                continue
+
+            kept.append((action, path))
+            continue
+
+        if action == "delete":
+            if not previous_hash:
+                skipped += 1
+                continue
+
+            current_remote_hash = remote_hash(normalized)
+            if current_remote_hash != previous_hash:
+                conflicts.append(normalized)
+                continue
+
+            kept.append((action, path))
+            continue
+
+        kept.append((action, path))
+
+if conflicts:
+    print("Hades update would overwrite Cerber edits. Resolve these paths first:", file=sys.stderr)
+    for path in conflicts:
+        print(f"  {path}", file=sys.stderr)
+    raise SystemExit(3)
+
+with open(output_path, "w", encoding="utf-8", errors="surrogateescape") as f:
+    for action, path in kept:
+        f.write(f"{action}\t{path}\n")
+
+if skipped:
+    print(f"Skipped paths already present on Cerber: {skipped}")
+PY
+}
+
 prepare_cerber_for_up() {
 	local branch="$1"
 
@@ -745,6 +887,49 @@ if (Test-Path -LiteralPath \$webProjectFile) {
     }
 }
 
+\$startupFile = 'Asms2.Web\Startup.cs'
+if (Test-Path -LiteralPath \$startupFile) {
+    \$startupContent = Get-Content -LiteralPath \$startupFile -Raw
+    if (\$startupContent -notmatch 'LOCAL_OVERRIDES_BEGIN: local-startup-overrides') {
+        \$startupOverrideBlock = @'
+// LOCAL_OVERRIDES_BEGIN: local-startup-overrides
+LocalOverridesBootstrap.TryApply(services, Configuration);
+// LOCAL_OVERRIDES_END: local-startup-overrides
+'@
+        \$startupMarker = '            services.ConfigureAnalytics(Configuration);'
+        \$startupMarkerIndex = \$startupContent.IndexOf(\$startupMarker)
+        if (\$startupMarkerIndex -lt 0) {
+            throw "Could not find marker in \$(\$startupFile): \$startupMarker"
+        }
+
+        \$insertIndex = \$startupMarkerIndex + \$startupMarker.Length
+        \$startupContent = \$startupContent.Insert(\$insertIndex, [Environment]::NewLine + \$startupOverrideBlock)
+        Set-Content -LiteralPath \$startupFile -Value \$startupContent -NoNewline
+    }
+}
+
+\$baselineFile = '.git\info\hades-cerber-h2c-baseline.tsv'
+\$baselinePaths = @(
+    'Asms2.Web/Startup.cs'
+)
+
+\$tab = [char]9
+\$baselineContent = if (Test-Path -LiteralPath \$baselineFile) { Get-Content -LiteralPath \$baselineFile } else { @() }
+\$baselineContent = @(\$baselineContent | Where-Object {
+    \$parts = \$_.Split(\$tab, 2)
+    \$linePath = if (\$parts.Count -ge 2) { \$parts[1] } else { '' }
+    \$baselinePaths -notcontains \$linePath
+})
+Set-Content -LiteralPath \$baselineFile -Value \$baselineContent
+
+foreach (\$baselinePath in \$baselinePaths) {
+    \$filePath = Join-Path \$repo \$baselinePath
+    if (Test-Path -LiteralPath \$filePath -PathType Leaf) {
+        \$hash = (Get-FileHash -Algorithm SHA256 -LiteralPath \$filePath).Hash.ToLowerInvariant()
+        Add-Content -LiteralPath \$baselineFile -Value "\$hash\$tab\$baselinePath"
+    }
+}
+
 \$excludeFile = '.git\info\exclude'
 \$entries = @(
     'Asms2.Web.cerber.sln',
@@ -781,26 +966,48 @@ status)
 	;;
 
 preview-up)
-	echo "Profile:      $PROFILE_NAME"
-	echo "macOS branch: $(local_branch)"
-	echo "Base branch:  origin/$BASE_BRANCH"
-	echo "Cerber will be prepared from the base branch before h2c copies these changes."
+	echo "Profile:       $PROFILE_NAME"
+	echo "macOS branch:  $(local_branch)"
+	echo "Base branch:   origin/$BASE_BRANCH"
+	if [[ "$update_mode" == "1" ]]; then
+		echo "Update mode:   Cerber will not be reset; only new Hades changes are shown."
+		assert_matching_branches
+	else
+		echo "Update mode:   no"
+		echo "Cerber will be prepared from the base branch before h2c copies these changes."
+	fi
 	echo
 	build_actions "hades" "$status_file" "$actions_file"
-	print_actions_report "$actions_file"
+	if [[ "$update_mode" == "1" ]]; then
+		filter_h2c_update_actions "$actions_file" "$filtered_actions_file"
+		print_actions_report "$filtered_actions_file"
+	else
+		print_actions_report "$actions_file"
+	fi
 	print_always_h2c_report
 	;;
 
 up)
 	mac_branch="$(local_branch)"
-	echo "Profile:      $PROFILE_NAME"
-	echo "macOS branch: $mac_branch"
-	echo "Base branch:  origin/$BASE_BRANCH"
-	prepare_cerber_for_up "$mac_branch"
+	echo "Profile:       $PROFILE_NAME"
+	echo "macOS branch:  $mac_branch"
+	echo "Base branch:   origin/$BASE_BRANCH"
+	if [[ "$update_mode" == "1" ]]; then
+		echo "Update mode:   yes"
+	else
+		echo "Update mode:   no"
+		prepare_cerber_for_up "$mac_branch"
+	fi
 	assert_matching_branches
 	build_actions "hades" "$status_file" "$actions_file"
-	print_actions_report "$actions_file"
-	apply_actions "hades-to-cerber" "$actions_file" "$REMOTE_BACKUP_ROOT/to-cerber-$stamp"
+	if [[ "$update_mode" == "1" ]]; then
+		filter_h2c_update_actions "$actions_file" "$filtered_actions_file"
+		print_actions_report "$filtered_actions_file"
+		apply_actions "hades-to-cerber" "$filtered_actions_file" "$REMOTE_BACKUP_ROOT/to-cerber-update-$stamp"
+	else
+		print_actions_report "$actions_file"
+		apply_actions "hades-to-cerber" "$actions_file" "$REMOTE_BACKUP_ROOT/to-cerber-$stamp"
+	fi
 	apply_always_h2c_paths
 	write_h2c_baseline
 	perform_vs_localize

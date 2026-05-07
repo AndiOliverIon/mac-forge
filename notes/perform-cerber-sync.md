@@ -412,7 +412,9 @@ Current aliases:
 ```bash
 h2c -help
 h2c perf
+h2c perf update
 h2c-preview perf
+h2c-preview perf update
 c2h perf
 c2h-preview perf
 ```
@@ -431,6 +433,8 @@ c2h-preview perf
 This means Cerber is disposable. If Cerber has uncommitted changes, the flow stops and asks for the VM checkout to be cleaned/reset first.
 
 The Cerber Git commands run with `GIT_TERMINAL_PROMPT=0` and a non-interactive `GIT_SSH_COMMAND`, because plain Windows `git fetch` can wait forever behind SSH or credential prompts that are invisible from the macOS terminal.
+
+`h2c <profile> update` is for an already-prepared Cerber checkout. It does not reset Cerber. It compares current Hades file hashes with the last Hades-to-Cerber baseline and copies only Hades paths that changed after the previous full or update sync. If the same path was also changed on Cerber, the update stops instead of overwriting Cerber work.
 
 The `perf` and `perf230` profiles also promote these local override folders from Hades to Cerber on every `h2c`:
 
