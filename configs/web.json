@@ -8,12 +8,8 @@
         "url": "https://portainer.ardis.eu:9443/#!/auth"
     },
     {
-        "name": "Portainer QA 8130",
-        "url": "https://portainer.ardis.eu:8130"
-    },
-    {
-        "name": "Portainer QA MB 8131",
-        "url": "https://portainer.ardis.eu:8131"
+        "name": "Portainer QA 8200",
+        "url": "https://portainer.ardis.eu:8200"
     },
     {
         "name": "Portainer GPT 7001",
