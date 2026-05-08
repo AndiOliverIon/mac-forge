@@ -35,7 +35,18 @@ fi
 #######################################
 FORGE_ROOT="${FORGE_ROOT:-$HOME/mac-forge}"
 DOTFILES_DIR="${DOTFILES_DIR:-$FORGE_ROOT/dotfiles}"
+DESCRIPTIONS_FILE="${ALIAS_DESCRIPTIONS_FILE:-$FORGE_ROOT/configs/alias-descriptions.tsv}"
 [[ -d "$DOTFILES_DIR" ]] || die "dotfiles folder not found: $DOTFILES_DIR"
+
+declare -A descriptions=()
+if [[ -f "$DESCRIPTIONS_FILE" ]]; then
+  while IFS=$'\t' read -r desc_type desc_name desc_text _; do
+    [[ -n "${desc_type:-}" && -n "${desc_name:-}" && -n "${desc_text:-}" ]] || continue
+    [[ "$desc_type" == \#* ]] && continue
+    [[ "$desc_type" == "alias" ]] || continue
+    descriptions["$desc_name"]="$desc_text"
+  done < "$DESCRIPTIONS_FILE"
+fi
 
 #######################################
 # Alias files (tight list; edit if needed)
@@ -74,9 +85,10 @@ fi
 #######################################
 # Build rows:
 #   col1 = alias name (what you filter by)
-#   col2 = relative path (from FORGE_ROOT) + :line (display)
-#   col3 = full path (preview)
-#   col4 = line number (preview)
+#   col2 = description
+#   col3 = relative path (from FORGE_ROOT) + :line (display)
+#   col4 = full path (preview)
+#   col5 = line number (preview)
 #######################################
 declare -A seen=()
 rows=()
@@ -109,7 +121,7 @@ while IFS= read -r hit; do
 
   if [[ -z "${seen[$name]+x}" ]]; then
     seen["$name"]=1
-    rows+=("${name}"$'\t'"${rel}:${line_no}"$'\t'"${file}"$'\t'"${line_no}")
+    rows+=("${name}"$'\t'"${descriptions[$name]:-No description yet.}"$'\t'"${rel}:${line_no}"$'\t'"${file}"$'\t'"${line_no}")
   fi
 done < <(
   rg -n --with-filename --no-heading --hidden --follow --no-messages \
@@ -133,15 +145,19 @@ selected="$(
     --layout=reverse \
     --border \
     --delimiter=$'\t' \
-    --with-nth=1,2 \
+    --with-nth=1 \
+    --nth=1,2,3 \
     --preview-window='right:60%:wrap' \
     --preview='bash -lc '"'"'
       name="{1}"
-      rel_and_line="{2}"
-      file="{3}"
-      ln="{4}"
+      description="{2}"
+      rel_and_line="{3}"
+      file="{4}"
+      ln="{5}"
 
       echo "$rel_and_line"
+      echo
+      echo "$description"
       echo
 
       # Print exactly the definition line from the file.

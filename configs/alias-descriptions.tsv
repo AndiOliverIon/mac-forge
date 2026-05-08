@@ -1,0 +1,214 @@
+# type	name	description
+alias	oliver	Go to the home directory.
+alias	pc	Go to the iCloud personal-organizer folder.
+alias	doc	Go to Documents.
+alias	desk	Go to Desktop.
+alias	dev	Go to the local dev folder.
+alias	down	Go to Downloads.
+alias	projects	Go to the projects folder.
+alias	cdp	Copy the current directory path to the clipboard.
+alias	reloadterm	Reload the current zsh config in this terminal.
+alias	fixdock	Restart the macOS Dock process.
+alias	info	Show a forge machine/system health snapshot.
+alias	inf	Shortcut for info.
+alias	help	Open the forge command picker for aliases and scripts.
+alias	port-release	Port a commit onto a release branch by creating a local cherry-pick branch.
+alias	prl	Shortcut for port-release.
+alias	web	Open a configured web entry in the preferred browser; use web change to switch browser.
+alias	winappclean	Delete Parallels Windows app shortcuts except Visual Studio.app.
+alias	vpn	Start a configured VPN connection from forge state/secrets.
+alias	dvpn	Disconnect the active VPN connection.
+alias	eject-all	Eject external volumes with forge safety exclusions and confirmation.
+alias	ejectall	Shortcut for eject-all.
+alias	ea	Short shortcut for eject-all.
+alias	hdd-clean	Find old large files by extension and delete them after confirmation.
+alias	hc	Shortcut for hdd-clean.
+alias	binclear	Remove bin and debug directories from the current tree.
+alias	al	Open the alias finder and copy the selected alias name.
+alias	a	Shortcut for al.
+alias	workset	Switch the active SQL Docker data and snapshot storage paths.
+alias	ws	Shortcut for workset.
+alias	workinfo	Show the current active SQL Docker and snapshot storage paths.
+alias	wi	Shortcut for workinfo.
+alias	ardis-migrate	Run Ardis migrations against a selected local SQL database.
+alias	am	Shortcut for ardis-migrate.
+alias	ardis-patch	Apply, remove, or inspect configured Ardis code patches.
+alias	ap	Shortcut for ardis-patch.
+alias	ardis-complete	Complete Ardis planning/activity data over a selected date range.
+alias	ac	Shortcut for ardis-complete.
+alias	perf-cache-reset	Clear Perform client cache artifacts.
+alias	pcr	Shortcut for perf-cache-reset.
+alias	genopenapi	Regenerate the Perform OpenAPI JSON and TypeScript client.
+alias	goa	Shortcut for genopenapi.
+alias	organizer	Organize configured folders by extension rules from work-state.
+alias	org	Shortcut for organizer.
+alias	o	Short shortcut for organizer.
+alias	dotnet-clean	Empty bin folders under the current tree.
+alias	dnc	Shortcut for dotnet-clean.
+alias	clean	Delete contents of selected configured cleanup targets.
+alias	present	Set external display presentation resolution/mode.
+alias	prs	Shortcut for present.
+alias	patch	Apply, remove, or inspect intervention patches.
+alias	p	Shortcut for patch.
+alias	pr	Remove an applied patch intervention.
+alias	stio	Copy or move a selected local file/folder to a station destination, replacing same-name targets.
+alias	sio	Shortcut for stio.
+alias	h2c	Sync Hades changes up to Cerber.
+alias	c2h	Sync Cerber changes down to Hades.
+alias	h2c-preview	Preview what would sync from Hades up to Cerber.
+alias	c2h-preview	Preview what would sync from Cerber down to Hades.
+alias	perf-to-cerber	Sync the Perform profile from Hades up to Cerber.
+alias	perf-from-cerber	Sync the Perform profile from Cerber down to Hades.
+alias	perf-to-cerber-preview	Preview the Perform sync from Hades up to Cerber.
+alias	perf-from-cerber-preview	Preview the Perform sync from Cerber down to Hades.
+alias	gs	Show git working tree status.
+alias	gco	Check out a git branch or path.
+alias	gp	Pull from the configured git remote.
+alias	gfo	Fetch updates from origin.
+alias	gpu	Push the current branch to its configured remote.
+alias	gb	List or manage git branches.
+alias	switch	Interactively switch git branches.
+alias	sw	Shortcut for switch.
+alias	gbd	Delete local git branches matching a pattern.
+alias	gdel	Delete local git branches containing a keyword.
+alias	branch-clean	Preview or delete local branches by safe prefix.
+alias	bc	Shortcut for branch-clean.
+alias	dps	List running Docker containers.
+alias	dcu	Start the current docker compose stack.
+alias	dcd	Stop and remove the current docker compose stack.
+alias	dba	Administer a local SQL database: offline/online, drop, recovery, shrink.
+alias	dbs	Start stopped Docker containers, launching Docker Desktop if needed.
+alias	dbu	Upload a selected .bak from the current folder into the SQL container.
+alias	dbr	Restore a selected .bak into the forge SQL Server container.
+alias	dbsn	Create a SQL backup snapshot from a selected database.
+alias	rdbsn	Create a backup from a configured remote SQL Server target.
+alias	rdown	Download a remote .bak backup to a selected local destination.
+alias	rup	Upload a local .bak backup to a selected remote destination.
+alias	dbc	Clear SQL databases; default hard mode removes container/data after typed confirmation.
+alias	dbo	Run configured SQL table cleanup and shrink; data loss is possible.
+alias	dbfix	Run SQL fix scripts from the repo sqls folder against a chosen database.
+alias	sdb	Switch the active appsettings connection string for a configured project.
+alias	sqlexec	Run selected .sql files against a chosen connection/database.
+alias	se	Shortcut for sqlexec.
+alias	forge	Go to the mac-forge repo root.
+alias	work	Go to the main work folder.
+alias	perf	Go to the Ardis Perform repo.
+alias	perfclient	Go to the Ardis Perform Angular client.
+alias	perf228	Go to the Ardis Perform 228 worktree.
+alias	perf230	Go to the Ardis Perform 230 worktree.
+alias	perfclient230	Go to the Ardis Perform 230 Angular client.
+alias	gpt	Go to the Ardis Tools Extensions repo.
+alias	gptbin	Go to the Ardis Utils debug build output folder.
+alias	lc	Go to the Ardis local connector repo.
+alias	localconnector	Go to the Ardis local connector repo.
+alias	fn	Go to the macOS Frontnotes project.
+alias	bl	Go to the BookingLounge project.
+alias	clients	Go to shared SQL client backup/storage folder.
+alias	invoice	Go to the TNI invoice project.
+alias	inv	Shortcut for invoice.
+alias	borg	Go to the borg dev folder.
+alias	perflog	Go to Perform output logs.
+alias	andi-notes	Go to the iCloud Andi notes folder.
+alias	an	Shortcut for andi-notes.
+alias	notes	Shortcut for andi-notes.
+alias	vsql	Go to shared SQL storage.
+alias	cloudforge	Go to the iCloud forge folder.
+alias	snapshots	Go to shared SQL Docker snapshots.
+alias	snap	Shortcut for snapshots.
+alias	snapdel	Delete everything in the shared snapshots folder; no prompt.
+alias	locsql	Go to the local SQL folder.
+alias	lcsql	Shortcut for locsql.
+alias	locsnapshots	Go to local SQL snapshots.
+alias	lcsnaphots	Typo-compatible shortcut for locsnapshots.
+alias	lcsnap	Shortcut for locsnapshots.
+alias	lcs	Short shortcut for locsnapshots.
+alias	lcsnapdel	Delete everything in local SQL snapshots; no prompt.
+alias	shared	Go to the shared mounted volume.
+alias	cloud	Go to the iCloud Drive root.
+alias	gdrive	Go to the Google Drive My Drive folder.
+alias	demo	Go to the Cerber-mounted Ardis demo folder.
+alias	work-cerb	Go to the Cerber-mounted work volume.
+alias	copilot	Run GitHub Copilot CLI.
+alias	aiusage	Show local agent/API usage stats.
+alias	dela	Delete everything in the current directory; no prompt.
+alias	perflogclean	Delete all files in Perform output logs; no prompt.
+alias	screenshotclean	Delete PNG screenshots from Desktop; no prompt.
+alias	rmc	SSH into MasterChief.
+alias	rth	SSH into Thanatos.
+alias	rt	Shortcut for rth.
+alias	showeth	Show network hardware ports and their current IP addresses.
+alias	mcshutdown	Force shutdown MasterChief over SSH.
+alias	thshutdown	Force shutdown Thanatos over SSH.
+alias	tsshutdown	Shortcut for thshutdown.
+alias	mcsleep	Put MasterChief into sleep/modern standby over SSH.
+alias	ms	Shortcut for mcsleep.
+alias	tssleep	Put Thanatos into sleep over SSH.
+alias	thsleep	Shortcut for tssleep.
+alias	ts	Shortcut for tssleep.
+alias	tshut	Shortcut for thshutdown.
+alias	thshut	Shortcut for thshutdown.
+alias	mcboot	Wake MasterChief with Wake-on-LAN.
+alias	mcbt	Shortcut for mcboot.
+alias	mb	Short shortcut for mcboot.
+alias	thboot	Wake Thanatos with Wake-on-LAN.
+alias	tboot	Shortcut for thboot.
+alias	thb	Shortcut for thboot.
+alias	rider	Open JetBrains Rider.
+alias	aliases	Print the alias file.
+alias	g	Run Gemini CLI.
+alias	link-dotfiles	Link Linux dotfiles into place.
+alias	ldf	Shortcut for link-dotfiles.
+alias	workspace-primary	Load the primary Linux workspace layout.
+alias	wp	Shortcut for workspace-primary.
+alias	display	Set Linux display scaling.
+alias	mnthadesw	Mount the Hades work share on Linux.
+alias	mnthw	Shortcut for mnthadesw.
+alias	umnthadesw	Unmount the Hades work share on Linux.
+alias	umnthw	Shortcut for umnthadesw.
+alias	thbt	Shortcut for thboot.
+script	aliases	Open the alias finder and copy the selected shortcut.
+script	ardis-complete	Complete Ardis planning/activity data over a selected date range.
+script	ardis-migrate	Run Ardis migrations against a selected local SQL database.
+script	bin-clear	Remove bin and debug directories from the current tree.
+script	branch-delete	Delete local git branches matching a pattern.
+script	branch-local-clean	Preview or delete local branches by safe prefix.
+script	clean	Delete contents of selected configured cleanup targets.
+script	db-admin	Administer a local SQL database: offline/online, drop, recovery, shrink.
+script	db-clear	Clear SQL databases; default hard mode removes container/data after typed confirmation.
+script	db-fix	Run SQL fix scripts from the repo sqls folder against a chosen database.
+script	db-optimize	Run configured SQL table cleanup and shrink; data loss is possible.
+script	db-remote-backup	Create a backup from a configured remote SQL Server target.
+script	db-remote-download	Download a remote .bak backup to a selected local destination.
+script	db-remote-upload	Upload a local .bak backup to a selected remote destination.
+script	db-restore	Restore a selected .bak into the forge SQL Server container.
+script	db-snapshot	Create a SQL backup snapshot from a selected database.
+script	db-upload-bak	Upload a selected .bak from the current folder into the SQL container.
+script	docker-start	Start stopped Docker containers, launching Docker Desktop if needed.
+script	dotnet-clean	Empty bin folders under the current tree.
+script	dvpn	Disconnect the active VPN connection.
+script	eject-all	Eject external volumes with forge safety exclusions and confirmation.
+script	forge	Shared forge runtime; usually sourced by other scripts.
+script	gen-open-api	Regenerate the Perform OpenAPI JSON and TypeScript client.
+script	git-del	Delete local git branches containing a keyword.
+script	git-switch	Interactively switch git branches.
+script	hdd-clean	Find old large files by extension and delete them after confirmation.
+script	help	Open the forge command picker for aliases and scripts.
+script	info	Show a forge machine/system health snapshot.
+script	mcboot	Wake MasterChief with Wake-on-LAN.
+script	mcsleep	Put MasterChief into sleep/modern standby over SSH.
+script	organizer	Organize configured folders by extension rules from work-state.
+script	patch	Apply, remove, or inspect intervention patches.
+script	perform-cache-reset	Clear Perform client cache artifacts.
+script	perform-cerber-sync	Sync configured work profiles between Hades and Cerber.
+script	perform-prep	Prepare Perform build output dependencies.
+script	port-release	Port a commit onto a release branch by creating a local cherry-pick branch.
+script	present	Set external display presentation resolution/mode.
+script	sql-execute	Run selected .sql files against a chosen connection/database.
+script	station-io	Copy or move a selected local file/folder to a station destination, replacing same-name targets.
+script	switch-db	Switch the active appsettings connection string for a configured project.
+script	thboot	Wake Thanatos with Wake-on-LAN.
+script	thsleep	Put Thanatos into sleep over SSH.
+script	vpn	Start a configured VPN connection from forge state/secrets.
+script	web	Open a configured web entry in the preferred browser; use web change to switch browser.
+script	win-shortcut-clean	Delete Parallels Windows app shortcuts except Visual Studio.app.
+script	work	Switch or inspect the active SQL Docker data and snapshot storage paths.
