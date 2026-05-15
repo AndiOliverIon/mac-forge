@@ -11,6 +11,15 @@ alias dev="cd ~/dev"
 alias down="cd ~/Downloads"
 alias projects="cd ~/projects"
 alias reloadterm="source ~/.zshrc"
+__kp() {
+  if [[ -z "${1:-}" ]]; then
+    echo "Usage: kp <port>" >&2
+    return 2
+  fi
+
+  kill $(lsof -ti tcp:"$1")
+}
+alias kp=__kp
 
 # ------------------------------------------------------------------------------
 # mac-forge

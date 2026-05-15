@@ -9,6 +9,7 @@ alias	projects	Go to the projects folder.
 alias	cdp	Copy the current directory path to the clipboard.
 alias	reloadterm	Reload the current zsh config in this terminal.
 alias	fixdock	Restart the macOS Dock process.
+alias	kp	Kill processes listening on a TCP port, for example kp 8080.
 alias	info	Show a forge machine/system health snapshot.
 alias	inf	Shortcut for info.
 alias	help	Open the forge command picker for aliases and scripts.
@@ -18,6 +19,7 @@ alias	web	Open a configured web entry in the preferred browser; use web change t
 alias	winappclean	Delete Parallels Windows app shortcuts except Visual Studio.app.
 alias	vpn	Start a configured VPN connection from forge state/secrets.
 alias	dvpn	Disconnect the active VPN connection.
+alias	vpns	Show whether an openconnect VPN connection is active.
 alias	eject-all	Eject external volumes with forge safety exclusions and confirmation.
 alias	ejectall	Shortcut for eject-all.
 alias	ea	Short shortcut for eject-all.
@@ -186,6 +188,7 @@ script	db-upload-bak	Upload a selected .bak from the current folder into the SQL
 script	docker-start	Start stopped Docker containers, launching Docker Desktop if needed.
 script	dotnet-clean	Empty bin folders under the current tree.
 script	dvpn	Disconnect the active VPN connection.
+script	vpn-status	Show whether an openconnect VPN connection is active.
 script	eject-all	Eject external volumes with forge safety exclusions and confirmation.
 script	forge	Shared forge runtime; usually sourced by other scripts.
 script	gen-open-api	Regenerate the Perform OpenAPI JSON and TypeScript client.

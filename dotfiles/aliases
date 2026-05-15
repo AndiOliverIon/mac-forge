@@ -11,6 +11,15 @@ alias projects="cd ~/projects"
 alias cdp='pwd | pbcopy'
 alias reloadterm="source ~/.zshrc"
 alias fixdock="killall Dock"
+__kp() {
+  if [[ -z "${1:-}" ]]; then
+    echo "Usage: kp <port>" >&2
+    return 2
+  fi
+
+  kill $(lsof -ti tcp:"$1")
+}
+alias kp=__kp
 
 # ------------------------------------------------------------------------------
 # mac-forge Scripts
@@ -24,6 +33,7 @@ alias web="~/mac-forge/scripts/web.sh"
 alias winappclean="~/mac-forge/scripts/win-shortcut-clean.sh"
 alias vpn="~/mac-forge/scripts/vpn.sh"
 alias dvpn="~/mac-forge/scripts/dvpn.sh"
+alias vpns="~/mac-forge/scripts/vpn-status.sh"
 alias eject-all="~/mac-forge/scripts/eject-all.sh"
 alias ejectall=eject-all
 alias ea=eject-all
