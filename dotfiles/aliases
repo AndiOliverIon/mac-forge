@@ -176,7 +176,7 @@ alias screenshotclean="desk && rm -f *.png"
 # Remote & Network
 # ------------------------------------------------------------------------------
 alias rmc="ssh -t oliver@masterchief"
-alias rmcr="ssh -t oliver@100.84.100.53"
+alias rmcr="ssh -t oliver@masterchief-ts"
 alias rth="ssh -t oliver@thanatos"
 alias rt=rth
 alias showeth='networksetup -listallhardwareports | awk "/Hardware Port|Device/"; echo; for i in $(networksetup -listallhardwareports | awk "/Device/ {print \$2}"); do ip=$(ipconfig getifaddr $i 2>/dev/null); echo "$i : ${ip:-no-ip}"; done'
