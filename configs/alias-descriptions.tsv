@@ -68,6 +68,7 @@ alias	gco	Check out a git branch or path.
 alias	gp	Pull from the configured git remote.
 alias	gfo	Fetch updates from origin.
 alias	gpu	Push the current branch to its configured remote.
+alias	gpo	Publish the current local branch to origin with upstream; fails if the remote branch already exists.
 alias	gb	List or manage git branches.
 alias	switch	Interactively switch git branches.
 alias	sw	Shortcut for switch.
@@ -96,6 +97,7 @@ alias	forge	Go to the mac-forge repo root.
 alias	work	Go to the main work folder.
 alias	perf	Go to the Ardis Perform repo.
 alias	perfclient	Go to the Ardis Perform Angular client.
+alias	perfdev	Go to the Ardis Perform DEV worktree.
 alias	perf228	Go to the Ardis Perform 228 worktree.
 alias	perf230	Go to the Ardis Perform 230 worktree.
 alias	perfclient230	Go to the Ardis Perform 230 Angular client.
@@ -136,6 +138,7 @@ alias	dela	Delete everything in the current directory; no prompt.
 alias	perflogclean	Delete all files in Perform output logs; no prompt.
 alias	screenshotclean	Delete PNG screenshots from Desktop; no prompt.
 alias	rmc	SSH into MasterChief.
+alias	rmcr	SSH into MasterChief over Tailscale.
 alias	rth	SSH into Thanatos.
 alias	rt	Shortcut for rth.
 alias	showeth	Show network hardware ports and their current IP addresses.

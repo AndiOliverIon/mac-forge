@@ -86,6 +86,7 @@ alias gco="git checkout"
 alias gp="git pull"
 alias gfo="git fetch origin"
 alias gpu="git push"
+alias gpo="~/mac-forge/scripts/git-publish-origin.sh"
 alias gb="git branch"
 alias switch="~/mac-forge/scripts/git-switch.sh"
 alias sw=switch
@@ -126,6 +127,7 @@ alias forge="cd ~/mac-forge"
 alias work="cd ~/work"
 alias perf="cd ~/work/ardis-perform"
 alias perfclient="cd ~/work/ardis-perform/ardis.perform.client"
+alias perfdev="cd ~/work/ardis-perform-dev"
 alias perf228="cd ~/work/ardis-perform-228"
 alias perf230="cd ~/work/ardis-perform-230"
 alias perfclient230="cd ~/work/ardis-perform-230/ardis.perform.client"
@@ -174,6 +176,7 @@ alias screenshotclean="desk && rm -f *.png"
 # Remote & Network
 # ------------------------------------------------------------------------------
 alias rmc="ssh -t oliver@masterchief"
+alias rmcr="ssh -t oliver@100.84.100.53"
 alias rth="ssh -t oliver@thanatos"
 alias rt=rth
 alias showeth='networksetup -listallhardwareports | awk "/Hardware Port|Device/"; echo; for i in $(networksetup -listallhardwareports | awk "/Device/ {print \$2}"); do ip=$(ipconfig getifaddr $i 2>/dev/null); echo "$i : ${ip:-no-ip}"; done'
