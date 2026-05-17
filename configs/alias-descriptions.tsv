@@ -140,6 +140,7 @@ alias	screenshotclean	Delete PNG screenshots from Desktop; no prompt.
 alias	rmc	SSH into MasterChief.
 alias	rmcr	SSH into MasterChief over Tailscale.
 alias	rth	SSH into Thanatos.
+alias	rthr	SSH into Thanatos over Tailscale.
 alias	rt	Shortcut for rth.
 alias	showeth	Show network hardware ports and their current IP addresses.
 alias	mcshutdown	Force shutdown MasterChief over SSH.

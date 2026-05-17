@@ -100,6 +100,7 @@ alias umnthw=umnthadesw
 alias rmc="ssh -t oliver@masterchief"
 alias rmcr="ssh -t oliver@masterchief-ts"
 alias rth="ssh -t oliver@thanatos"
+alias rthr="ssh -t oliver@thanatos-ts"
 alias rt=rth
 alias mcshutdown='ssh -t oliver@masterchief "powershell -Command \"Stop-Computer -Force\""'
 alias thshutdown='ssh -t oliver@thanatos "powershell -Command \"Stop-Computer -Force\""'

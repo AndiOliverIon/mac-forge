@@ -178,6 +178,7 @@ alias screenshotclean="desk && rm -f *.png"
 alias rmc="ssh -t oliver@masterchief"
 alias rmcr="ssh -t oliver@masterchief-ts"
 alias rth="ssh -t oliver@thanatos"
+alias rthr="ssh -t oliver@thanatos-ts"
 alias rt=rth
 alias showeth='networksetup -listallhardwareports | awk "/Hardware Port|Device/"; echo; for i in $(networksetup -listallhardwareports | awk "/Device/ {print \$2}"); do ip=$(ipconfig getifaddr $i 2>/dev/null); echo "$i : ${ip:-no-ip}"; done'
 alias mcshutdown='ssh -t oliver@masterchief "powershell -Command \"Stop-Computer -Force\""'
