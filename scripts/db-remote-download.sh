@@ -23,29 +23,45 @@ require_cmd rsync
 # Configuration
 MOUNT_PATH="/Volumes/shared-files"
 SMB_URL="smb://portainer.ardis.eu/shared-files"
+MOUNT_WAIT_SECONDS="${RDOWN_MOUNT_WAIT_SECONDS:-120}"
+MOUNT_RECHECK_SECONDS="${RDOWN_MOUNT_RECHECK_SECONDS:-2}"
 
-# Pre-check: Is it mounted? If not, try to mount it.
-if [[ ! -d "$MOUNT_PATH" ]]; then
-  echo "📡 Mount not found. Attempting to connect to $SMB_URL..."
-  
-  # On macOS, 'open' is the cleanest way to trigger a mount with keychain credentials
-  open "$SMB_URL"
-  
-  # Wait up to 10 seconds for the mount to appear
-  echo -n "⏳ Waiting for mount..."
-  for i in {1..10}; do
-    if [[ -d "$MOUNT_PATH" ]]; then
-      echo " OK!"
-      break
+[[ "$MOUNT_WAIT_SECONDS" =~ ^[0-9]+$ && "$MOUNT_WAIT_SECONDS" -gt 0 ]] || die "RDOWN_MOUNT_WAIT_SECONDS must be a positive integer."
+[[ "$MOUNT_RECHECK_SECONDS" =~ ^[0-9]+$ && "$MOUNT_RECHECK_SECONDS" -gt 0 ]] || die "RDOWN_MOUNT_RECHECK_SECONDS must be a positive integer."
+
+is_mount_ready() {
+  [[ -d "$MOUNT_PATH" ]] || return 1
+  mount | grep -F " on $MOUNT_PATH " >/dev/null 2>&1
+}
+
+wait_for_mount() {
+  local elapsed=0
+
+  echo "⏳ Waiting up to ${MOUNT_WAIT_SECONDS}s for mount at $MOUNT_PATH."
+  echo "   If macOS asks for credentials, complete that prompt and this will continue."
+
+  while ((elapsed < MOUNT_WAIT_SECONDS)); do
+    if is_mount_ready; then
+      echo "✔ Mount ready."
+      return 0
     fi
-    echo -n "."
-    sleep 1
+
+    sleep "$MOUNT_RECHECK_SECONDS"
+    elapsed=$((elapsed + MOUNT_RECHECK_SECONDS))
+    echo "   Rechecking mount... ${elapsed}s"
   done
 
-  if [[ ! -d "$MOUNT_PATH" ]]; then
-    echo
-    die "Failed to mount $MOUNT_PATH. Please check your connection or connect manually in Finder once."
-  fi
+  return 1
+}
+
+# Pre-check: Is it mounted? If not, try to mount it.
+if ! is_mount_ready; then
+  echo "📡 Mount not found. Attempting to connect to $SMB_URL..."
+
+  # On macOS, 'open' is the cleanest way to trigger a mount with keychain credentials
+  open "$SMB_URL"
+
+  wait_for_mount || die "Failed to mount $MOUNT_PATH. Please check your connection or connect manually in Finder once."
 fi
 
 #######################################
