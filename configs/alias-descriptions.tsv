@@ -42,6 +42,7 @@ alias	perf-cache-reset	Clear Perform client cache artifacts.
 alias	pcr	Shortcut for perf-cache-reset.
 alias	genopenapi	Regenerate the Perform OpenAPI JSON and TypeScript client.
 alias	goa	Shortcut for genopenapi.
+alias	genopenapitimetrack	Regenerate the TimeTrack OpenAPI JSON and TypeScript client.
 alias	organizer	Organize configured folders by extension rules from work-state.
 alias	org	Shortcut for organizer.
 alias	o	Short shortcut for organizer.
@@ -198,6 +199,7 @@ script	vpn-status	Show whether an openconnect VPN connection is active.
 script	eject-all	Eject external volumes with forge safety exclusions and confirmation.
 script	forge	Shared forge runtime; usually sourced by other scripts.
 script	gen-open-api	Regenerate the Perform OpenAPI JSON and TypeScript client.
+script	gen-open-api-timetrack	Regenerate the TimeTrack OpenAPI JSON and TypeScript client.
 script	git-del	Delete local git branches containing a keyword.
 script	git-switch	Interactively switch git branches.
 script	hdd-clean	Find old large files by extension and delete them after confirmation.

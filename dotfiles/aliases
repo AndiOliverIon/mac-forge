@@ -56,6 +56,7 @@ alias perf-cache-reset="~/mac-forge/scripts/perform-cache-reset.sh"
 alias pcr="perf-cache-reset"
 alias genopenapi="~/mac-forge/scripts/gen-open-api.sh"
 alias goa=genopenapi
+alias genopenapitimetrack="~/mac-forge/scripts/gen-open-api-timetrack.sh"
 alias organizer="~/mac-forge/scripts/organizer.sh"
 alias org=organizer
 alias o=organizer
