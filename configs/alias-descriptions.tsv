@@ -96,6 +96,8 @@ alias	se	Shortcut for sqlexec.
 alias	forge	Go to the mac-forge repo root.
 alias	work	Go to the main work folder.
 alias	perf	Go to the Ardis Perform repo.
+alias	timetrack	Go to the Ardis Timetrack repo.
+alias	tt	Shortcut for timetrack.
 alias	perfclient	Go to the Ardis Perform Angular client.
 alias	perfdev	Go to the Ardis Perform DEV worktree.
 alias	perf228	Go to the Ardis Perform 228 worktree.
