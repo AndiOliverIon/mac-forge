@@ -95,7 +95,7 @@ alias	sdb	Switch the active appsettings connection string for a configured proje
 alias	sqlexec	Run selected .sql files against a chosen connection/database.
 alias	se	Shortcut for sqlexec.
 alias	script-run	Run selected .sql files from the current folder against a chosen SQL connection.
-alias	sr	Shortcut for script-run.
+alias	sr	Select one or more .sql files from the current folder, choose a SQL connection, then run them in order after confirmation.
 alias	forge	Go to the mac-forge repo root.
 alias	work	Go to the main work folder.
 alias	perf	Go to the Ardis Perform repo.
