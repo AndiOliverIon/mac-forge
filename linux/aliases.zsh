@@ -69,6 +69,8 @@ alias dbr="~/mac-forge/linux/scripts/db-restore.sh"
 alias dbsn="~/mac-forge/linux/scripts/db-snapshot.sh"
 alias ardis-migrate="~/mac-forge/linux/scripts/ardis-migrate.sh"
 alias am="ardis-migrate"
+alias script-run="~/mac-forge/scripts/script-run.sh"
+alias sr=script-run
 
 # ------------------------------------------------------------------------------
 # Workspaces & Paths

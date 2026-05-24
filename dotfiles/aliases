@@ -120,6 +120,8 @@ alias dbfix="~/mac-forge/scripts/db-fix.sh"
 alias sdb="~/mac-forge/scripts/switch-db.sh"
 alias sqlexec="~/mac-forge/scripts/sql-execute.sh"
 alias se=sqlexec
+alias script-run="~/mac-forge/scripts/script-run.sh"
+alias sr=script-run
 
 # ------------------------------------------------------------------------------
 # Workspaces & Paths

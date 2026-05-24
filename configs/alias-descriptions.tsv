@@ -94,6 +94,8 @@ alias	dbfix	Run SQL fix scripts from the repo sqls folder against a chosen datab
 alias	sdb	Switch the active appsettings connection string for a configured project.
 alias	sqlexec	Run selected .sql files against a chosen connection/database.
 alias	se	Shortcut for sqlexec.
+alias	script-run	Run selected .sql files from the current folder against a chosen SQL connection.
+alias	sr	Shortcut for script-run.
 alias	forge	Go to the mac-forge repo root.
 alias	work	Go to the main work folder.
 alias	perf	Go to the Ardis Perform repo.
@@ -215,6 +217,7 @@ script	perform-prep	Prepare Perform build output dependencies.
 script	port-release	Port a commit onto a release branch by creating a local cherry-pick branch.
 script	present	Set external display presentation resolution/mode.
 script	sql-execute	Run selected .sql files against a chosen connection/database.
+script	script-run	Run selected .sql files from the current folder against a chosen SQL connection.
 script	station-io	Copy or move a selected local file/folder to a station destination, replacing same-name targets.
 script	switch-db	Switch the active appsettings connection string for a configured project.
 script	thboot	Wake Thanatos with Wake-on-LAN.
