@@ -40,6 +40,8 @@ alias	ardis-complete	Complete Ardis planning/activity data over a selected date 
 alias	ac	Shortcut for ardis-complete.
 alias	perf-cache-reset	Clear Perform client cache artifacts.
 alias	pcr	Shortcut for perf-cache-reset.
+alias	publish-tt	Build the Timetrack solution, then build and push its Docker image.
+alias	publish-perf-local	Interactively publish and start a selected Perform branch in a local Portainer-style Docker stack.
 alias	genopenapi	Regenerate the Perform OpenAPI JSON and TypeScript client.
 alias	goa	Shortcut for genopenapi.
 alias	genopenapitimetrack	Regenerate the TimeTrack OpenAPI JSON and TypeScript client.
@@ -101,6 +103,7 @@ alias	work	Go to the main work folder.
 alias	perf	Go to the Ardis Perform repo.
 alias	timetrack	Go to the Ardis Timetrack repo.
 alias	tt	Shortcut for timetrack.
+alias	ttmd	Go to the Ardis Timetrack migrations database folder.
 alias	perfclient	Go to the Ardis Perform Angular client.
 alias	perfdev	Go to the Ardis Perform DEV worktree.
 alias	perf228	Go to the Ardis Perform 228 worktree.
