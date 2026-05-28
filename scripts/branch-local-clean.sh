@@ -269,16 +269,6 @@ echo
 echo "${BOLD}Branches matching prefix:${RESET}"
 echo "--------------------------------"
 
-echo "${ORANGE}${BOLD}SAFE (orange) — eligible for deletion:${RESET}"
-if (( SAFE_COUNT == 0 )); then
-  echo "  ${DIM}(none)${RESET}"
-else
-  for branch in "${SAFE_TO_DELETE[@]}"; do
-    echo "  ${ORANGE}${branch}${RESET}"
-  done
-fi
-echo
-
 echo "${YELLOW}${BOLD}REVIEW (yellow) — PR closed/declined, not auto-delete:${RESET}"
 if (( REVIEW_COUNT == 0 )); then
   echo "  ${DIM}(none)${RESET}"
@@ -309,11 +299,20 @@ else
     echo "  ${WHITE}${line}${RESET}"
   done
 fi
+echo
+
+echo "${ORANGE}${BOLD}SAFE (orange) — eligible for deletion:${RESET}"
+if (( SAFE_COUNT == 0 )); then
+  echo "  ${DIM}(none)${RESET}"
+else
+  for branch in "${SAFE_TO_DELETE[@]}"; do
+    echo "  ${ORANGE}${branch}${RESET}"
+  done
+fi
 
 # Preview mode ends here
 if [[ "${MODE}" != "--c" ]]; then
   echo
-  print_summary
   echo "${DIM}Preview only — nothing deleted.${RESET}"
   exit 0
 fi
