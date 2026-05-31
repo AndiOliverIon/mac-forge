@@ -103,6 +103,8 @@ alias	work	Go to the main work folder.
 alias	perf	Go to the Ardis Perform repo.
 alias	timetrack	Go to the Ardis Timetrack repo.
 alias	tt	Shortcut for timetrack.
+alias	ttc	Go to the Ardis Timetrack client folder.
+alias	ttclient	Go to the Ardis Timetrack client folder.
 alias	ttmd	Go to the Ardis Timetrack migrations database folder.
 alias	perfclient	Go to the Ardis Perform Angular client.
 alias	perfdev	Go to the Ardis Perform DEV worktree.
@@ -118,6 +120,7 @@ alias	bl	Go to the BookingLounge project.
 alias	clients	Go to shared SQL client backup/storage folder.
 alias	invoice	Go to the TNI invoice project.
 alias	inv	Shortcut for invoice.
+alias	ti	Shortcut for invoice.
 alias	borg	Go to the borg dev folder.
 alias	perflog	Go to Perform output logs.
 alias	andi-notes	Go to the iCloud Andi notes folder.

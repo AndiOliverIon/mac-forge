@@ -1,10 +1,10 @@
 [
     {
-        "name": "Portainer home",
+        "name": "Portainer home 443",
         "url": "https://portainer.ardis.eu"
     },
     {
-        "name": "Portainer administration",
+        "name": "Portainer administration 9443",
         "url": "https://portainer.ardis.eu:9443/#!/auth"
     },
     {
@@ -12,7 +12,15 @@
         "url": "https://portainer.ardis.eu:8200"
     },
     {
+        "name": "Portainer QA 8230",
+        "url": "https://portainer.ardis.eu:8230"
+    },
+    {
         "name": "Portainer GPT 7001",
         "url": "https://portainer.ardis.eu:7001"
+    },
+    {
+        "name": "Portainer Timetrack 7003",
+        "url": "https://portainer.ardis.eu:7003"
     }
 ]
