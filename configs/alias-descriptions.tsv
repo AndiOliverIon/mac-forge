@@ -53,6 +53,7 @@ alias	dnc	Shortcut for dotnet-clean.
 alias	clean	Delete contents of selected configured cleanup targets.
 alias	present	Set external display presentation resolution/mode.
 alias	prs	Shortcut for present.
+alias	convert-mov	Convert a selected .mov in the current folder to a GIF using ffmpeg/gifski presets; use -n to name output.
 alias	patch	Apply, remove, or inspect intervention patches.
 alias	p	Shortcut for patch.
 alias	pr	Remove an applied patch intervention.
@@ -117,6 +118,7 @@ alias	lc	Go to the Ardis local connector repo.
 alias	localconnector	Go to the Ardis local connector repo.
 alias	fn	Go to the macOS Frontnotes project.
 alias	bl	Go to the BookingLounge project.
+alias	aiwk	Go to the Alice in Wonder Kitchen project.
 alias	clients	Go to shared SQL client backup/storage folder.
 alias	invoice	Go to the TNI invoice project.
 alias	inv	Shortcut for invoice.
@@ -190,6 +192,7 @@ script	bin-clear	Remove bin and debug directories from the current tree.
 script	branch-delete	Delete local git branches matching a pattern.
 script	branch-local-clean	Preview or delete local branches by safe prefix.
 script	clean	Delete contents of selected configured cleanup targets.
+script	convert-mov	Convert a selected .mov in the current folder to a GIF using ffmpeg/gifski presets; use -n to name output.
 script	db-admin	Administer a local SQL database: offline/online, drop, recovery, shrink.
 script	db-clear	Clear SQL databases; default hard mode removes container/data after typed confirmation.
 script	db-fix	Run SQL fix scripts from the repo sqls folder against a chosen database.

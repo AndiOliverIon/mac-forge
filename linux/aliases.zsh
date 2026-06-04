@@ -34,6 +34,7 @@ alias ap="ardis-patch"
 alias patch="~/mac-forge/linux/scripts/patch.sh"
 alias p=patch
 alias pr="patch -R"
+alias convert-mov="~/mac-forge/scripts/convert-mov.sh"
 
 # ------------------------------------------------------------------------------
 # Git Shortcuts
@@ -94,6 +95,7 @@ alias gpt="cd ~/work/ardis.tools.extensions"
 alias gptbin="cd ~/work/ardis.tools.extensions/Ardis.Utils/bin/debug/net8.0"
 alias lc="cd ~/work/ardis-local-connector"
 alias localconnector="cd ~/work/ardis-local-connector"
+alias aiwk="cd ~/projects/alice-in-wonder-kitchen"
 
 # ------------------------------------------------------------------------------
 # Cleanup
