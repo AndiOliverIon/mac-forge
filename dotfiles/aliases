@@ -151,6 +151,7 @@ alias localconnector="cd ~/work/ardis-local-connector"
 alias fn="cd ~/projects/macos-frontnotes"
 alias bl="cd ~/projects/bookinglounge"
 alias wkdata="cd ~/projects/wonderkitchen-data"
+alias dwkdata="/Users/oliver/mac-forge/scripts/deploy-wonderkitchen.sh"
 alias clients="cd /Volumes/shared/sql/clients"
 alias invoice="cd ~/tni-invoice"
 alias inv=invoice
