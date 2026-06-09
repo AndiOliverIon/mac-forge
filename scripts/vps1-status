@@ -1,0 +1,396 @@
+#!/opt/homebrew/bin/bash
+set -euo pipefail
+
+HOST="vps1"
+HOURS="24"
+CPU_SAMPLE_SECONDS="1"
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/mac-forge/vps1-status"
+HISTORY_FILE="$CACHE_DIR/history.tsv"
+
+ENDPOINTS=(
+  "tnisoft|https://tnisoft.ro/"
+  "bookinglounge|https://bookinglounge.tnisoft.ro/"
+  "bookinglounge-api|https://api.bookinglounge.tnisoft.ro/health"
+  "wonderkitchen-catalog|https://wonderkitchen.tnisoft.ro/manifest.json"
+)
+
+usage() {
+  cat <<'USAGE'
+Usage: vps1-status [--hours N] [--host SSH_ALIAS]
+
+Shows a compact VPS dashboard from this Mac:
+  - CPU, memory, disk, uptime, Docker containers
+  - endpoint HTTP checks
+  - MSSQL public reachability from this station
+  - network usage delta based on local vps1-status samples
+
+The historical CPU/network numbers become useful after this command has been
+run more than once. History is stored at ~/.cache/mac-forge/vps1-status/history.tsv.
+USAGE
+}
+
+die() {
+  echo "ERROR: $*" >&2
+  exit 1
+}
+
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || die "Required command '$1' not found."
+}
+
+while (($#)); do
+  case "$1" in
+    --hours|-H)
+      [[ $# -ge 2 ]] || die "--hours requires a value"
+      HOURS="$2"
+      shift 2
+      ;;
+    --host)
+      [[ $# -ge 2 ]] || die "--host requires a value"
+      HOST="$2"
+      shift 2
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      die "Unknown argument: $1"
+      ;;
+  esac
+done
+
+[[ "$HOURS" =~ ^[0-9]+([.][0-9]+)?$ ]] || die "--hours must be numeric"
+
+require_cmd ssh
+require_cmd awk
+require_cmd curl
+
+mkdir -p "$CACHE_DIR"
+
+fmt_bytes() {
+  awk -v bytes="$1" '
+    BEGIN {
+      split("B KiB MiB GiB TiB PiB", unit, " ")
+      i = 1
+      while (bytes >= 1024 && i < 6) {
+        bytes = bytes / 1024
+        i++
+      }
+      if (i == 1) {
+        printf "%.0f %s", bytes, unit[i]
+      } else {
+        printf "%.1f %s", bytes, unit[i]
+      }
+    }'
+}
+
+fmt_kib() {
+  awk -v kib="$1" '
+    BEGIN {
+      bytes = kib * 1024
+      split("B KiB MiB GiB TiB PiB", unit, " ")
+      i = 1
+      while (bytes >= 1024 && i < 6) {
+        bytes = bytes / 1024
+        i++
+      }
+      printf "%.1f %s", bytes, unit[i]
+    }'
+}
+
+pct() {
+  awk -v used="$1" -v total="$2" 'BEGIN { if (total <= 0) print "0.0"; else printf "%.1f", used * 100 / total }'
+}
+
+bar() {
+  local value="$1"
+  local width="${2:-18}"
+  awk -v value="$value" -v width="$width" '
+    BEGIN {
+      filled = int((value / 100) * width + 0.5)
+      if (filled < 0) filled = 0
+      if (filled > width) filled = width
+      printf "["
+      for (i = 1; i <= width; i++) printf "%s", (i <= filled ? "#" : ".")
+      printf "]"
+    }'
+}
+
+print_pair() {
+  printf "  %-22s %s\n" "$1" "$2"
+}
+
+remote_output="$(
+  ssh "$HOST" "CPU_SAMPLE_SECONDS='$CPU_SAMPLE_SECONDS' bash -s" <<'REMOTE'
+set -euo pipefail
+
+kv() { printf 'KV\t%s\t%s\n' "$1" "$2"; }
+
+sample_seconds="${CPU_SAMPLE_SECONDS:-1}"
+ts="$(date +%s)"
+kv timestamp "$ts"
+kv hostname "$(hostname)"
+kv kernel "$(uname -srmo)"
+kv uptime "$(uptime -p 2>/dev/null || uptime)"
+kv load "$(awk '{print $1" "$2" "$3}' /proc/loadavg)"
+
+read -r _ u1 n1 s1 i1 w1 irq1 sirq1 steal1 _ < /proc/stat
+idle1=$((i1 + w1))
+nonidle1=$((u1 + n1 + s1 + irq1 + sirq1 + steal1))
+total1=$((idle1 + nonidle1))
+sleep "$sample_seconds"
+read -r _ u2 n2 s2 i2 w2 irq2 sirq2 steal2 _ < /proc/stat
+idle2=$((i2 + w2))
+nonidle2=$((u2 + n2 + s2 + irq2 + sirq2 + steal2))
+total2=$((idle2 + nonidle2))
+totald=$((total2 - total1))
+idled=$((idle2 - idle1))
+cpu_pct="$(awk -v total="$totald" -v idle="$idled" 'BEGIN { if (total <= 0) print "0.0"; else printf "%.1f", (total - idle) * 100 / total }')"
+kv cpu_pct "$cpu_pct"
+
+awk '
+  /^MemTotal:/ { mem_total=$2 }
+  /^MemAvailable:/ { mem_avail=$2 }
+  /^SwapTotal:/ { swap_total=$2 }
+  /^SwapFree:/ { swap_free=$2 }
+  END {
+    printf "KV\tmem_total_kib\t%s\n", mem_total + 0
+    printf "KV\tmem_available_kib\t%s\n", mem_avail + 0
+    printf "KV\tswap_total_kib\t%s\n", swap_total + 0
+    printf "KV\tswap_free_kib\t%s\n", swap_free + 0
+  }' /proc/meminfo
+
+df -kP / 2>/dev/null \
+  | awk 'NR > 1 { printf "DISK\t%s\t%s\t%s\t%s\t%s\t%s\n", $6, $2, $3, $4, $5, $1 }'
+
+if [[ -d /srv/tnisoft ]]; then
+  du_kib="$(du -sk /srv/tnisoft 2>/dev/null | awk '{print $1}')"
+  printf 'DU\t/srv/tnisoft\t%s\n' "${du_kib:-0}"
+fi
+
+iface="$(ip route show default 2>/dev/null | awk '/default/ {print $5; exit}')"
+if [[ -z "$iface" ]]; then
+  iface="$(awk -F: 'NR > 2 && $1 !~ /lo/ {gsub(/[ \t]/, "", $1); print $1; exit}' /proc/net/dev)"
+fi
+rx_tx="$(awk -F'[: ]+' -v iface="$iface" '$2 == iface {print $3" "$11}' /proc/net/dev)"
+if [[ -n "$iface" && -n "$rx_tx" ]]; then
+  read -r rx_bytes tx_bytes <<<"$rx_tx"
+  printf 'NET\t%s\t%s\t%s\n' "$iface" "$rx_bytes" "$tx_bytes"
+fi
+
+if command -v docker >/dev/null 2>&1; then
+  docker ps --format 'DOCKER	{{.Names}}	{{.Image}}	{{.Status}}	{{.Ports}}' || true
+fi
+REMOTE
+)"
+
+timestamp=""
+hostname=""
+kernel=""
+uptime_text=""
+load_text=""
+cpu_pct=""
+mem_total_kib="0"
+mem_available_kib="0"
+swap_total_kib="0"
+swap_free_kib="0"
+net_iface=""
+rx_bytes="0"
+tx_bytes="0"
+disk_rows=()
+docker_rows=()
+du_rows=()
+
+while IFS=$'\t' read -r kind a b c d e f; do
+  case "$kind" in
+    KV)
+      case "$a" in
+        timestamp) timestamp="$b" ;;
+        hostname) hostname="$b" ;;
+        kernel) kernel="$b" ;;
+        uptime) uptime_text="$b" ;;
+        load) load_text="$b" ;;
+        cpu_pct) cpu_pct="$b" ;;
+        mem_total_kib) mem_total_kib="$b" ;;
+        mem_available_kib) mem_available_kib="$b" ;;
+        swap_total_kib) swap_total_kib="$b" ;;
+        swap_free_kib) swap_free_kib="$b" ;;
+      esac
+      ;;
+    DISK)
+      disk_rows+=("$a"$'\t'"$b"$'\t'"$c"$'\t'"$d"$'\t'"$e"$'\t'"$f")
+      ;;
+    NET)
+      net_iface="$a"
+      rx_bytes="$b"
+      tx_bytes="$c"
+      ;;
+    DOCKER)
+      docker_rows+=("$a"$'\t'"$b"$'\t'"$c"$'\t'"$d")
+      ;;
+    DU)
+      du_rows+=("$a"$'\t'"$b")
+      ;;
+  esac
+done <<<"$remote_output"
+
+[[ -n "$timestamp" ]] || die "No metrics returned from $HOST"
+
+mem_used_kib=$((mem_total_kib - mem_available_kib))
+mem_pct="$(pct "$mem_used_kib" "$mem_total_kib")"
+swap_used_kib=$((swap_total_kib - swap_free_kib))
+swap_pct="$(pct "$swap_used_kib" "$swap_total_kib")"
+
+root_disk_pct="0"
+for row in "${disk_rows[@]}"; do
+  IFS=$'\t' read -r mount total_kib used_kib _ percent_text _ <<<"$row"
+  if [[ "$mount" == "/" ]]; then
+    root_disk_pct="${percent_text%\%}"
+  fi
+done
+
+printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+  "$timestamp" "$cpu_pct" "$rx_bytes" "$tx_bytes" "$mem_pct" "$root_disk_pct" "$HOST" >>"$HISTORY_FILE"
+
+since="$(awk -v ts="$timestamp" -v hours="$HOURS" 'BEGIN { printf "%.0f", ts - (hours * 3600) }')"
+history_summary="$(
+  awk -F'\t' -v since="$since" '
+    $1 >= since {
+      count++
+      cpu += $2
+      mem += $5
+      disk += $6
+      if (!seen) {
+        min_rx = max_rx = $3
+        min_tx = max_tx = $4
+        first_ts = $1
+        seen = 1
+      }
+      if ($3 < min_rx) min_rx = $3
+      if ($3 > max_rx) max_rx = $3
+      if ($4 < min_tx) min_tx = $4
+      if ($4 > max_tx) max_tx = $4
+      last_ts = $1
+    }
+    END {
+      if (!count) {
+        print "0\t0\t0\t0\t0\t0\t0\t0"
+      } else {
+        printf "%d\t%.1f\t%.1f\t%.1f\t%.0f\t%.0f\t%.0f\t%.0f\n",
+          count, cpu / count, mem / count, disk / count, max_rx - min_rx, max_tx - min_tx, first_ts, last_ts
+      }
+    }' "$HISTORY_FILE"
+)"
+IFS=$'\t' read -r hist_count hist_cpu_avg hist_mem_avg hist_disk_avg hist_rx_delta hist_tx_delta hist_first_ts hist_last_ts <<<"$history_summary"
+
+endpoint_results=()
+endpoint_ok=0
+for endpoint in "${ENDPOINTS[@]}"; do
+  IFS='|' read -r name url <<<"$endpoint"
+  result="$(curl -k -sS -o /dev/null -w '%{http_code}|%{time_total}' --max-time 5 "$url" 2>/dev/null || printf '000|0')"
+  IFS='|' read -r code seconds <<<"$result"
+  ok="FAIL"
+  if [[ "$code" =~ ^(2|3)[0-9][0-9]$ ]]; then
+    ok="OK"
+    endpoint_ok=$((endpoint_ok + 1))
+  fi
+  ms="$(awk -v s="$seconds" 'BEGIN { printf "%.0f", s * 1000 }')"
+  endpoint_results+=("$ok"$'\t'"$name"$'\t'"$code"$'\t'"${ms}ms"$'\t'"$url")
+done
+
+mssql_status="unknown"
+if command -v sqlcmd >/dev/null 2>&1; then
+  set +e
+  sqlcmd_output="$(SQLCMDPASSWORD='definitely_wrong_password_123!' sqlcmd -S vps1.tnisoft.ro,1433 -U sa -C -l 4 -Q 'SELECT 1' 2>&1)"
+  sqlcmd_exit=$?
+  set -e
+  if grep -qi 'Login failed' <<<"$sqlcmd_output"; then
+    mssql_status="reachable from this station"
+  elif [[ "$sqlcmd_exit" -eq 0 ]]; then
+    mssql_status="reachable from this station"
+  else
+    mssql_status="not reachable from this station"
+  fi
+elif command -v nc >/dev/null 2>&1 && nc -z -w 3 vps1.tnisoft.ro 1433 >/dev/null 2>&1; then
+  mssql_status="tcp open from this station"
+else
+  mssql_status="not reachable from this station"
+fi
+
+echo
+echo "vps1 status"
+echo "==========="
+print_pair "Host" "$hostname via $HOST"
+print_pair "Kernel" "$kernel"
+print_pair "Uptime" "$uptime_text"
+print_pair "Load avg" "$load_text"
+print_pair "Sample time" "$(date -r "$timestamp" '+%Y-%m-%d %H:%M:%S %Z')"
+
+echo
+echo "System"
+echo "------"
+print_pair "CPU now" "$(bar "$cpu_pct") ${cpu_pct}%"
+print_pair "CPU avg ${HOURS}h" "${hist_cpu_avg}% (${hist_count} samples)"
+print_pair "Memory" "$(bar "$mem_pct") ${mem_pct}% ($(fmt_kib "$mem_used_kib") / $(fmt_kib "$mem_total_kib"))"
+if [[ "$swap_total_kib" -gt 0 ]]; then
+  print_pair "Swap" "$(bar "$swap_pct") ${swap_pct}% ($(fmt_kib "$swap_used_kib") / $(fmt_kib "$swap_total_kib"))"
+else
+  print_pair "Swap" "not configured"
+fi
+
+echo
+echo "Disk"
+echo "----"
+for row in "${disk_rows[@]}"; do
+  IFS=$'\t' read -r mount total_kib used_kib avail_kib percent_text fs <<<"$row"
+  percent="${percent_text%\%}"
+  printf "  %-22s %s %s used, %s free, %s total (%s)\n" \
+    "$mount" "$(bar "$percent")" "$(fmt_kib "$used_kib")" "$(fmt_kib "$avail_kib")" "$(fmt_kib "$total_kib")" "$fs"
+done
+for row in "${du_rows[@]}"; do
+  IFS=$'\t' read -r path used_kib <<<"$row"
+  printf "  %-22s %s\n" "$path" "$(fmt_kib "$used_kib") stored under TNI Soft"
+done
+
+echo
+echo "Network"
+echo "-------"
+print_pair "Interface" "${net_iface:-unknown}"
+print_pair "Since boot" "down $(fmt_bytes "$rx_bytes"), up $(fmt_bytes "$tx_bytes")"
+print_pair "Delta ${HOURS}h" "down $(fmt_bytes "$hist_rx_delta"), up $(fmt_bytes "$hist_tx_delta") (${hist_count} samples)"
+
+echo
+echo "Endpoints"
+echo "---------"
+print_pair "Healthy" "${endpoint_ok}/${#ENDPOINTS[@]}"
+for row in "${endpoint_results[@]}"; do
+  IFS=$'\t' read -r ok name code ms url <<<"$row"
+  printf "  %-22s %-4s HTTP %-3s %-6s %s\n" "$name" "$ok" "$code" "$ms" "$url"
+done
+
+echo
+echo "Database"
+echo "--------"
+print_pair "MSSQL public" "$mssql_status"
+
+echo
+echo "Docker"
+echo "------"
+if ((${#docker_rows[@]} == 0)); then
+  echo "  no running containers"
+else
+  for row in "${docker_rows[@]}"; do
+    IFS=$'\t' read -r name image status ports <<<"$row"
+    printf "  %-22s %-18s %s\n" "$name" "$status" "$image"
+    [[ -n "${ports:-}" ]] && printf "  %-22s %s\n" "" "$ports"
+  done
+fi
+
+echo
+echo "History"
+echo "-------"
+print_pair "File" "$HISTORY_FILE"
+if [[ "$hist_count" -lt 2 ]]; then
+  print_pair "Note" "run again later for meaningful ${HOURS}h averages"
+fi

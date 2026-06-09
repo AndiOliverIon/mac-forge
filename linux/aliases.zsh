@@ -95,7 +95,9 @@ alias gpt="cd ~/work/ardis.tools.extensions"
 alias gptbin="cd ~/work/ardis.tools.extensions/Ardis.Utils/bin/debug/net8.0"
 alias lc="cd ~/work/ardis-local-connector"
 alias localconnector="cd ~/work/ardis-local-connector"
-alias wkdata="cd ~/projects/wonderkitchen-data"
+alias aiwk="cd /Users/oliver/projects/alice-in-wonderkitchen"
+alias wk="cd ~/projects/alice-in-wonderkitchen"
+alias wkdata="cd ~/projects/alice-in-wonderkitchen/wonderkitchen-data"
 alias dwkdata="/Users/oliver/mac-forge/scripts/deploy-wonderkitchen.sh"
 
 # ------------------------------------------------------------------------------

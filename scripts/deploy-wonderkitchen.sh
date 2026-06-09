@@ -21,8 +21,8 @@ By default this script runs in dry-run mode. Pass --apply to upload and switch
 the live release.
 
 Options:
-  --source PATH       Static payload folder. Defaults to the current generated
-                      WonderKitchen Static folder from wonderkitchen-data.
+  --source PATH       Static payload folder. Defaults to the generated
+                      wonderkitchen-data folder inside the WonderKitchen repo.
   --host HOST         SSH host. Defaults to vps1.
   --remote PATH       Remote app root. Defaults to /srv/tnisoft/wonderkitchen.
   --release NAME      Release folder name. Defaults to timestamp.
@@ -33,7 +33,7 @@ Options:
 Examples:
   deploy-wonderkitchen.sh
   deploy-wonderkitchen.sh --apply
-  deploy-wonderkitchen.sh --source "$HOME/projects/wonderkitchen-data/WonderKitchen Static" --apply
+  deploy-wonderkitchen.sh --source "$HOME/projects/alice-in-wonderkitchen/wonderkitchen-data" --apply
 EOF
 }
 
@@ -41,7 +41,7 @@ require_cmd() {
 	command -v "$1" >/dev/null 2>&1 || die "Required command '$1' not found."
 }
 
-SOURCE="${WONDERKITCHEN_SOURCE:-$HOME/projects/wonderkitchen-data/WonderKitchen Static}"
+SOURCE="${WONDERKITCHEN_SOURCE:-$HOME/projects/alice-in-wonderkitchen/wonderkitchen-data}"
 HOST="${WONDERKITCHEN_HOST:-vps1}"
 REMOTE_ROOT="${WONDERKITCHEN_REMOTE_ROOT:-/srv/tnisoft/wonderkitchen}"
 RELEASE="$(date +%Y%m%d%H%M%S)"
