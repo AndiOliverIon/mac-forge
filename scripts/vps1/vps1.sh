@@ -40,6 +40,39 @@ vps1_die() { echo "✖ $*" >&2; exit 1; }
 vps1_require_cmd() { command -v "$1" >/dev/null 2>&1 || vps1_die "Required command '$1' not found."; }
 vps1_log_step() { echo "→ $*"; }
 
+# True if a TCP listener answers on host:port (used to detect the SSH tunnel).
+vps1_port_open() {
+  local host="$1" port="$2"
+  (exec 3<>"/dev/tcp/${host}/${port}") 2>/dev/null && { exec 3>&- 3<&-; return 0; }
+  return 1
+}
+
+# The vps1 SQL Server is private (127.0.0.1:1433 on vps1); local sqlcmd reaches it
+# through the v1-sql-tunnel (localhost,14333). When the configured host is that
+# local endpoint and the tunnel is down, raise it automatically so the db-* scripts
+# "just work" without remembering v1-sql-tunnel-up first.
+vps1_ensure_sql_tunnel() {
+  local host="${VPS1_SQL_HOST:-}" port="${VPS1_SQL_PORT:-}"
+  case "$host" in
+    localhost|127.0.0.1|::1) ;;
+    *) return 0 ;;
+  esac
+  [[ -n "$port" ]] || return 0
+  vps1_port_open "$host" "$port" && return 0
+
+  local tunnel="$VPS1_SCRIPT_DIR/vps1-sql-tunnel.sh"
+  [[ -x "$tunnel" ]] || vps1_die "SQL tunnel down on ${host}:${port} and tunnel script not found: $tunnel"
+  vps1_log_step "SQL tunnel down — opening it (localhost:${port} → vps1 SQL)..."
+  SQL_LOCAL_PORT="$port" "$tunnel" up >/dev/null || vps1_die "Failed to auto-open the SQL tunnel."
+
+  local i
+  for i in 1 2 3 4 5; do
+    vps1_port_open "$host" "$port" && return 0
+    sleep 1
+  done
+  vps1_die "SQL tunnel did not come up on ${host}:${port}."
+}
+
 # Load connection (host/port/user/password) from local-store.json by display name.
 vps1_load_connection() {
   vps1_require_cmd python3
@@ -83,6 +116,8 @@ PY
   else
     VPS1_SQL_SERVER="tcp:${VPS1_SQL_HOST}"
   fi
+
+  vps1_ensure_sql_tunnel
 }
 
 # Run local sqlcmd against vps1 over TCP. Extra args are appended.
