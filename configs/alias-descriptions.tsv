@@ -235,3 +235,22 @@ script	vpn	Start a configured VPN connection from forge state/secrets.
 script	web	Open a configured web entry in the preferred browser; use web change to switch browser.
 script	win-shortcut-clean	Delete Parallels Windows app shortcuts except Visual Studio.app.
 script	work	Switch or inspect the active SQL Docker data and snapshot storage paths.
+alias	v1sn	Create a .bak snapshot of a vps1 database into the vps1 snapshots folder.
+alias	vps1-snapshot	Long form of v1sn: create a .bak snapshot of a vps1 database.
+alias	v1r	Restore a .bak from the vps1 snapshots folder into the vps1 SQL Server.
+alias	vps1-restore	Long form of v1r: restore a vps1 snapshot into the vps1 SQL Server.
+alias	v1down	Download a vps1 .bak snapshot to a local directory.
+alias	vps1-download	Long form of v1down: download a vps1 .bak snapshot locally.
+alias	v1up	Upload a local .bak into the vps1 snapshots folder for later restore.
+alias	vps1-upload	Long form of v1up: upload a local .bak into the vps1 snapshots folder.
+alias	v1drop	Drop a live user database on vps1 (requires typing the exact name).
+alias	vps1-drop	Long form of v1drop: drop a live user database on vps1.
+alias	v1sndrop	Delete .bak snapshot file(s) from the vps1 snapshots folder (multi-select).
+alias	vps1-snapshot-drop	Long form of v1sndrop: delete vps1 .bak snapshot file(s).
+alias	v1am	Run Ardis migrations against a database on vps1.
+alias	vps1-migrate	Long form of v1am: run Ardis migrations against a vps1 database.
+alias	v1list	List all installed databases and all available snapshots on vps1.
+alias	vps1-list	Long form of v1list: list vps1 databases and snapshots.
+alias	vps1-status	Show vps1 host and web-endpoint health (reachability, CPU, recent history).
+alias	v1-bl-publish	Build and publish the BookingLounge API to a vps1 endpoint (development, or gated production: main + clean tree).
+alias	vps1-bl-publish	Long form of v1-bl-publish: publish the BookingLounge API to a vps1 endpoint.

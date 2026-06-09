@@ -8,8 +8,10 @@ alias v1r="~/mac-forge/scripts/vps1/vps1-db-restore.sh"
 alias v1down="~/mac-forge/scripts/vps1/vps1-db-download.sh"
 alias v1up="~/mac-forge/scripts/vps1/vps1-db-upload.sh"
 alias v1drop="~/mac-forge/scripts/vps1/vps1-db-drop.sh"
+alias v1sndrop="~/mac-forge/scripts/vps1/vps1-db-snapshot-drop.sh"
 alias v1am="~/mac-forge/scripts/vps1/vps1-db-migrate.sh"
 alias v1list="~/mac-forge/scripts/vps1/vps1-db-list.sh"
+alias v1-bl-publish="~/mac-forge/scripts/vps1/vps1-bl-publish.sh"
 
 # Long-form equivalents
 alias vps1-snapshot=v1sn
@@ -17,5 +19,7 @@ alias vps1-restore=v1r
 alias vps1-download=v1down
 alias vps1-upload=v1up
 alias vps1-drop=v1drop
+alias vps1-snapshot-drop=v1sndrop
 alias vps1-migrate=v1am
 alias vps1-list=v1list
+alias vps1-bl-publish=v1-bl-publish

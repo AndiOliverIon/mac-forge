@@ -4,6 +4,10 @@ set -euo pipefail
 
 FORGE_ROOT="${FORGE_ROOT:-$HOME/mac-forge}"
 ALIASES_FILE="$FORGE_ROOT/dotfiles/aliases"
+ALIAS_FILES=(
+  "$FORGE_ROOT/dotfiles/aliases"
+  "$FORGE_ROOT/dotfiles/aliases-vps1"
+)
 DESCRIPTIONS_FILE="${ALIAS_DESCRIPTIONS_FILE:-$FORGE_ROOT/configs/alias-descriptions.tsv}"
 SCRIPTS_DIR="$FORGE_ROOT/scripts"
 
@@ -57,7 +61,7 @@ while IFS= read -r line; do
   fi
 
   entries+=("alias\t${name}\t${description}\t${command_part}")
-done < "$ALIASES_FILE"
+done < <(cat "${ALIAS_FILES[@]}" 2>/dev/null)
 
 if [[ -d "$SCRIPTS_DIR" ]]; then
   while IFS= read -r -d '' script_path; do
