@@ -254,3 +254,5 @@ alias	vps1-list	Long form of v1list: list vps1 databases and snapshots.
 alias	vps1-status	Show vps1 host and web-endpoint health (reachability, CPU, recent history).
 alias	v1-bl-publish	Build and publish the BookingLounge API to a vps1 endpoint (development, or gated production: main + clean tree).
 alias	vps1-bl-publish	Long form of v1-bl-publish: publish the BookingLounge API to a vps1 endpoint.
+alias	v1-bl-tunnel-up	Open the SSH tunnel so localhost:5081 reaches the private BookingLounge dev API on vps1.
+alias	v1-bl-tunnel-down	Close the BookingLounge dev API SSH tunnel (localhost:5081).

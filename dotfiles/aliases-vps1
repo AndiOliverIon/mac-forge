@@ -12,6 +12,8 @@ alias v1sndrop="~/mac-forge/scripts/vps1/vps1-db-snapshot-drop.sh"
 alias v1am="~/mac-forge/scripts/vps1/vps1-db-migrate.sh"
 alias v1list="~/mac-forge/scripts/vps1/vps1-db-list.sh"
 alias v1-bl-publish="~/mac-forge/scripts/vps1/vps1-bl-publish.sh"
+alias v1-bl-tunnel-up="~/mac-forge/scripts/vps1/vps1-bl-tunnel.sh up"
+alias v1-bl-tunnel-down="~/mac-forge/scripts/vps1/vps1-bl-tunnel.sh down"
 
 # Long-form equivalents
 alias vps1-snapshot=v1sn
