@@ -5,8 +5,10 @@
 # (tnisoft-mssql container) on the vps1 station.
 #
 # Design:
-#   - SQL operations run as LOCAL sqlcmd over TCP to the vps1 public endpoint
-#     (server/user/password taken from config-local/local-store.json).
+#   - SQL operations run as LOCAL sqlcmd over TCP to vps1 via the SSH tunnel
+#     (localhost,14333 -> vps1 127.0.0.1:1433). The SQL Server is NOT public;
+#     bring the tunnel up first with `v1-sql-tunnel-up` (vps1-sql-tunnel.sh).
+#     server/user/password are taken from config-local/local-store.json.
 #   - File operations (list/download) run over ssh/rsync to the vps1 host.
 #   - Single dedicated snapshots folder on vps1:
 #       host:      /srv/tnisoft/mssql/snapshots
