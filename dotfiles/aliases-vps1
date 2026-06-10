@@ -16,6 +16,7 @@ alias v1-bl-tunnel-up="~/mac-forge/scripts/vps1/vps1-bl-tunnel.sh up"
 alias v1-bl-tunnel-down="~/mac-forge/scripts/vps1/vps1-bl-tunnel.sh down"
 alias v1-sql-tunnel-up="~/mac-forge/scripts/vps1/vps1-sql-tunnel.sh up"
 alias v1-sql-tunnel-down="~/mac-forge/scripts/vps1/vps1-sql-tunnel.sh down"
+alias v1-sql-tunnel-status="~/mac-forge/scripts/vps1/vps1-sql-tunnel.sh status"
 
 # Long-form equivalents
 alias vps1-snapshot=v1sn

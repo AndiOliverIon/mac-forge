@@ -258,3 +258,4 @@ alias	v1-bl-tunnel-up	Open the SSH tunnel so localhost:5081 reaches the private 
 alias	v1-bl-tunnel-down	Close the BookingLounge dev API SSH tunnel (localhost:5081).
 alias	v1-sql-tunnel-up	Open the SSH tunnel so localhost:14333 reaches the private vps1 SQL Server (VS Code: Server = localhost,14333).
 alias	v1-sql-tunnel-down	Close the vps1 SQL Server SSH tunnel (localhost:14333).
+alias	v1-sql-tunnel-status	Show whether the vps1 SQL Server SSH tunnel is up (localhost:14333).
