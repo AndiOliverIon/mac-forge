@@ -158,5 +158,7 @@ if ! gifski --fps "$fps" --quality "$quality" "${frames[@]}" -o "$output" 2> >(t
 	exit 1
 fi
 
+rm -rf -- "$frames_dir"
+
 echo
 echo "Done: $output"
