@@ -251,11 +251,14 @@ alias	v1am	Run Ardis migrations against a database on vps1.
 alias	vps1-migrate	Long form of v1am: run Ardis migrations against a vps1 database.
 alias	v1list	List all installed databases and all available snapshots on vps1.
 alias	vps1-list	Long form of v1list: list vps1 databases and snapshots.
-alias	vps1-status	Show vps1 host and web-endpoint health (reachability, CPU, recent history).
+alias	vps1-status	Show vps1 host health plus storage per app keyword (web dirs + databases), endpoints, CPU, and recent history.
 alias	v1-bl-publish	Build and publish the BookingLounge API to a vps1 endpoint (development, or gated production: main + clean tree).
 alias	vps1-bl-publish	Long form of v1-bl-publish: publish the BookingLounge API to a vps1 endpoint.
 alias	v1-bl-tunnel-up	Open the SSH tunnel so localhost:5081 reaches the private BookingLounge dev API on vps1.
 alias	v1-bl-tunnel-down	Close the BookingLounge dev API SSH tunnel (localhost:5081).
+alias	v1-tally-tunnel-up	Open the SSH tunnel so localhost:5181 reaches the private Tally dev API on vps1 (needed by the macOS Debug build).
+alias	v1-tally-tunnel-down	Close the Tally dev API SSH tunnel (localhost:5181).
+alias	v1-tally-tunnel-status	Show whether the Tally dev API SSH tunnel is up (localhost:5181) + dev health.
 alias	v1-sql-tunnel-up	Open the SSH tunnel so localhost:14333 reaches the private vps1 SQL Server (VS Code: Server = localhost,14333).
 alias	v1-sql-tunnel-down	Close the vps1 SQL Server SSH tunnel (localhost:14333).
 alias	v1-sql-tunnel-status	Show whether the vps1 SQL Server SSH tunnel is up (localhost:14333).
