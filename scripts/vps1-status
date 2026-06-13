@@ -4,6 +4,7 @@ set -euo pipefail
 HOST="vps1"
 HOURS="24"
 CPU_SAMPLE_SECONDS="1"
+COLOR="auto"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/mac-forge/vps1-status"
 HISTORY_FILE="$CACHE_DIR/history.tsv"
 
@@ -16,10 +17,11 @@ ENDPOINTS=(
 
 usage() {
   cat <<'USAGE'
-Usage: vps1-status [--hours N] [--host SSH_ALIAS]
+Usage: vps1-status [--hours N] [--host SSH_ALIAS] [--color|--no-color]
 
 Shows a compact VPS dashboard from this Mac:
   - CPU, memory, disk, uptime, Docker containers
+  - storage by app keyword (/srv/tnisoft dirs + mssql/data databases)
   - endpoint HTTP checks
   - MSSQL public reachability from this station
   - network usage delta based on local vps1-status samples
@@ -50,6 +52,14 @@ while (($#)); do
       HOST="$2"
       shift 2
       ;;
+    --no-color)
+      COLOR="never"
+      shift
+      ;;
+    --color)
+      COLOR="always"
+      shift
+      ;;
     --help|-h)
       usage
       exit 0
@@ -67,6 +77,32 @@ require_cmd awk
 require_cmd curl
 
 mkdir -p "$CACHE_DIR"
+
+use_color=0
+case "$COLOR" in
+  always) use_color=1 ;;
+  never) use_color=0 ;;
+  auto) [[ -t 1 && -z "${NO_COLOR:-}" ]] && use_color=1 ;;
+esac
+
+if ((use_color)); then
+  C_RESET=$'\033[0m'; C_BOLD=$'\033[1m'; C_DIM=$'\033[2m'
+  C_RED=$'\033[31m'; C_GREEN=$'\033[32m'; C_YELLOW=$'\033[33m'
+  C_CYAN=$'\033[36m'
+else
+  C_RESET=; C_BOLD=; C_DIM=; C_RED=; C_GREEN=; C_YELLOW=; C_CYAN=
+fi
+
+section() {
+  local title="$1"
+  printf '\n%s%s%s%s\n' "$C_BOLD" "$C_CYAN" "$title" "$C_RESET"
+  printf '%s%s%s\n' "$C_DIM" "$(printf '%*s' "${#title}" '' | tr ' ' '-')" "$C_RESET"
+}
+
+sev_color() {
+  awk -v v="$1" -v g="$C_GREEN" -v y="$C_YELLOW" -v r="$C_RED" \
+    'BEGIN { if (v+0 >= 85) printf "%s", r; else if (v+0 >= 60) printf "%s", y; else printf "%s", g }'
+}
 
 fmt_bytes() {
   awk -v bytes="$1" '
@@ -106,19 +142,67 @@ pct() {
 bar() {
   local value="$1"
   local width="${2:-18}"
-  awk -v value="$value" -v width="$width" '
+  local color
+  color="$(sev_color "$value")"
+  awk -v value="$value" -v width="$width" -v color="$color" -v dim="$C_DIM" -v reset="$C_RESET" '
     BEGIN {
       filled = int((value / 100) * width + 0.5)
       if (filled < 0) filled = 0
       if (filled > width) filled = width
-      printf "["
-      for (i = 1; i <= width; i++) printf "%s", (i <= filled ? "#" : ".")
-      printf "]"
+      printf "%s[%s", dim, reset
+      for (i = 1; i <= width; i++) {
+        if (i <= filled) printf "%s#%s", color, reset
+        else printf "%s.%s", dim, reset
+      }
+      printf "%s]%s", dim, reset
     }'
 }
 
 print_pair() {
-  printf "  %-22s %s\n" "$1" "$2"
+  printf "  %s%-22s%s %s\n" "$C_CYAN" "$1" "$C_RESET" "$2"
+}
+
+app_keyword() {
+  printf '%s' "${1%%-*}"
+}
+
+db_keyword() {
+  local n="$1"
+  n="${n%.mdf}"
+  n="${n%.ldf}"
+  n="${n%_log}"
+  case "$n" in
+    master|mastlog|model|modellog|msdb|msdbdata|msdblog|tempdb|templog|model_*|mssqlsystemresource)
+      printf 'system'
+      return
+      ;;
+  esac
+  printf '%s' "${n%%-*}"
+}
+
+# Reads "keyword<TAB>name<TAB>kib" rows from stdin and prints per-keyword
+# totals sorted by size, expanding components only when a keyword has >1.
+print_grouped() {
+  local data
+  data="$(cat)"
+  if [[ -z "$data" ]]; then
+    echo "  (none found)"
+    return
+  fi
+  local keywords
+  keywords="$(awk -F'\t' '{t[$1]+=$3} END{for(k in t) printf "%s\t%s\n", t[k], k}' <<<"$data" | sort -rn)"
+  local ktotal keyword count ckib cname
+  while IFS=$'\t' read -r ktotal keyword; do
+    [[ -n "$keyword" ]] || continue
+    count="$(awk -F'\t' -v k="$keyword" '$1==k{c++} END{print c+0}' <<<"$data")"
+    printf "  %s%-22s%s %s%s%s\n" "$C_BOLD" "$keyword" "$C_RESET" "$C_GREEN" "$(fmt_kib "$ktotal")" "$C_RESET"
+    if ((count > 1)); then
+      while IFS=$'\t' read -r ckib cname; do
+        [[ -n "$cname" ]] || continue
+        printf "    %s%-20s%s %s\n" "$C_DIM" "$cname" "$C_RESET" "$(fmt_kib "$ckib")"
+      done < <(awk -F'\t' -v k="$keyword" '$1==k{printf "%s\t%s\n",$3,$2}' <<<"$data" | sort -rn)
+    fi
+  done <<<"$keywords"
 }
 
 remote_output="$(
@@ -164,9 +248,24 @@ awk '
 df -kP / 2>/dev/null \
   | awk 'NR > 1 { printf "DISK\t%s\t%s\t%s\t%s\t%s\t%s\n", $6, $2, $3, $4, $5, $1 }'
 
-if [[ -d /srv/tnisoft ]]; then
-  du_kib="$(du -sk /srv/tnisoft 2>/dev/null | awk '{print $1}')"
-  printf 'DU\t/srv/tnisoft\t%s\n' "${du_kib:-0}"
+SRV_ROOT="/srv/tnisoft"
+if [[ -d "$SRV_ROOT" ]]; then
+  for d in "$SRV_ROOT"/*/; do
+    [[ -d "$d" ]] || continue
+    name="$(basename "$d")"
+    kib="$(du -sk "$d" 2>/dev/null | awk '{print $1}')"
+    printf 'APPDIR\t%s\t%s\n' "$name" "${kib:-0}"
+  done
+fi
+
+DB_DATA="$SRV_ROOT/mssql/data"
+if [[ -d "$DB_DATA" ]]; then
+  for f in "$DB_DATA"/*.mdf "$DB_DATA"/*.ldf; do
+    [[ -e "$f" ]] || continue
+    fname="$(basename "$f")"
+    kib="$(du -sk "$f" 2>/dev/null | awk '{print $1}')"
+    printf 'DBFILE\t%s\t%s\n' "$fname" "${kib:-0}"
+  done
 fi
 
 iface="$(ip route show default 2>/dev/null | awk '/default/ {print $5; exit}')"
@@ -200,7 +299,8 @@ rx_bytes="0"
 tx_bytes="0"
 disk_rows=()
 docker_rows=()
-du_rows=()
+appdir_rows=()
+dbfile_rows=()
 
 while IFS=$'\t' read -r kind a b c d e f; do
   case "$kind" in
@@ -229,8 +329,11 @@ while IFS=$'\t' read -r kind a b c d e f; do
     DOCKER)
       docker_rows+=("$a"$'\t'"$b"$'\t'"$c"$'\t'"$d")
       ;;
-    DU)
-      du_rows+=("$a"$'\t'"$b")
+    APPDIR)
+      appdir_rows+=("$a"$'\t'"$b")
+      ;;
+    DBFILE)
+      dbfile_rows+=("$a"$'\t'"$b")
       ;;
   esac
 done <<<"$remote_output"
@@ -318,18 +421,15 @@ else
   mssql_status="not reachable from this station"
 fi
 
-echo
-echo "vps1 status"
-echo "==========="
+printf '\n%s%svps1 status%s\n' "$C_BOLD" "$C_CYAN" "$C_RESET"
+printf '%s===========%s\n' "$C_DIM" "$C_RESET"
 print_pair "Host" "$hostname via $HOST"
 print_pair "Kernel" "$kernel"
 print_pair "Uptime" "$uptime_text"
 print_pair "Load avg" "$load_text"
 print_pair "Sample time" "$(date -r "$timestamp" '+%Y-%m-%d %H:%M:%S %Z')"
 
-echo
-echo "System"
-echo "------"
+section "System"
 print_pair "CPU now" "$(bar "$cpu_pct") ${cpu_pct}%"
 print_pair "CPU avg ${HOURS}h" "${hist_cpu_avg}% (${hist_count} samples)"
 print_pair "Memory" "$(bar "$mem_pct") ${mem_pct}% ($(fmt_kib "$mem_used_kib") / $(fmt_kib "$mem_total_kib"))"
@@ -339,57 +439,64 @@ else
   print_pair "Swap" "not configured"
 fi
 
-echo
-echo "Disk"
-echo "----"
+section "Disk"
 for row in "${disk_rows[@]}"; do
   IFS=$'\t' read -r mount total_kib used_kib avail_kib percent_text fs <<<"$row"
   percent="${percent_text%\%}"
-  printf "  %-22s %s %s used, %s free, %s total (%s)\n" \
-    "$mount" "$(bar "$percent")" "$(fmt_kib "$used_kib")" "$(fmt_kib "$avail_kib")" "$(fmt_kib "$total_kib")" "$fs"
-done
-for row in "${du_rows[@]}"; do
-  IFS=$'\t' read -r path used_kib <<<"$row"
-  printf "  %-22s %s\n" "$path" "$(fmt_kib "$used_kib") stored under TNI Soft"
+  printf "  %s%-22s%s %s %s used, %s free, %s total %s(%s)%s\n" \
+    "$C_BOLD" "$mount" "$C_RESET" "$(bar "$percent")" "$(fmt_kib "$used_kib")" "$(fmt_kib "$avail_kib")" "$(fmt_kib "$total_kib")" "$C_DIM" "$fs" "$C_RESET"
 done
 
+section "Storage by app"
+printf '  %sApp / web (/srv/tnisoft)%s\n' "$C_CYAN" "$C_RESET"
+{
+  for row in "${appdir_rows[@]}"; do
+    IFS=$'\t' read -r name kib <<<"$row"
+    printf '%s\t%s\t%s\n' "$(app_keyword "$name")" "$name" "$kib"
+  done
+} | print_grouped
 echo
-echo "Network"
-echo "-------"
+printf '  %sDatabases (mssql/data)%s\n' "$C_CYAN" "$C_RESET"
+{
+  for row in "${dbfile_rows[@]}"; do
+    IFS=$'\t' read -r name kib <<<"$row"
+    printf '%s\t%s\t%s\n' "$(db_keyword "$name")" "$name" "$kib"
+  done
+} | print_grouped
+
+section "Network"
 print_pair "Interface" "${net_iface:-unknown}"
 print_pair "Since boot" "down $(fmt_bytes "$rx_bytes"), up $(fmt_bytes "$tx_bytes")"
 print_pair "Delta ${HOURS}h" "down $(fmt_bytes "$hist_rx_delta"), up $(fmt_bytes "$hist_tx_delta") (${hist_count} samples)"
 
-echo
-echo "Endpoints"
-echo "---------"
+section "Endpoints"
 print_pair "Healthy" "${endpoint_ok}/${#ENDPOINTS[@]}"
 for row in "${endpoint_results[@]}"; do
   IFS=$'\t' read -r ok name code ms url <<<"$row"
-  printf "  %-22s %-4s HTTP %-3s %-6s %s\n" "$name" "$ok" "$code" "$ms" "$url"
+  if [[ "$ok" == "OK" ]]; then okc="$C_GREEN"; else okc="$C_RED"; fi
+  printf "  %-22s %s%-4s%s HTTP %-3s %-6s %s%s%s\n" "$name" "$okc" "$ok" "$C_RESET" "$code" "$ms" "$C_DIM" "$url" "$C_RESET"
 done
 
-echo
-echo "Database"
-echo "--------"
-print_pair "MSSQL public" "$mssql_status"
+section "Database"
+if [[ "$mssql_status" == *"not reachable"* ]]; then
+  print_pair "MSSQL public" "${C_RED}${mssql_status}${C_RESET}"
+else
+  print_pair "MSSQL public" "${C_GREEN}${mssql_status}${C_RESET}"
+fi
 
-echo
-echo "Docker"
-echo "------"
+section "Docker"
 if ((${#docker_rows[@]} == 0)); then
   echo "  no running containers"
 else
   for row in "${docker_rows[@]}"; do
     IFS=$'\t' read -r name image status ports <<<"$row"
-    printf "  %-22s %-18s %s\n" "$name" "$status" "$image"
-    [[ -n "${ports:-}" ]] && printf "  %-22s %s\n" "" "$ports"
+    if [[ "$status" == Up* ]]; then stc="$C_GREEN"; else stc="$C_YELLOW"; fi
+    printf "  %s%-22s%s %s%-18s%s %s%s%s\n" "$C_BOLD" "$name" "$C_RESET" "$stc" "$status" "$C_RESET" "$C_DIM" "$image" "$C_RESET"
+    [[ -n "${ports:-}" ]] && printf "  %-22s %s%s%s\n" "" "$C_DIM" "$ports" "$C_RESET"
   done
 fi
 
-echo
-echo "History"
-echo "-------"
+section "History"
 print_pair "File" "$HISTORY_FILE"
 if [[ "$hist_count" -lt 2 ]]; then
   print_pair "Note" "run again later for meaningful ${HOURS}h averages"
