@@ -118,6 +118,7 @@ alias	lc	Go to the Ardis local connector repo.
 alias	localconnector	Go to the Ardis local connector repo.
 alias	fn	Go to the macOS Frontnotes project.
 alias	bl	Go to the BookingLounge project.
+alias	meerkat	Go to the Meerkat project.
 alias	aiwk	Go to the Alice in Wonder Kitchen project.
 alias	clients	Go to shared SQL client backup/storage folder.
 alias	invoice	Go to the TNI invoice project.
