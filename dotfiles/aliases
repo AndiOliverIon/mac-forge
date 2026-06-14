@@ -226,3 +226,5 @@ alias thb=thboot
 alias rider="open -a 'Rider.app'"
 alias aliases="cat ~/mac-forge/dotfiles/aliases"
 alias g="gemini"
+
+alias codex-thanatos="codex --profile lmstudio"
