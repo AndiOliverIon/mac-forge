@@ -257,9 +257,9 @@ alias	v1-bl-publish	Build and publish the BookingLounge API to a vps1 endpoint (
 alias	vps1-bl-publish	Long form of v1-bl-publish: publish the BookingLounge API to a vps1 endpoint.
 alias	v1-bl-tunnel-up	Open the SSH tunnel so localhost:5081 reaches the private BookingLounge dev API on vps1.
 alias	v1-bl-tunnel-down	Close the BookingLounge dev API SSH tunnel (localhost:5081).
-alias	v1-meerkat-tunnel-up	Open the SSH tunnel so localhost:8780 reaches 127.0.0.1:8780 on vps1.
-alias	v1-meerkat-tunnel-down	Close the Meerkat dev SSH tunnel (localhost:8780).
-alias	v1-meerkat-tunnel-status	Show whether the Meerkat dev SSH tunnel is up (localhost:8780).
+alias	v1-meerkat-tunnel-up	Open the SSH tunnel so localhost:5281 reaches the private Meerkat dev API on vps1.
+alias	v1-meerkat-tunnel-down	Close the Meerkat dev SSH tunnel (localhost:5281).
+alias	v1-meerkat-tunnel-status	Show whether the Meerkat dev SSH tunnel is up (localhost:5281) + dev health.
 alias	v1-tally-tunnel-up	Open the SSH tunnel so localhost:5181 reaches the private Tally dev API on vps1 (needed by the macOS Debug build).
 alias	v1-tally-tunnel-down	Close the Tally dev API SSH tunnel (localhost:5181).
 alias	v1-tally-tunnel-status	Show whether the Tally dev API SSH tunnel is up (localhost:5181) + dev health.
