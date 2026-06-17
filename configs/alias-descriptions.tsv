@@ -41,6 +41,7 @@ alias	ac	Shortcut for ardis-complete.
 alias	perf-cache-reset	Clear Perform client cache artifacts.
 alias	pcr	Shortcut for perf-cache-reset.
 alias	publish-tt	Build the Timetrack solution, then build and push its Docker image.
+alias	publish-te	Build the Tools Extensions solution, then build and push its Docker image.
 alias	publish-perf-local	Interactively publish and start a selected Perform branch in a local Portainer-style Docker stack.
 alias	genopenapi	Regenerate the Perform OpenAPI JSON and TypeScript client.
 alias	goa	Shortcut for genopenapi.
