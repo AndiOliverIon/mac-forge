@@ -55,6 +55,7 @@ fi
 
 need_cmd fzf
 need_cmd ffmpeg
+need_cmd ffprobe
 need_cmd gifski
 
 mov_list="$(mktemp)"
@@ -74,31 +75,11 @@ if [[ ! -s "$mov_list" ]]; then
 	exit 0
 fi
 
-preset="$(
-	{
-		printf "%-22s %s\t%s\n" "standard compression" "fps 10, width 960, quality 70" "standard compression"
-		printf "%-22s %s\t%s\n" "high quality" "fps 15, width 1600, quality 95" "high quality"
-	} | fzf --prompt="quality> " --height=40% --layout=reverse --border --delimiter=$'\t' --with-nth=1
-)" || exit 0
-
-[[ -n "$preset" ]] || exit 0
-
-preset_name="${preset##*$'\t'}"
-case "$preset_name" in
-	"standard compression")
-		fps="10"
-		width="960"
-		quality="70"
-		;;
-	"high quality")
-		fps="15"
-		width="1600"
-		quality="95"
-		;;
-	*)
-		die "Unknown preset: $preset_name"
-		;;
-esac
+# Single readable-quality preset. gifski caps output to ~800x600 unless it is
+# given an explicit --width, so width is computed from the source and passed to
+# both ffmpeg (frame extraction) and gifski (encode) to avoid silent downscaling.
+fps="15"
+quality="100"
 
 selected="$(
 	fzf --prompt="mov> " --height=60% --layout=reverse --border <"$mov_list"
@@ -106,6 +87,12 @@ selected="$(
 
 [[ -n "$selected" ]] || exit 0
 [[ -f "$selected" ]] || die "Selected file does not exist: $selected"
+
+src_width="$(ffprobe -v error -select_streams v:0 -show_entries stream=width -of csv=p=0 "$selected" | head -n1)"
+[[ "$src_width" =~ ^[0-9]+$ ]] || die "Could not determine source width for '$selected'."
+# Half-resolution keeps text sharp on Retina captures while halving pixel count.
+width=$(( (src_width / 2 / 2) * 2 ))
+(( width >= 2 )) || width=$(( (src_width / 2) * 2 ))
 
 base="${selected%.*}"
 frames_dir="frames"
@@ -136,9 +123,9 @@ if [[ -e "$output" ]]; then
 fi
 
 echo "Extracting frames from '$selected'..."
-echo "Preset: $preset_name (fps=$fps, width=$width, quality=$quality)"
-echo "ffmpeg -i \"$selected\" -vf \"fps=$fps,scale=$width:-1\" \"$frames_dir/frame_%04d.png\""
-if ! ffmpeg -i "$selected" -vf "fps=$fps,scale=$width:-1" "$frames_dir/frame_%04d.png" 2> >(tee "$ffmpeg_log" >&2); then
+echo "Quality: fps=$fps, width=$width (from source ${src_width}px), quality=$quality"
+echo "ffmpeg -i \"$selected\" -vf \"fps=$fps,scale=$width:-2:flags=lanczos\" \"$frames_dir/frame_%04d.png\""
+if ! ffmpeg -i "$selected" -vf "fps=$fps,scale=$width:-2:flags=lanczos" "$frames_dir/frame_%04d.png" 2> >(tee "$ffmpeg_log" >&2); then
 	echo >&2
 	echo "ffmpeg failed. Last output:" >&2
 	tail -n 40 "$ffmpeg_log" >&2
@@ -150,8 +137,8 @@ frames=("$frames_dir"/*.png)
 
 echo
 echo "Encoding GIF '$output'..."
-echo "gifski --fps $fps --quality $quality \"$frames_dir\"/*.png -o \"$output\""
-if ! gifski --fps "$fps" --quality "$quality" "${frames[@]}" -o "$output" 2> >(tee "$gifski_log" >&2); then
+echo "gifski --fps $fps --quality $quality --width $width \"$frames_dir\"/*.png -o \"$output\""
+if ! gifski --fps "$fps" --quality "$quality" --width "$width" "${frames[@]}" -o "$output" 2> >(tee "$gifski_log" >&2); then
 	echo >&2
 	echo "gifski failed. Last output:" >&2
 	tail -n 40 "$gifski_log" >&2
