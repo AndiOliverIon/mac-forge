@@ -255,6 +255,8 @@ alias	v1am	Run Ardis migrations against a database on vps1.
 alias	vps1-migrate	Long form of v1am: run Ardis migrations against a vps1 database.
 alias	v1list	List all installed databases and all available snapshots on vps1.
 alias	vps1-list	Long form of v1list: list vps1 databases and snapshots.
+alias	v1opt	Optimize a vps1 database: set recovery SIMPLE and shrink log/data files to reclaim disk (best-effort, no data deleted).
+alias	vps1-optimize	Long form of v1opt: shrink/optimize a vps1 database to reduce its disk footprint.
 alias	vps1-status	Show vps1 host health plus storage per app keyword (web dirs + databases), endpoints, CPU, and recent history.
 alias	v1-bl-publish	Build and publish the BookingLounge API to a vps1 endpoint (development, or gated production: main + clean tree).
 alias	vps1-bl-publish	Long form of v1-bl-publish: publish the BookingLounge API to a vps1 endpoint.
