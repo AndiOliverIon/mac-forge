@@ -34,6 +34,7 @@ alias	workinfo	Show the current active SQL Docker and snapshot storage paths.
 alias	wi	Shortcut for workinfo.
 alias	ardis-migrate	Run Ardis migrations against a selected local SQL database.
 alias	am	Shortcut for ardis-migrate.
+alias	ram	Run Ardis migrations against a database on a configured remote SQL Server target.
 alias	ardis-patch	Apply, remove, or inspect configured Ardis code patches.
 alias	ap	Shortcut for ardis-patch.
 alias	ardis-complete	Complete Ardis planning/activity data over a selected date range.
@@ -90,6 +91,7 @@ alias	dbu	Upload a selected .bak from the current folder into the SQL container.
 alias	dbr	Restore a selected .bak into the forge SQL Server container.
 alias	dbsn	Create a SQL backup snapshot from a selected database.
 alias	rdbsn	Create a backup from a configured remote SQL Server target.
+alias	rdbr	Restore a snapshot back into a remote SQL Server, overriding an existing database or cloning into a new one with mdf/ldf collision protection.
 alias	rdown	Download a remote .bak backup to a selected local destination.
 alias	rup	Upload a local .bak backup to a selected remote destination.
 alias	dbc	Clear SQL databases; default hard mode removes container/data after typed confirmation.

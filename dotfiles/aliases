@@ -49,6 +49,7 @@ alias workinfo="~/mac-forge/scripts/work.sh --info"
 alias wi=workinfo
 alias ardis-migrate="~/mac-forge/scripts/ardis-migrate.sh"
 alias am="ardis-migrate"
+alias ram="~/mac-forge/scripts/ardis-migrate-remote.sh"
 alias ardis-patch="~/mac-forge/scripts/patch.sh"
 alias ap="ardis-patch"
 alias ardis-complete="~/mac-forge/scripts/ardis-complete.sh"
@@ -107,6 +108,8 @@ alias bc=branch-clean
 alias dps="docker ps"
 alias dcu="docker compose up"
 alias dcd="docker compose down"
+alias docker-cleanup="~/mac-forge/scripts/docker-cleanup.sh"
+alias dcl=docker-cleanup
 
 # ------------------------------------------------------------------------------
 # Database Scripts
@@ -117,6 +120,7 @@ alias dbu="~/mac-forge/scripts/db-upload-bak.sh"
 alias dbr="~/mac-forge/scripts/db-restore.sh"
 alias dbsn="~/mac-forge/scripts/db-snapshot.sh"
 alias rdbsn="~/mac-forge/scripts/db-remote-backup.sh"
+alias rdbr="~/mac-forge/scripts/db-remote-restore.sh"
 alias rdown="~/mac-forge/scripts/db-remote-download.sh"
 alias rup="~/mac-forge/scripts/db-remote-upload.sh"
 alias dbc="~/mac-forge/scripts/db-clear.sh"
