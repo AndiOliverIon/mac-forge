@@ -1,9 +1,9 @@
 #!/opt/homebrew/bin/bash
-# vps1-db-drop.sh — drop a user database on vps1 (the actual live database in
-# the tnisoft-mssql container, not a .bak file).
+# vps1-db-drop.sh — drop user database(s) on vps1 (the actual live databases in
+# the tnisoft-mssql container, not .bak files).
 #
-# Safety: requires typing the exact database name to confirm. System databases
-# are never listed.
+# Safety: multi-select the databases to drop, then type 'delete' to confirm.
+# System databases are never listed.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -29,26 +29,34 @@ mapfile -t DB_LIST < <(
 )
 ((${#DB_LIST[@]} > 0)) || vps1_die "No user databases found on vps1."
 
-DB_SELECTED="$(printf '%s\n' "${DB_LIST[@]}" | fzf --prompt='Select vps1 database to DROP > ')" \
-  || vps1_die "No database selected."
+mapfile -t SELECTED < <(
+  printf '%s\n' "${DB_LIST[@]}" \
+    | fzf --multi --prompt='Select vps1 database(s) to DROP > ' \
+          --header='TAB to mark multiple, ENTER to confirm selection' \
+          --height=60% --reverse
+)
+((${#SELECTED[@]} > 0)) || vps1_die "No database selected."
 
 #######################################
 # Strict confirmation
 #######################################
 echo
-echo "⚠ You are about to PERMANENTLY DROP this database on vps1:"
-echo "    $DB_SELECTED"
+echo "⚠ You are about to PERMANENTLY DROP these database(s) on vps1:"
+for name in "${SELECTED[@]}"; do
+  echo "    $name"
+done
 echo "  Container: $VPS1_SQL_CONTAINER   Server: $VPS1_SQL_SERVER"
 echo
-echo "Type the exact database name to confirm."
+echo "Type 'delete' to confirm."
 read -r -p "> " answer
-[[ "$answer" == "$DB_SELECTED" ]] || vps1_die "Confirmation mismatch. Aborted (nothing was dropped)."
+[[ "$answer" == "delete" ]] || vps1_die "Confirmation mismatch. Aborted (nothing was dropped)."
 
 #######################################
 # Drop
 #######################################
-vps1_log_step "Dropping database [$DB_SELECTED] on vps1..."
-vps1_sqlcmd -b <<SQL_EOF
+for DB_SELECTED in "${SELECTED[@]}"; do
+  vps1_log_step "Dropping database [$DB_SELECTED] on vps1..."
+  vps1_sqlcmd -b <<SQL_EOF
 SET NOCOUNT ON;
 BEGIN TRY
   IF DB_ID(N'$DB_SELECTED') IS NULL
@@ -67,5 +75,6 @@ BEGIN CATCH
   THROW;
 END CATCH
 SQL_EOF
+done
 
-echo "✔ Database [$DB_SELECTED] dropped on vps1."
+echo "✔ Dropped ${#SELECTED[@]} database(s) on vps1."
