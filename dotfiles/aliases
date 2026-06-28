@@ -21,6 +21,11 @@ __kp() {
 }
 alias kp=__kp
 
+__convo() {
+  ( cd /Users/oliver/games/convoy-hunter && nohup godot-mono --path game --windowed --resolution 932x430 "$@" >/dev/null 2>&1 & disown )
+}
+alias convo=__convo
+
 # ------------------------------------------------------------------------------
 # mac-forge Scripts
 # ------------------------------------------------------------------------------
