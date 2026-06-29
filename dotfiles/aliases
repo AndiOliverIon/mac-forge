@@ -115,6 +115,8 @@ alias dcu="docker compose up"
 alias dcd="docker compose down"
 alias docker-cleanup="~/mac-forge/scripts/docker-cleanup.sh"
 alias dcl=docker-cleanup
+alias docker-clean-fact="~/mac-forge/scripts/docker-clean-known-facts.sh"
+alias dcf=docker-clean-fact
 
 # ------------------------------------------------------------------------------
 # Database Scripts

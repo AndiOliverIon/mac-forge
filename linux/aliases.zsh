@@ -62,6 +62,8 @@ alias bc=branch-clean
 alias dps="docker ps"
 alias dcu="docker compose up"
 alias dcd="docker compose down"
+alias docker-clean-fact="~/mac-forge/scripts/docker-clean-known-facts.sh"
+alias dcf=docker-clean-fact
 
 # ------------------------------------------------------------------------------
 # Database Scripts
