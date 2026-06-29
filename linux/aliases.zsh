@@ -39,8 +39,6 @@ alias convert-mov="~/mac-forge/scripts/convert-mov.sh"
 # ------------------------------------------------------------------------------
 # Git Shortcuts
 # ------------------------------------------------------------------------------
-unalias g 2>/dev/null
-alias g="gemini"
 alias aiusage='~/mac-forge/scripts/agents/usage.sh'
 alias gs="git status"
 alias gco="git checkout"

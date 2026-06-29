@@ -130,7 +130,7 @@ alias	inv	Shortcut for invoice.
 alias	ti	Shortcut for invoice.
 alias	borg	Go to the borg dev folder.
 alias	perflog	Go to Perform output logs.
-alias	andi-notes	Go to the iCloud Andi notes folder.
+alias	andi-notes	Go to the Obsidian Andi notes folder.
 alias	an	Shortcut for andi-notes.
 alias	notes	Shortcut for andi-notes.
 alias	vsql	Go to shared SQL storage.
@@ -179,7 +179,6 @@ alias	tboot	Shortcut for thboot.
 alias	thb	Shortcut for thboot.
 alias	rider	Open JetBrains Rider.
 alias	aliases	Print the alias file.
-alias	g	Run Gemini CLI.
 alias	link-dotfiles	Link Linux dotfiles into place.
 alias	ldf	Shortcut for link-dotfiles.
 alias	workspace-primary	Load the primary Linux workspace layout.

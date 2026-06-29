@@ -176,9 +176,9 @@ alias inv=invoice
 alias ti=invoice
 alias borg="cd ~/dev/borg"
 alias perflog="cd ~/work/perform-output/logs/perform"
-alias andi-notes="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
-alias an="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
-alias notes="cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/andi-notes"
+alias andi-notes="cd ~/Library/Mobile\ Documents/iCloud~md~obsidian/Documents/andi-notes"
+alias an="cd ~/Library/Mobile\ Documents/iCloud~md~obsidian/Documents/andi-notes"
+alias notes="cd ~/Library/Mobile\ Documents/iCloud~md~obsidian/Documents/andi-notes"
 alias vsql="cd /Volumes/shared/sql"
 alias cloudforge='cd "$HOME/Library/Mobile Documents/com~apple~CloudDocs/forge"'
 alias snapshots="cd /Volumes/shared/sql/docker/snapshots"
@@ -238,6 +238,5 @@ alias thb=thboot
 # ------------------------------------------------------------------------------
 alias rider="open -a 'Rider.app'"
 alias aliases="cat ~/mac-forge/dotfiles/aliases"
-alias g="gemini"
 
 alias codex-thanatos="codex --profile lmstudio"
