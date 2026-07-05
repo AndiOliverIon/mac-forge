@@ -5,6 +5,7 @@
 # ------------------------------------------------------------------------------
 alias v1sn="~/mac-forge/scripts/vps1/vps1-db-snapshot.sh"
 alias v1r="~/mac-forge/scripts/vps1/vps1-db-restore.sh"
+alias v1dbindex="~/mac-forge/scripts/vps1/vps1-db-index.sh"
 alias v1down="~/mac-forge/scripts/vps1/vps1-db-download.sh"
 alias v1up="~/mac-forge/scripts/vps1/vps1-db-upload.sh"
 alias rdown-to-v1="~/mac-forge/scripts/vps1/vps1-db-relay-download.sh"
@@ -32,6 +33,7 @@ alias v1-sql-down="~/mac-forge/scripts/vps1/vps1-db-state.sh offline"
 # Long-form equivalents
 alias vps1-snapshot=v1sn
 alias vps1-restore=v1r
+alias vps1-db-index=v1dbindex
 alias vps1-download=v1down
 alias vps1-upload=v1up
 alias vps1-relay-download=rdown-to-v1

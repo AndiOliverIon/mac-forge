@@ -89,6 +89,7 @@ alias	dba	Administer a local SQL database: offline/online, drop, recovery, shrin
 alias	dbs	Start stopped Docker containers, launching Docker Desktop if needed.
 alias	dbu	Upload a selected .bak from the current folder into the SQL container.
 alias	dbr	Restore a selected .bak into the forge SQL Server container.
+alias	db-index	Rebuild all indexes in a selected local Docker SQL database.
 alias	dbsn	Create a SQL backup snapshot from a selected database.
 alias	rdbsn	Create a backup from a configured remote SQL Server target.
 alias	rdbr	Restore a snapshot back into a remote SQL Server, overriding an existing database or cloning into a new one with mdf/ldf collision protection.
@@ -200,6 +201,7 @@ script	convert-mov	Convert a selected .mov in the current folder to a readable, 
 script	db-admin	Administer a local SQL database: offline/online, drop, recovery, shrink.
 script	db-clear	Clear SQL databases; default hard mode removes container/data after typed confirmation.
 script	db-fix	Run SQL fix scripts from the repo sqls folder against a chosen database.
+script	db-index	Rebuild all indexes in a selected local Docker SQL database.
 script	db-optimize	Run configured SQL table cleanup and shrink; data loss is possible.
 script	db-remote-backup	Create a backup from a configured remote SQL Server target.
 script	db-remote-download	Download a remote .bak backup to a selected local destination.
@@ -243,6 +245,8 @@ alias	v1sn	Create a .bak snapshot of a vps1 database into the vps1 snapshots fol
 alias	vps1-snapshot	Long form of v1sn: create a .bak snapshot of a vps1 database.
 alias	v1r	Restore a .bak from the vps1 snapshots folder into the vps1 SQL Server.
 alias	vps1-restore	Long form of v1r: restore a vps1 snapshot into the vps1 SQL Server.
+alias	v1dbindex	Rebuild all indexes in a selected vps1 SQL database.
+alias	vps1-db-index	Long form of v1dbindex: rebuild all indexes in a selected vps1 SQL database.
 alias	v1down	Download a vps1 .bak snapshot to a local directory.
 alias	vps1-download	Long form of v1down: download a vps1 .bak snapshot locally.
 alias	v1up	Upload a local .bak into the vps1 snapshots folder for later restore.
