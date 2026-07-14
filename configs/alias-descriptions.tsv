@@ -44,7 +44,7 @@ alias	pcr	Shortcut for perf-cache-reset.
 alias	publish-tt	Build the Timetrack solution, then build and push its Docker image.
 alias	publish-te	Build the Tools Extensions solution, then build and push its Docker image.
 alias	publish-perf-local	Interactively publish and start a selected Perform branch in a local Portainer-style Docker stack.
-alias	genopenapi	Regenerate the Perform OpenAPI JSON and TypeScript client.
+alias	genopenapi	Regenerate the Perform OpenAPI JSON and TypeScript client using the checked-out project's target framework.
 alias	goa	Shortcut for genopenapi.
 alias	genopenapitimetrack	Regenerate the TimeTrack OpenAPI JSON and TypeScript client.
 alias	organizer	Organize configured folders by extension rules from work-state.

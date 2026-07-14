@@ -5,6 +5,12 @@ ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 PROJDIR="$ROOT/Asms2.Web"
 OUTDIR="$ROOT/ardis.perform.client/src/app/shared/api"
 OUTFILE="$OUTDIR/PerformApiClient.ts"
+TARGET_FRAMEWORK="$(dotnet msbuild "$PROJDIR/Asms2.Web.csproj" -getProperty:TargetFramework -property:Configuration=Debug)"
+
+if [[ -z "$TARGET_FRAMEWORK" ]]; then
+    echo "Could not determine the target framework for $PROJDIR/Asms2.Web.csproj" >&2
+    exit 1
+fi
 
 cd "$ROOT"
 dotnet tool restore
@@ -12,7 +18,7 @@ dotnet tool restore
 dotnet build "$PROJDIR/Asms2.Web.csproj" -c Debug
 
 # Generate OpenAPI JSON from the built assembly
-DLL="$PROJDIR/bin/Debug/net8.0/osx-arm64/Ardis.Perform.dll"
+DLL="$PROJDIR/bin/Debug/$TARGET_FRAMEWORK/osx-arm64/Ardis.Perform.dll"
 dotnet tool run swagger tofile --output "$PROJDIR/openapi-v1.json" "$DLL" v1
 
 # Ensure output directory exists; optionally force regeneration
