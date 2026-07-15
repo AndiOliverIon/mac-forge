@@ -50,8 +50,8 @@ alias	genopenapitimetrack	Regenerate the TimeTrack OpenAPI JSON and TypeScript c
 alias	organizer	Organize configured folders by extension rules from work-state.
 alias	org	Shortcut for organizer.
 alias	o	Short shortcut for organizer.
-alias	dotnet-clean	Empty bin folders under the current tree.
-alias	dnc	Shortcut for dotnet-clean.
+alias	dotnet-clean	Remove generated build output and caches from the current tree; pass --node_modules to include dependencies.
+alias	dnc	Shortcut for dotnet-clean; pass --node_modules to include dependencies.
 alias	clean	Delete contents of selected configured cleanup targets.
 alias	present	Set external display presentation resolution/mode.
 alias	prs	Shortcut for present.
@@ -115,6 +115,7 @@ alias	perfclient	Go to the Ardis Perform Angular client.
 alias	perfdev	Go to the Ardis Perform DEV worktree.
 alias	perf228	Go to the Ardis Perform 228 worktree.
 alias	perf230	Go to the Ardis Perform 230 worktree.
+alias	perfold	Go to the older Ardis Perform worktree.
 alias	perfclient230	Go to the Ardis Perform 230 Angular client.
 alias	gpt	Go to the Ardis Tools Extensions repo.
 alias	gptbin	Go to the Ardis Utils debug build output folder.
@@ -210,7 +211,7 @@ script	db-restore	Restore a selected .bak into the forge SQL Server container.
 script	db-snapshot	Create a SQL backup snapshot from a selected database.
 script	db-upload-bak	Upload a selected .bak from the current folder into the SQL container.
 script	docker-start	Start stopped Docker containers, launching Docker Desktop if needed.
-script	dotnet-clean	Empty bin folders under the current tree.
+script	dotnet-clean	Remove generated build output and caches from the current tree; pass --node_modules to include dependencies.
 script	dvpn	Disconnect the active VPN connection.
 script	vpn-status	Show whether an openconnect VPN connection is active.
 script	eject-all	Eject external volumes with forge safety exclusions and confirmation.
