@@ -1,4 +1,8 @@
-#!/opt/homebrew/bin/bash
+#!/bin/sh
+if [ -z "${BASH_VERSION:-}" ]; then
+  [ -x /opt/homebrew/bin/bash ] && exec /opt/homebrew/bin/bash "$0" "$@"
+  exec bash "$0" "$@"
+fi
 # vps1-db-index.sh — rebuild all indexes in a selected vps1 SQL database.
 set -euo pipefail
 

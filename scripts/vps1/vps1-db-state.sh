@@ -1,4 +1,8 @@
-#!/opt/homebrew/bin/bash
+#!/bin/sh
+if [ -z "${BASH_VERSION:-}" ]; then
+  [ -x /opt/homebrew/bin/bash ] && exec /opt/homebrew/bin/bash "$0" "$@"
+  exec bash "$0" "$@"
+fi
 # vps1-db-state.sh — bring vps1 user databases ONLINE or OFFLINE.
 #
 # Usage:

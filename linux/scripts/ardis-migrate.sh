@@ -150,7 +150,7 @@ PY
 }
 
 main() {
-  forge_require_cmd docker
+  forge_require_docker_access
   forge_require_cmd fzf
   forge_require_cmd dotnet
   forge_assert_sensitive_config

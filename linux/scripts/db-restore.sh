@@ -163,8 +163,8 @@ ensure_sql_container() {
   local existing_user existing_data_mount existing_snapshots_mount
 
   mkdir -p "$snapshots_host_path" "$data_bind_path"
+  forge_prepare_sql_shared_path "$snapshots_host_path"
   [[ -w "$snapshots_host_path" ]] || die "Snapshots path not writable: $snapshots_host_path"
-  [[ -w "$data_bind_path" ]] || die "Data bind path not writable: $data_bind_path"
 
   prepare_sql_bind_path "$image" "$data_bind_path" "$container_root" "$container_user"
 
@@ -227,7 +227,7 @@ find_backup_files() {
 }
 
 main() {
-  forge_require_cmd docker
+  forge_require_docker_access
   forge_require_cmd fzf
   forge_require_cmd find
   forge_require_cmd python3
@@ -288,12 +288,6 @@ main() {
     "$container_user"
 
   wait_for_sql_ready "$container_name" "$sqlcmd_path" "$sa_password"
-
-  docker exec -u 0 "$container_name" /bin/bash -lc "
-    mkdir -p '$snapshots_container_path' &&
-    chown -R mssql:mssql '$snapshots_container_path' 2>/dev/null || true &&
-    chmod 775 '$snapshots_container_path' 2>/dev/null || true
-  " >/dev/null || die "Failed to prepare snapshots folder in container: $snapshots_container_path"
 
   snapshot_filename="$db_name.bak"
   snapshot_host_path="$snapshots_host_path/$snapshot_filename"

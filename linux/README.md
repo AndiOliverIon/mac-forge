@@ -2,6 +2,113 @@
 
 A list of essential tools and configurations for a fresh Linux installation.
 
+## Bootstrap
+
+Run the workstation bootstrap from the repository root:
+
+```bash
+./linux/scripts/bootstrap.sh
+```
+
+The script installs the core development tools, IDEs, terminal, shell, and
+Powerlevel10k setup used on a fresh Ubuntu workstation. It also installs `fzf`
+and configures native Docker Engine with storage under `/data/docker`.
+
+Before running it, the Data SSD must already be formatted and mounted
+read/write at `/data` through `/etc/fstab`. The bootstrap intentionally does
+not partition disks or edit `fstab`.
+
+The Linux prompt sources `profiles/p10k.zsh`, which is the macOS master
+Powerlevel10k personalization. Do not run `p10k configure` independently on
+Linux; update the master profile instead.
+
+Ghostty split shortcuts:
+
+- `Alt+D`: split horizontally, opening the new panel on the right
+- `Alt+Shift+D`: split vertically, opening the new panel below
+- `Alt+W`: close the focused panel
+- `Ctrl+Alt+Arrow`: move between splits
+
+Focused panels close immediately without a confirmation prompt.
+
+## Private Forge configuration
+
+Linux reads its private configuration from:
+
+```text
+/data/forge/forge-secrets.sh
+```
+
+The existing macOS-compatible `FORGE_SQL_SA_PASSWORD` variable is reused by
+Linux commands such as `dbr`, `dbsn`, and `am`. Non-sensitive Linux paths stay
+in `linux/config/runtime.json`.
+
+The bootstrap creates `/data/forge` with owner-only permissions, but it does
+not create or copy secret values.
+
+## Docker
+
+Install native Docker Engine with its daemon and containerd storage under
+`/data/docker`:
+
+```bash
+sudo ./linux/scripts/install-docker.sh
+```
+
+Log out and back in after installation so membership in the `docker` group
+takes effect.
+
+## Data share
+
+Share `/data` with authenticated SMB access on the local network:
+
+```bash
+sudo ./linux/scripts/install-data-share.sh
+sudo smbpasswd -a "$USER"
+```
+
+Connect from macOS using:
+
+```text
+smb://masterchief/Data
+```
+
+If local hostname resolution needs the mDNS suffix, use
+`smb://masterchief.local/Data`.
+
+The SMB password is deliberately not automated. Set it after bootstrap:
+
+```bash
+sudo smbpasswd -a "$USER"
+```
+
+## Private npm feeds
+
+The Angular client uses private Ardis Azure Artifacts packages. Bootstrap does
+not store or generate npm credentials. Copy a valid user-level npm
+configuration to `~/.npmrc`, or authenticate with an Azure DevOps PAT that has
+Packaging Read permission, before running `npm ci`.
+
+Bootstrap installs Angular CLI `20.3.16`, matching
+`ardis-perform/ardis.perform.client`, and activates Yarn `1.22.22` through
+Corepack. The project README mentions
+`vsts-npm-auth`, but that package exposes a Windows executable and is not used
+as the Linux authentication method.
+
+After adding Azure Artifacts credentials:
+
+```bash
+cd ~/work/ardis-perform/ardis.perform.client
+npm ci
+ng serve
+```
+
+Commercial UI licensing is also intentionally manual:
+
+- Set `DEVEXTREME_KEY` before `npm ci` if a DevExtreme license key is required.
+- Run the project’s Kendo license-refresh command only when its referenced
+  helper script and license credential are available.
+
 ## Window Management
 - **i3 tiling manager**: Efficient keyboard-driven window management. (Under investigation)
 

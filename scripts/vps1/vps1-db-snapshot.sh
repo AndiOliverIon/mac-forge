@@ -1,4 +1,8 @@
-#!/opt/homebrew/bin/bash
+#!/bin/sh
+if [ -z "${BASH_VERSION:-}" ]; then
+  [ -x /opt/homebrew/bin/bash ] && exec /opt/homebrew/bin/bash "$0" "$@"
+  exec bash "$0" "$@"
+fi
 # vps1-db-snapshot.sh — create a .bak snapshot of a vps1 database into the
 # dedicated vps1 snapshots folder.
 #

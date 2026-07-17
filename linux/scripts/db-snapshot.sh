@@ -128,7 +128,7 @@ db_size_bytes() {
 }
 
 main() {
-  forge_require_cmd docker
+  forge_require_docker_access
   forge_require_cmd fzf
   forge_require_cmd stat
   forge_assert_sensitive_config
@@ -151,7 +151,7 @@ main() {
 
   wait_for_sql_ready "$container_name" "$sqlcmd_path" "$sa_password"
 
-  mkdir -p "$snapshots_host_path"
+  forge_prepare_sql_shared_path "$snapshots_host_path"
   [[ -d "$snapshots_host_path" && -w "$snapshots_host_path" ]] || die "Snapshots path not writable on host: $snapshots_host_path"
 
   section "Snapshot Plan"

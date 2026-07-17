@@ -9,9 +9,16 @@
     "sqlcmd_path": "/opt/mssql-tools18/bin/sqlcmd"
   },
   "paths": {
-    "sql_storage_root": "state/mssql",
+    "sql_storage_root": "/data/sql/docker",
     "data_bind_path": "data",
     "restore_stage_path": "snapshots"
+  },
+  "restore": {
+    "backup_source_paths": [
+      "/data/sql",
+      "/data/sql/snapshot",
+      "/data/sql/snapshots"
+    ]
   },
   "ardis": {
     "migrations_paths": [

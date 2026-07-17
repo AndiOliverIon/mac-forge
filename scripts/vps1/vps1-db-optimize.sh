@@ -1,4 +1,8 @@
-#!/opt/homebrew/bin/bash
+#!/bin/sh
+if [ -z "${BASH_VERSION:-}" ]; then
+  [ -x /opt/homebrew/bin/bash ] && exec /opt/homebrew/bin/bash "$0" "$@"
+  exec bash "$0" "$@"
+fi
 # vps1-db-optimize.sh — shrink/optimize a vps1 database to reduce its disk
 # footprint. Intended for inspection-only databases imported onto vps1, where the
 # original size is irrelevant and the vps disk is the bottleneck.

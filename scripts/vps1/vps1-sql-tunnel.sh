@@ -1,4 +1,8 @@
-#!/opt/homebrew/bin/bash
+#!/bin/sh
+if [ -z "${BASH_VERSION:-}" ]; then
+  [ -x /opt/homebrew/bin/bash ] && exec /opt/homebrew/bin/bash "$0" "$@"
+  exec bash "$0" "$@"
+fi
 # vps1-sql-tunnel.sh — open/close the SSH tunnel to the private vps1 SQL Server.
 #
 # The MSSQL container (tnisoft-mssql) binds to 127.0.0.1:1433 on vps1 and is NOT
@@ -35,7 +39,11 @@ listener_pids() {
 }
 
 is_up() {
-  lsof -nP -iTCP:"${SQL_LOCAL_PORT}" -sTCP:LISTEN >/dev/null 2>&1
+  if command -v lsof >/dev/null 2>&1; then
+    lsof -nP -iTCP:"${SQL_LOCAL_PORT}" -sTCP:LISTEN >/dev/null 2>&1
+  else
+    ss -lnt 2>/dev/null | grep -Eq "127\\.0\\.0\\.1:${SQL_LOCAL_PORT}[[:space:]]"
+  fi
 }
 
 #######################################
@@ -46,7 +54,10 @@ tunnel_up() {
     log "SQL tunnel already up — localhost:${SQL_LOCAL_PORT} → ${VPS1_SSH_HOST}:${SQL_REMOTE}"
   else
     log "Opening SQL tunnel localhost:${SQL_LOCAL_PORT} → ${VPS1_SSH_HOST}:${SQL_REMOTE} ..."
-    ssh -f -N -L "${FORWARD_SPEC}" "${VPS1_SSH_HOST}" \
+    ssh -f -N \
+      -o ExitOnForwardFailure=yes \
+      -o ServerAliveInterval=30 \
+      -L "${FORWARD_SPEC}" "${VPS1_SSH_HOST}" \
       || die "Failed to open SSH tunnel to ${VPS1_SSH_HOST}."
     sleep 1
   fi

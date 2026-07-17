@@ -1,4 +1,8 @@
-#!/opt/homebrew/bin/bash
+#!/bin/sh
+if [ -z "${BASH_VERSION:-}" ]; then
+  [ -x /opt/homebrew/bin/bash ] && exec /opt/homebrew/bin/bash "$0" "$@"
+  exec bash "$0" "$@"
+fi
 # vps1.sh — shared config/helpers for the vps1 SQL snapshot workflow.
 #
 # Sourced by scripts/vps1/vps1-db-*.sh. Operates against the dev SQL Server

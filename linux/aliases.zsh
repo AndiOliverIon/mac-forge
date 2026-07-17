@@ -35,6 +35,9 @@ alias patch="~/mac-forge/linux/scripts/patch.sh"
 alias p=patch
 alias pr="patch -R"
 alias convert-mov="~/mac-forge/scripts/convert-mov.sh"
+alias genopenapi="~/mac-forge/linux/scripts/gen-open-api.sh"
+alias goa=genopenapi
+alias genopenapitimetrack="~/mac-forge/scripts/gen-open-api-timetrack.sh"
 
 # ------------------------------------------------------------------------------
 # Git Shortcuts
@@ -81,6 +84,8 @@ alias sr=script-run
 # ------------------------------------------------------------------------------
 alias workspace-primary="~/mac-forge/linux/scripts/load-workspace.sh"
 alias wp=workspace-primary
+alias data="cd /data"
+alias dock="cd /data/docker"
 alias work="cd ~/work"
 alias perf="cd ~/work/ardis-perform"
 alias timetrack="cd ~/work/ardis.timetrack"

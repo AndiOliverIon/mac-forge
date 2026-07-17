@@ -1,4 +1,8 @@
-#!/opt/homebrew/bin/bash
+#!/bin/sh
+if [ -z "${BASH_VERSION:-}" ]; then
+  [ -x /opt/homebrew/bin/bash ] && exec /opt/homebrew/bin/bash "$0" "$@"
+  exec bash "$0" "$@"
+fi
 # vps1-db-relay-download.sh — relay a remote .bak straight from the portainer
 # SMB share to the vps1 snapshots folder, WITHOUT landing it on the Mac SSD.
 #
@@ -30,8 +34,19 @@ vps1_require_cmd ssh
 #######################################
 # Share / mount config (mirrors db-remote-download.sh)
 #######################################
-MOUNT_PATH="/Volumes/shared-files"
-SMB_URL="smb://portainer.ardis.eu/shared-files"
+case "$(uname -s)" in
+  Darwin)
+    MOUNT_PATH="${RDOWN_MOUNT_PATH:-/Volumes/shared-files}"
+    SMB_URL="${RDOWN_SMB_URL:-smb://portainer.ardis.eu/shared-files}"
+    ;;
+  Linux)
+    MOUNT_PATH="${RDOWN_MOUNT_PATH:-/mnt/shared-files}"
+    SMB_URL="${RDOWN_SMB_URL:-//portainer.ardis.eu/shared-files}"
+    ;;
+  *)
+    vps1_die "Unsupported operating system: $(uname -s)"
+    ;;
+esac
 MOUNT_WAIT_SECONDS="${RDOWN_MOUNT_WAIT_SECONDS:-120}"
 MOUNT_RECHECK_SECONDS="${RDOWN_MOUNT_RECHECK_SECONDS:-2}"
 
@@ -40,7 +55,11 @@ MOUNT_RECHECK_SECONDS="${RDOWN_MOUNT_RECHECK_SECONDS:-2}"
 
 is_mount_ready() {
   [[ -d "$MOUNT_PATH" ]] || return 1
-  mount | grep -F " on $MOUNT_PATH " >/dev/null 2>&1
+  if command -v mountpoint >/dev/null 2>&1; then
+    mountpoint -q "$MOUNT_PATH"
+  else
+    mount | grep -F " on $MOUNT_PATH " >/dev/null 2>&1
+  fi
 }
 
 wait_for_mount() {
@@ -64,9 +83,13 @@ wait_for_mount() {
 }
 
 if ! is_mount_ready; then
-  echo "📡 Mount not found. Attempting to connect to $SMB_URL..."
-  open "$SMB_URL"
-  wait_for_mount || vps1_die "Failed to mount $MOUNT_PATH. Please check your connection or connect manually in Finder once."
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    echo "📡 Mount not found. Attempting to connect to $SMB_URL..."
+    open "$SMB_URL"
+    wait_for_mount || vps1_die "Failed to mount $MOUNT_PATH. Please check your connection or connect manually in Finder once."
+  else
+    vps1_die "SMB share is not mounted at $MOUNT_PATH. Mount $SMB_URL there or set RDOWN_MOUNT_PATH."
+  fi
 fi
 
 #######################################

@@ -1,1 +1,1 @@
-source "$HOME/mac-forge/dotfiles/p10k.zsh"
+source "$HOME/mac-forge/profiles/p10k.zsh"
