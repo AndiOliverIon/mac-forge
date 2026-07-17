@@ -1,4 +1,4 @@
-#!/opt/homebrew/bin/bash
+#!/usr/bin/env bash
 # vps1-license-tunnel.sh — open/close the SSH tunnel to CodeMeter on vps1.
 #
 # CodeMeter binds to 127.0.0.1:22350 on vps1 and is not exposed publicly.
