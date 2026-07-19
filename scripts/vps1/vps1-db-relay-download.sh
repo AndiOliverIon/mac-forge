@@ -1,8 +1,4 @@
-#!/bin/sh
-if [ -z "${BASH_VERSION:-}" ]; then
-  [ -x /opt/homebrew/bin/bash ] && exec /opt/homebrew/bin/bash "$0" "$@"
-  exec bash "$0" "$@"
-fi
+#!/usr/bin/env bash
 # vps1-db-relay-download.sh — relay a remote .bak straight from the portainer
 # SMB share to the vps1 snapshots folder, WITHOUT landing it on the Mac SSD.
 #
