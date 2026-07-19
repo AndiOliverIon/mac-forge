@@ -73,11 +73,28 @@ for entry in state.get("ardis-migration-paths", []):
         print(f"{title}\t{path}")
 PY
     )" || { echo "No migrations path selected. Aborting." >&2; return 1; }
-    if [[ -n "${selected:-}" ]]; then printf '%s\n' "${selected#*$'\t'}"; return 0; fi
+    if [[ -n "${selected:-}" ]]; then resolve_local_path "${selected#*$'\t'}"; return 0; fi
   fi
-  if [[ -n "${ARDIS_MIGRATIONS_PATH:-}" ]]; then printf '%s\n' "$ARDIS_MIGRATIONS_PATH"; return 0; fi
+  if [[ -n "${ARDIS_MIGRATIONS_PATH:-}" ]]; then resolve_local_path "$ARDIS_MIGRATIONS_PATH"; return 0; fi
   echo "No migrations paths configured. Add 'ardis-migration-paths' to ${FORGE_WORK_STATE_FILE:-configs/work-state.json}." >&2
   return 1
+}
+
+#######################################
+# Helper: map a shared macOS home path to the current Linux home
+#######################################
+resolve_local_path() {
+  local path="$1"
+  local relative
+
+  if [[ -e "$path" || "$(uname -s)" != "Linux" || "$path" != /Users/*/* ]]; then
+    printf '%s\n' "$path"
+    return 0
+  fi
+
+  relative="${path#/Users/}"
+  relative="${relative#*/}"
+  printf '%s/%s\n' "$HOME" "$relative"
 }
 
 #######################################

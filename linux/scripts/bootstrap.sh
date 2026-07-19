@@ -116,7 +116,7 @@ if ! snap list rider > /dev/null 2>&1; then
     sudo snap install rider --classic
 fi
 
-step "7/18" "Installing .NET 8 and .NET 10 SDKs system-wide..."
+step "7/18" "Installing .NET 8, .NET 9, and .NET 10 SDKs system-wide..."
 dotnet_installer="$(mktemp)"
 trap 'rm -f "${dotnet_installer}"' EXIT
 curl -fsSL https://dot.net/v1/dotnet-install.sh -o "${dotnet_installer}"
@@ -125,6 +125,11 @@ chmod +x "${dotnet_installer}"
 sudo mkdir -p "${DOTNET_INSTALL_DIR}"
 sudo "${dotnet_installer}" \
     --channel 8.0 \
+    --quality GA \
+    --install-dir "${DOTNET_INSTALL_DIR}" \
+    --no-path
+sudo "${dotnet_installer}" \
+    --channel 9.0 \
     --quality GA \
     --install-dir "${DOTNET_INSTALL_DIR}" \
     --no-path
