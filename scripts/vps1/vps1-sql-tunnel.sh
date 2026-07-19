@@ -1,8 +1,4 @@
-#!/bin/sh
-if [ -z "${BASH_VERSION:-}" ]; then
-  [ -x /opt/homebrew/bin/bash ] && exec /opt/homebrew/bin/bash "$0" "$@"
-  exec bash "$0" "$@"
-fi
+#!/usr/bin/env bash
 # vps1-sql-tunnel.sh — open/close the SSH tunnel to the private vps1 SQL Server.
 #
 # The MSSQL container (tnisoft-mssql) binds to 127.0.0.1:1433 on vps1 and is NOT

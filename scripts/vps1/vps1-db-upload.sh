@@ -1,8 +1,4 @@
-#!/bin/sh
-if [ -z "${BASH_VERSION:-}" ]; then
-  [ -x /opt/homebrew/bin/bash ] && exec /opt/homebrew/bin/bash "$0" "$@"
-  exec bash "$0" "$@"
-fi
+#!/usr/bin/env bash
 # vps1-db-upload.sh — upload a local .bak into the dedicated vps1 snapshots
 # folder, so it can then be restored with v1r.
 #

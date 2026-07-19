@@ -85,6 +85,9 @@ sudo apt install -y \
     htop \
     btop \
     fzf \
+    lsof \
+    netcat-openbsd \
+    openssh-client \
     acl \
     zsh \
     build-essential \

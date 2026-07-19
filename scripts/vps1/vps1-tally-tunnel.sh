@@ -1,8 +1,4 @@
-#!/bin/sh
-if [ -z "${BASH_VERSION:-}" ]; then
-  [ -x /opt/homebrew/bin/bash ] && exec /opt/homebrew/bin/bash "$0" "$@"
-  exec bash "$0" "$@"
-fi
+#!/usr/bin/env bash
 # vps1-tally-tunnel.sh — open/close the SSH tunnel to the private Tally dev API.
 #
 # The dev endpoint (tally-api@dev) binds to 127.0.0.1:5181 on vps1 and is NOT

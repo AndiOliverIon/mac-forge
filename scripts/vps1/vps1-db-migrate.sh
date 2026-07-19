@@ -1,8 +1,4 @@
-#!/bin/sh
-if [ -z "${BASH_VERSION:-}" ]; then
-  [ -x /opt/homebrew/bin/bash ] && exec /opt/homebrew/bin/bash "$0" "$@"
-  exec bash "$0" "$@"
-fi
+#!/usr/bin/env bash
 # vps1-db-migrate.sh — run Ardis migrations against a database on vps1.
 #
 # Mirrors scripts/ardis-migrate.sh ('am'), but targets the vps1 SQL Server

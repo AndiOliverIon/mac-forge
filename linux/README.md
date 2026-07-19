@@ -129,6 +129,20 @@ Commercial UI licensing is also intentionally manual:
       ```
 
 ## SSH & Shell Configuration
+
+The Linux Zsh configuration sources the shared
+`dotfiles/aliases-vps1` file. This provides the same on-demand CodeMeter tunnel
+commands used on macOS:
+
+```bash
+v1-license-tunnel-up
+v1-license-tunnel-status
+v1-license-tunnel-down
+```
+
+The tunnel forwards local `127.0.0.1:22350` to the private CodeMeter service on
+`vps1`. It is only active after running the `up` command.
+
 - **SSH Agent**: Automatically start the agent and add keys in `~/.zshrc`:
   ```bash
   # Make sure the ssh keys are in

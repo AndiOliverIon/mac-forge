@@ -1,8 +1,4 @@
-#!/bin/sh
-if [ -z "${BASH_VERSION:-}" ]; then
-  [ -x /opt/homebrew/bin/bash ] && exec /opt/homebrew/bin/bash "$0" "$@"
-  exec bash "$0" "$@"
-fi
+#!/usr/bin/env bash
 # vps1.sh — shared config/helpers for the vps1 SQL snapshot workflow.
 #
 # Sourced by scripts/vps1/vps1-db-*.sh. Operates against the dev SQL Server
@@ -17,6 +13,14 @@ fi
 #   - Single dedicated snapshots folder on vps1:
 #       host:      /srv/tnisoft/mssql/snapshots
 #       container: /var/opt/mssql/snapshots
+
+if ((BASH_VERSINFO[0] < 4)); then
+  echo "✖ vps1 database scripts require Bash 4 or newer (running $BASH_VERSION)." >&2
+  if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
+    return 1
+  fi
+  exit 1
+fi
 
 #######################################
 # Static config (vps1 station)

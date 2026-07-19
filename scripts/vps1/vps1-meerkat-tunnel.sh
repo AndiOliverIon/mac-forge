@@ -1,8 +1,4 @@
-#!/bin/sh
-if [ -z "${BASH_VERSION:-}" ]; then
-  [ -x /opt/homebrew/bin/bash ] && exec /opt/homebrew/bin/bash "$0" "$@"
-  exec bash "$0" "$@"
-fi
+#!/usr/bin/env bash
 # vps1-meerkat-tunnel.sh — open/close the SSH tunnel to the private Meerkat dev API.
 #
 # The dev endpoint (meerkat-backend@dev) binds to 127.0.0.1:5281 on vps1 and is
