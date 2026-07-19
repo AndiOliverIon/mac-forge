@@ -69,7 +69,9 @@ brew install --cask arc bitwarden codex docker-desktop dotnet-sdk dotnet-sdk8 do
 Install these separately from vendor sources:
 
 - FortiClient VPN (Fortinet): install only VPN component.
-- CodeMeter Runtime (Wibu): for local license handling.
+- CodeMeter/WIBU licensing: use the `vps1`-hosted CmCloud architecture in
+  [CODEMETER.md](CODEMETER.md). Do not install CodeMeter Runtime on macOS for
+  this setup.
 - Parallels Desktop: needed when using Windows-side tools and shortcut cleanup workflow.
 - Oh My Zsh: install from official GitHub project for shell profile baseline.
 
@@ -192,15 +194,19 @@ pyenv global 3.12.0
 
 ---
 
-## 7. CodeMeter (Wibu) – Restart Service
+## 7. CodeMeter (Wibu) / ARDIS licensing
 
-To restart the CodeMeter server (e.g., when licenses or dongles are not picked up correctly):
+The authoritative license container is hosted by CodeMeter on `vps1`. The Mac
+opens an SSH tunnel only when licensed software is needed:
 
 ```bash
-sudo launchctl kickstart -k system/com.wibu.CodeMeter.Server
+v1-license-tunnel-up
+v1-license-tunnel-status
+v1-license-tunnel-down
 ```
 
-Run this if CodeMeter behaves strangely or licensed apps stop detecting the license.
+See [CODEMETER.md](CODEMETER.md) for the complete architecture, activation and
+recovery record, Windows/Parallels setup, verification, and troubleshooting.
 
 ---
 
@@ -234,7 +240,8 @@ Run `brew doctor` from time to time to check the health of the Homebrew installa
    - [ ] Install `pyenv` via Homebrew.
    - [ ] Install and set a default Python version.
 6. Licensing
-   - [ ] If needed, verify CodeMeter is running; use restart command if not.
+   - [ ] Configure the `vps1` SSH alias and verify the on-demand license tunnel
+     described in `CODEMETER.md`.
 7. Homebrew
    - [ ] Run `brew doctor`.
    - [ ] Run `brew outdated` and `brew upgrade` as needed.
