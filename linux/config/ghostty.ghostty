@@ -1,5 +1,6 @@
 command = /usr/bin/zsh
 confirm-close-surface = false
+background-opacity = 0.8
 
 # Split panels
 keybind = ctrl+shift+o=unbind

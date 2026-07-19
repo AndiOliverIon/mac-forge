@@ -14,6 +14,13 @@ The script installs the core development tools, IDEs, terminal, shell, and
 Powerlevel10k setup used on a fresh Ubuntu workstation. It also installs `fzf`
 and configures native Docker Engine with storage under `/data/docker`.
 
+Before running the bootstrap, a Telerik license can be staged as
+`.telerik/telerik-license.txt` in the launch directory or under
+`/data/forge-temp`. The bootstrap installs it as
+`~/.telerik/telerik-license.txt` with owner-only permissions. Set
+`TELERIK_LICENSE_SOURCE_DIR` to use another source directory. The source copy
+is deliberately retained for verification and should be removed afterward.
+
 Before running it, the Data SSD must already be formatted and mounted
 read/write at `/data` through `/etc/fstab`. The bootstrap intentionally does
 not partition disks or edit `fstab`.
@@ -106,8 +113,9 @@ ng serve
 Commercial UI licensing is also intentionally manual:
 
 - Set `DEVEXTREME_KEY` before `npm ci` if a DevExtreme license key is required.
-- Run the project’s Kendo license-refresh command only when its referenced
-  helper script and license credential are available.
+- The bootstrap installs a staged `.telerik/telerik-license.txt`; run
+  `npx kendo-ui-license activate` from the Angular client to verify the
+  entitlement after `npm ci`.
 
 ## Window Management
 - **i3 tiling manager**: Efficient keyboard-driven window management. (Under investigation)

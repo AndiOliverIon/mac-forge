@@ -15,21 +15,64 @@ step() {
     echo "[$1] $2"
 }
 
+install_telerik_license() {
+    local destination_dir="${HOME}/.telerik"
+    local destination_file="${destination_dir}/telerik-license.txt"
+    local source_dir=""
+    local candidate
+    local -a candidates=()
+
+    if [[ -n "${TELERIK_LICENSE_SOURCE_DIR:-}" ]]; then
+        candidates+=("${TELERIK_LICENSE_SOURCE_DIR}")
+    fi
+    candidates+=(
+        "${PWD}/.telerik"
+        "${FORGE_ROOT}/.telerik"
+        "/data/forge-temp/.telerik"
+    )
+
+    for candidate in "${candidates[@]}"; do
+        if [[ -f "${candidate}/telerik-license.txt" ]]; then
+            source_dir="${candidate}"
+            break
+        fi
+    done
+
+    if [[ "${source_dir}" == "${destination_dir}" ]]; then
+        chmod 700 "${destination_dir}"
+        chmod 600 "${destination_file}"
+        echo "Telerik license already installed at ${destination_file}."
+    elif [[ -n "${source_dir}" ]]; then
+        install -d -m 700 "${destination_dir}"
+        install -m 600 "${source_dir}/telerik-license.txt" "${destination_file}"
+        echo "Telerik license installed from ${source_dir}."
+        echo "The source copy was left in place; remove it after verifying the workstation."
+    elif [[ -f "${destination_file}" ]]; then
+        chmod 700 "${destination_dir}"
+        chmod 600 "${destination_file}"
+        echo "Telerik license already installed at ${destination_file}."
+    else
+        echo "NOTICE: Telerik license was not found."
+        echo "Place .telerik/telerik-license.txt in the launch directory or /data/forge-temp,"
+        echo "then rerun the bootstrap. TELERIK_LICENSE_SOURCE_DIR can override the source."
+    fi
+}
+
 echo "========================================="
 echo " Ubuntu Forge Bootstrap"
 echo "========================================="
 
-step "1/17" "Updating package index..."
+step "1/18" "Updating package index..."
 sudo apt update
 
-step "2/17" "Upgrading installed packages..."
+step "2/18" "Upgrading installed packages..."
 sudo apt full-upgrade -y
 
-step "3/17" "Removing unused packages..."
+step "3/18" "Removing unused packages..."
 sudo apt autoremove -y
 sudo apt autoclean
 
-step "4/17" "Installing essential tools..."
+step "4/18" "Installing essential tools..."
 sudo apt install -y \
     ca-certificates \
     git \
@@ -48,7 +91,7 @@ sudo apt install -y \
     snapd \
     software-properties-common
 
-step "5/17" "Installing Visual Studio Code..."
+step "5/18" "Installing Visual Studio Code..."
 wget -qO- https://packages.microsoft.com/keys/microsoft.asc \
     | sudo gpg --dearmor --yes -o /usr/share/keyrings/microsoft.gpg
 sudo chmod 644 /usr/share/keyrings/microsoft.gpg
@@ -65,12 +108,12 @@ EOF
 sudo apt update
 sudo apt install -y code
 
-step "6/17" "Installing JetBrains Rider..."
+step "6/18" "Installing JetBrains Rider..."
 if ! snap list rider > /dev/null 2>&1; then
     sudo snap install rider --classic
 fi
 
-step "7/17" "Installing .NET 8 and .NET 10 SDKs system-wide..."
+step "7/18" "Installing .NET 8 and .NET 10 SDKs system-wide..."
 dotnet_installer="$(mktemp)"
 trap 'rm -f "${dotnet_installer}"' EXIT
 curl -fsSL https://dot.net/v1/dotnet-install.sh -o "${dotnet_installer}"
@@ -92,7 +135,7 @@ sudo ln -sfn "${DOTNET_INSTALL_DIR}/dotnet" /usr/bin/dotnet
 rm -f "${dotnet_installer}"
 trap - EXIT
 
-step "8/17" "Installing or updating NVM..."
+step "8/18" "Installing or updating NVM..."
 
 if [ ! -d "${NVM_DIR}/.git" ]; then
     git clone https://github.com/nvm-sh/nvm.git "${NVM_DIR}"
@@ -120,25 +163,28 @@ export NVM_DIR="$HOME/.nvm"
 EOF
 fi
 
-step "9/17" "Installing the latest Node.js LTS release..."
+step "9/18" "Installing the latest Node.js LTS release..."
 nvm install --lts
 nvm use --lts
 nvm alias default 'lts/*'
 nvm install-latest-npm
 
-step "10/17" "Installing global npm development tools..."
+step "10/18" "Installing global npm development tools..."
 npm install --global @openai/codex
 npm install --global "@angular/cli@${ANGULAR_CLI_VERSION}"
 corepack enable
 corepack install --global "yarn@${YARN_VERSION}"
 
-step "11/17" "Installing or updating Claude Code..."
+step "11/18" "Configuring the Telerik license..."
+install_telerik_license
+
+step "12/18" "Installing or updating Claude Code..."
 curl -fsSL https://claude.ai/install.sh | bash
 
-step "12/17" "Installing or updating GitHub Copilot CLI..."
+step "13/18" "Installing or updating GitHub Copilot CLI..."
 curl -fsSL https://gh.io/copilot-install | bash
 
-step "13/17" "Installing and configuring Ghostty..."
+step "14/18" "Installing and configuring Ghostty..."
 sudo apt install -y ghostty
 
 GHOSTTY_CONFIG_DIR="${HOME}/.config/ghostty"
@@ -154,7 +200,7 @@ gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-right \
 gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-up "[]"
 gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-down "[]"
 
-step "14/17" "Installing Oh My Zsh and Powerlevel10k..."
+step "15/18" "Installing Oh My Zsh and Powerlevel10k..."
 if [ ! -d "${HOME}/.oh-my-zsh/.git" ]; then
     RUNZSH=no CHSH=no KEEP_ZSHRC=yes sh -c \
         "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" \
@@ -186,7 +232,7 @@ fi
 
 "${FORGE_ROOT}/linux/scripts/link-dotfiles.sh"
 
-step "15/17" "Preparing the permanent Data SSD layout..."
+step "16/18" "Preparing the permanent Data SSD layout..."
 sudo "${FORGE_ROOT}/linux/scripts/setup-data-layout.sh"
 
 if [[ ! -e "${HOME}/work" && ! -L "${HOME}/work" ]]; then
@@ -195,10 +241,10 @@ elif [[ "$(readlink -f "${HOME}/work" 2>/dev/null || true)" != "/data/work" ]]; 
     echo "NOTICE: ${HOME}/work already exists and was not replaced."
 fi
 
-step "16/17" "Installing and configuring Docker Engine..."
+step "17/18" "Installing and configuring Docker Engine..."
 sudo "${FORGE_ROOT}/linux/scripts/install-docker.sh"
 
-step "17/17" "Sharing /data over SMB..."
+step "18/18" "Sharing /data over SMB..."
 sudo "${FORGE_ROOT}/linux/scripts/install-data-share.sh"
 
 sudo chsh -s "$(command -v zsh)" "${USER}"

@@ -28,6 +28,29 @@ npx kendo-ui-license info
 The `refresh` command opens the Telerik login flow and writes the license file
 under `~/.telerik/`.
 
+## Linux Bootstrap
+
+Before running `./linux/scripts/bootstrap.sh`, stage the downloaded license at
+one of these locations:
+
+```text
+<launch-directory>/.telerik/telerik-license.txt
+/data/forge-temp/.telerik/telerik-license.txt
+```
+
+The bootstrap also checks `<mac-forge>/.telerik` and accepts
+`TELERIK_LICENSE_SOURCE_DIR` as an explicit source-directory override. It
+copies only `telerik-license.txt` to `~/.telerik/`, applies directory mode
+`700` and file mode `600`, and never prints the license contents. macOS
+`._telerik-license.txt` metadata is ignored.
+
+The source is not deleted automatically. Remove it after activation is
+verified from the Angular client:
+
+```sh
+npx kendo-ui-license activate
+```
+
 ## Cerber / Windows Setup
 
 Use `cmd.exe`, or call `.cmd` explicitly from PowerShell because PowerShell may
