@@ -1,52 +1,109 @@
-# Windows scripts
+# Windows Forge workstation
 
-Windows helpers for stations that use the shared `mac-forge` toolbox.
+The Windows layer keeps PowerShell as the interactive shell while reusing the
+repository's shared Bash workflows through Git Bash. Native PowerShell is used
+only for Windows profile, terminal, networking, and other platform operations.
 
-## Aliases
+## Bootstrap
 
-Load the Windows aliases in the current PowerShell session:
+From an elevated or normal PowerShell session in the repository root:
 
 ```powershell
-. .\windows\aliases.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File .\windows\scripts\bootstrap.ps1
 ```
 
-Then the tunnel commands are available as:
+The bootstrap is repeatable. It:
+
+- installs the workstation baseline with `winget`;
+- sets the current-user PowerShell execution policy to `RemoteSigned`;
+- loads Forge from both Windows PowerShell and PowerShell 7 profiles;
+- applies the shared minimal prompt through Oh My Posh;
+- configures Windows Terminal with the Forge color scheme, transparency,
+  padding, and JetBrainsMono Nerd Font;
+- validates that the main Forge commands load.
+
+Use these switches when only part of the setup is wanted:
+
+```powershell
+.\windows\scripts\bootstrap.ps1 -SkipPackages
+.\windows\scripts\bootstrap.ps1 -SkipTerminal
+.\windows\scripts\bootstrap.ps1 -WhatIf
+```
+
+Windows Terminal creates its settings file on first launch. If terminal setup
+is skipped with a warning, launch Terminal once and run:
+
+```powershell
+.\windows\scripts\configure-terminal.ps1
+```
+
+The terminal configurator creates a timestamped settings backup before writing.
+
+## Command model
+
+[profile.ps1](profile.ps1) loads [aliases.ps1](aliases.ps1) in every terminal.
+PowerShell functions preserve familiar macOS/Linux names and forward arguments
+to shared scripts:
+
+```powershell
+switch
+dnc --dry-run
+genopenapi
+v1sn daily
+v1list
+```
+
+Run `help` for common commands or `aliases` to inspect the complete surface.
+
+The launcher automatically:
+
+- finds Git Bash;
+- runs the script from the checked-out repository;
+- exposes the Windows station name as `FORGE_MACHINE_NAME`;
+- exposes the actual checkout as `FORGE_ROOT`;
+- uses `config-local\forge-secrets.sh` when present.
+
+Do not commit `config-local`; it is ignored and may contain private values.
+
+## Native Windows commands
+
+SSH tunnels use a common PowerShell implementation because the Unix tunnel
+scripts depend on process and socket tools not supplied by Git Bash:
 
 ```powershell
 v1-sql-tunnel-up
-v1-sql-tunnel-down
-v1-sql-tunnel-status
+v1-license-tunnel-up
+v1-bl-tunnel-up
+v1-meerkat-tunnel-up
+v1-tally-tunnel-up
 ```
 
-## VPS1 SQL tunnel
+Each has matching `down` and `status` commands and long-form `vps1-*` aliases.
+The existing SQL `.cmd` launchers remain available.
 
-Run this on each Windows station that needs direct SQL tooling access to VPS1:
+The SSH host alias `vps1` and key authentication must already work:
 
 ```powershell
-v1-sql-tunnel-up
-```
-
-Then connect SQL clients to:
-
-```text
-localhost,14333
-```
-
-Close the tunnel with:
-
-```powershell
-v1-sql-tunnel-down
-```
-
-The tunnel uses the local Windows OpenSSH client and expects the SSH alias `vps1`
-to exist in that station's SSH config. SQL remains private on VPS1; each station
-gets its own local `localhost:14333` relay.
-
-Before using the tunnel wrappers, confirm this works from the Windows station:
-
-```cmd
 ssh vps1
 ```
 
-The tunnel starts SSH in non-interactive mode, so key-based authentication should
-already be configured.
+SQL clients connect through `localhost,14333`.
+
+## Shared versus station-specific state
+
+The shared Bash runtime now derives the repository root from its own location
+and accepts `FORGE_MACHINE_NAME`, `FORGE_ROOT`, and `FORGE_SECRETS_FILE`
+overrides.
+
+`configs/work-state.json` still describes Hades paths under `/Users` and
+`/Volumes`. Windows does not automatically expose destructive or stateful local
+Docker/storage commands that consume those paths. Those workflows need a
+station-local state contract before they are safe to enable on Windows.
+
+Commands backed primarily by Git, source files, build tools, SSH, or VPS1 are
+shared now. Commands involving macOS applications, mounted volumes, display
+management, VPN process management, or Hades storage remain platform-specific.
+
+OneDrive/iCloud, Google Drive, and Cerber navigation or synchronization aliases
+remain macOS-only and are intentionally not registered in PowerShell.
