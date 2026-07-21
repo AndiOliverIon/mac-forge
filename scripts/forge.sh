@@ -4,8 +4,9 @@
 #######################################
 # Machine / repo
 #######################################
-FORGE_MACHINE_NAME="Hades"
-FORGE_ROOT="$HOME/mac-forge"
+FORGE_MACHINE_NAME="${FORGE_MACHINE_NAME:-Hades}"
+FORGE_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+FORGE_ROOT="${FORGE_ROOT:-$(cd -- "${FORGE_SCRIPT_DIR}/.." && pwd)}"
 
 #######################################
 # Config (work state)
@@ -61,7 +62,7 @@ FORGE_SQL_DOCKER_SNAPSHOTS_PATH="${FORGE_SQL_DOCKER_ROOT}/snapshots"
 #######################################
 FORGE_ICLOUD_ROOT="$HOME/Library/Mobile Documents/com~apple~CloudDocs"
 FORGE_ICLOUD_FORGE_DIR="$FORGE_ICLOUD_ROOT/forge"
-FORGE_SECRETS_FILE="$FORGE_ICLOUD_FORGE_DIR/forge-secrets.sh"
+FORGE_SECRETS_FILE="${FORGE_SECRETS_FILE:-$FORGE_ICLOUD_FORGE_DIR/forge-secrets.sh}"
 
 #######################################
 # Docker / SQL Server
@@ -153,6 +154,7 @@ ARDIS_MIGRATIONS_LIBRARY="Ardis.Migrations.Console.dll"
 #######################################
 export \
   FORGE_MACHINE_NAME \
+  FORGE_SCRIPT_DIR \
   FORGE_ROOT \
   FORGE_CONFIG_DIR \
   FORGE_CONFIG_LOCAL_DIR \
