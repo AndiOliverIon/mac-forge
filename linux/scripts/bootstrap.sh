@@ -243,11 +243,7 @@ fi
 step "16/18" "Preparing the permanent Data SSD layout..."
 sudo "${FORGE_ROOT}/linux/scripts/setup-data-layout.sh"
 
-if [[ ! -e "${HOME}/work" && ! -L "${HOME}/work" ]]; then
-    ln -s /data/work "${HOME}/work"
-elif [[ "$(readlink -f "${HOME}/work" 2>/dev/null || true)" != "/data/work" ]]; then
-    echo "NOTICE: ${HOME}/work already exists and was not replaced."
-fi
+mkdir -p "${HOME}/work"
 
 step "17/18" "Installing and configuring Docker Engine..."
 sudo "${FORGE_ROOT}/linux/scripts/install-docker.sh"

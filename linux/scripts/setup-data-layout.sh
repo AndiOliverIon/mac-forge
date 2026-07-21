@@ -31,7 +31,6 @@ findmnt -no OPTIONS /data | grep -qw rw || {
 }
 
 for path in \
-    /data/work \
     /data/sql \
     /data/sql/snapshot \
     /data/sql/snapshots \
