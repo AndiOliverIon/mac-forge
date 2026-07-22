@@ -88,6 +88,7 @@ alias data="cd /data"
 alias dock="cd /data/docker"
 alias work="cd ~/work"
 alias perf="cd ~/work/ardis-perform"
+alias perf230="cd ~/work/ardis-perform-230"
 alias timetrack="cd ~/work/ardis.timetrack"
 alias tt=timetrack
 alias ttbs="cd ~/work/ardis.timetrack && ./buildsolution.sh"
