@@ -52,7 +52,9 @@ cpu_temp_line() {
 }
 
 storage_lines() {
-  df -hT / | awk 'NR==2 {print $1 "\n" $2 "\n" $3 "\n" $5 "\n" $4 "\n" $6}'
+  local path="${1:-/}"
+
+  df -hT "$path" | awk 'NR==2 {print $1 "\n" $2 "\n" $3 "\n" $5 "\n" $4 "\n" $6}'
 }
 
 memory_lines() {
@@ -116,7 +118,7 @@ print_columns() {
   printf '\n'
 }
 
-readarray -t STORAGE_INFO < <(storage_lines)
+readarray -t STORAGE_INFO < <(storage_lines /)
 readarray -t MEMORY_INFO < <(memory_lines)
 DISK_NAME="${STORAGE_INFO[0]:-unknown}"
 FILESYSTEM="${STORAGE_INFO[1]:-unknown}"
@@ -158,12 +160,27 @@ MEMORY_LINES=(
   "Used        $USED_MEMORY"
 )
 STORAGE_LINES=(
-  "Device      $DISK_NAME"
-  "Filesystem  $FILESYSTEM"
-  "Total       $TOTAL_STORAGE"
-  "Free        $FREE_STORAGE"
-  "Occupied    $USED_STORAGE ($USED_PERCENT)"
+  "Root        /"
+  "  Device    $DISK_NAME"
+  "  Filesystem $FILESYSTEM"
+  "  Total     $TOTAL_STORAGE"
+  "  Free      $FREE_STORAGE"
+  "  Occupied  $USED_STORAGE ($USED_PERCENT)"
 )
+
+if mountpoint -q /data; then
+  DATA_STORAGE_INFO=()
+  readarray -t DATA_STORAGE_INFO < <(storage_lines /data)
+  STORAGE_LINES+=(
+    ""
+    "Data        /data"
+    "  Device    ${DATA_STORAGE_INFO[0]:-unknown}"
+    "  Filesystem ${DATA_STORAGE_INFO[1]:-unknown}"
+    "  Total     ${DATA_STORAGE_INFO[2]:-unknown}"
+    "  Free      ${DATA_STORAGE_INFO[3]:-unknown}"
+    "  Occupied  ${DATA_STORAGE_INFO[4]:-unknown} (${DATA_STORAGE_INFO[5]:-unknown})"
+  )
+fi
 
 printf '\n'
 printf 'Forge Linux Info\n'
