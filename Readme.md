@@ -72,6 +72,10 @@ Install these separately from vendor sources:
 - CodeMeter/WIBU licensing: use the `vps1`-hosted CmCloud architecture in
   [CODEMETER.md](CODEMETER.md). Do not install CodeMeter Runtime on macOS for
   this setup.
+- DevExpress .NET component licensing: download the assigned license file and
+  install it at the user-level path described in
+  [licenses/devexpress-suite-license.md](licenses/devexpress-suite-license.md).
+  Do not install the Windows suite on macOS and never commit the license file.
 - Parallels Desktop: needed when using Windows-side tools and shortcut cleanup workflow.
 - Oh My Zsh: install from official GitHub project for shell profile baseline.
 
@@ -242,6 +246,8 @@ Run `brew doctor` from time to time to check the health of the Homebrew installa
 6. Licensing
    - [ ] Configure the `vps1` SSH alias and verify the on-demand license tunnel
      described in `CODEMETER.md`.
+   - [ ] Install the DevExpress .NET license file as described in
+     `licenses/devexpress-suite-license.md`.
 7. Homebrew
    - [ ] Run `brew doctor`.
    - [ ] Run `brew outdated` and `brew upgrade` as needed.

@@ -53,6 +53,7 @@ alias	o	Short shortcut for organizer.
 alias	dotnet-clean	Remove generated build output and caches from the current tree; pass --node_modules to include dependencies.
 alias	dnc	Shortcut for dotnet-clean; pass --node_modules to include dependencies.
 alias	clean	Delete contents of selected configured cleanup targets.
+alias	sim	Cycle focus through the currently open desktop apps; use --cycle SECONDS to save the interval.
 alias	present	Set external display presentation resolution/mode.
 alias	prs	Shortcut for present.
 alias	convert-mov	Convert a selected .mov in the current folder to a readable, high-quality GIF (half-res, ffmpeg+gifski); use -n to name output, -o to drop near-duplicate frames (smaller GIF).
@@ -198,6 +199,7 @@ script	bin-clear	Remove bin and debug directories from the current tree.
 script	branch-delete	Delete local git branches matching a pattern.
 script	branch-local-clean	Preview or delete local branches by safe prefix.
 script	clean	Delete contents of selected configured cleanup targets.
+script	sim	Cycle focus through the desktop apps captured at startup until Ctrl+C.
 script	convert-mov	Convert a selected .mov in the current folder to a readable, high-quality GIF (half-res, ffmpeg+gifski); use -n to name output, -o to drop near-duplicate frames (smaller GIF).
 script	db-admin	Administer a local SQL database: offline/online, drop, recovery, shrink.
 script	db-clear	Clear SQL databases; default hard mode removes container/data after typed confirmation.

@@ -118,7 +118,21 @@ Commercial UI licensing is also intentionally manual:
   entitlement after `npm ci`.
 
 ## Window Management
-- **i3 tiling manager**: Efficient keyboard-driven window management. (Under investigation)
+
+The active Linux desktop is KDE Plasma with KWin.
+
+Use `sim` to cycle focus through the open, non-minimized applications captured
+when the command starts:
+
+```bash
+sim
+sim --cycle 30
+```
+
+The second form saves the interval in seconds. `sim` stays in the foreground
+and unloads its temporary KWin script when stopped with `Ctrl+C`. It supports
+Plasma on Wayland and X11 and requires one of `qdbus6`, `qdbus-qt6`, or
+`qdbus`.
 
 ## Utilities
 - **Flameshot**: Powerful screenshot tool.
