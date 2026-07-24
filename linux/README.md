@@ -68,6 +68,13 @@ They use OpenConnect's Fortinet protocol support, connection metadata from
 `/data/forge/forge-secrets.sh`. For example, a connection with ID `ARDIS`
 requires `FORGE_VPN_ARDIS_PASSWORD`.
 
+## Web launcher
+
+Use `web` to select an entry from the shared `configs/web.json` list and open
+it in the browser configured by `configs/work-state.json`. Use `web change` to
+select a different browser. Linux falls back to the system default browser when
+the configured application is unavailable.
+
 ## Docker
 
 Install native Docker Engine with its daemon and containerd storage under

@@ -29,6 +29,7 @@ alias aliases="sed -n '1,240p' ~/mac-forge/linux/aliases.zsh"
 alias link-dotfiles="~/mac-forge/linux/scripts/link-dotfiles.sh"
 alias ldf=link-dotfiles
 alias inf="~/mac-forge/linux/scripts/inf.sh"
+alias web="~/mac-forge/scripts/web.sh"
 alias vpn="~/mac-forge/scripts/vpn.sh"
 alias dvpn="~/mac-forge/scripts/dvpn.sh"
 alias vpns="~/mac-forge/scripts/vpn-status.sh"

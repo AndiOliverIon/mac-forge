@@ -85,10 +85,12 @@ sudo apt install -y \
     htop \
     btop \
     fzf \
+    jq \
     lsof \
     netcat-openbsd \
     openconnect \
     openssh-client \
+    xdg-utils \
     acl \
     zsh \
     build-essential \

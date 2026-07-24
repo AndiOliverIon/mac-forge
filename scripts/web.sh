@@ -16,6 +16,7 @@ source "$SCRIPT_DIR/forge.sh"
 
 # Default browser from forge if not set
 BROWSER="${FORGE_BROWSER:-Arc}"
+PLATFORM="$(uname -s)"
 
 #######################################
 # Helpers
@@ -34,7 +35,19 @@ require_cmd() {
 #######################################
 require_cmd jq
 require_cmd fzf
-require_cmd osascript
+
+case "$PLATFORM" in
+  Darwin)
+    require_cmd osascript
+    require_cmd open
+    ;;
+  Linux)
+    require_cmd xdg-open
+    ;;
+  *)
+    die "Unsupported platform: $PLATFORM"
+    ;;
+esac
 
 [[ -f "$CONFIG_FILE" ]] || die "Missing config file: $CONFIG_FILE"
 
@@ -46,7 +59,12 @@ ACTION="${1:-go}"
 if [[ "$ACTION" == "change" ]]; then
   # Settle a default browser
   echo "Select a default browser for 'web' command:"
-  selected_browser=$(echo -e "Arc\nGoogle Chrome\nSafari\nFirefox\nMicrosoft Edge" | fzf --prompt="browser > ")
+  if [[ "$PLATFORM" == "Darwin" ]]; then
+    browser_choices=$'Arc\nGoogle Chrome\nSafari\nFirefox\nMicrosoft Edge'
+  else
+    browser_choices=$'Default browser\nGoogle Chrome\nFirefox\nChromium\nMicrosoft Edge'
+  fi
+  selected_browser=$(printf '%s\n' "$browser_choices" | fzf --prompt="browser > ")
   
   if [[ -n "$selected_browser" ]]; then
     python3 - "$FORGE_WORK_STATE_FILE" "$selected_browser" <<'PY'
@@ -93,7 +111,32 @@ echo "Opening in $BROWSER${space:+ on space $space}: $url"
 #######################################
 # Open in Browser
 #######################################
-if [[ "$BROWSER" == "Arc" ]]; then
+if [[ "$PLATFORM" == "Linux" ]]; then
+  case "$BROWSER" in
+    "Google Chrome")
+      browser_command="google-chrome"
+      ;;
+    "Firefox")
+      browser_command="firefox"
+      ;;
+    "Chromium")
+      browser_command="chromium"
+      ;;
+    "Microsoft Edge")
+      browser_command="microsoft-edge"
+      ;;
+    *)
+      browser_command="xdg-open"
+      ;;
+  esac
+
+  if ! command -v "$browser_command" >/dev/null 2>&1; then
+    echo "Browser '$BROWSER' is unavailable; using the system default."
+    browser_command="xdg-open"
+  fi
+
+  "$browser_command" "$url" >/dev/null 2>&1 &
+elif [[ "$BROWSER" == "Arc" ]]; then
   # Use argv passing so quotes/spaces don't break AppleScript
   if ! osascript - "$url" "$space" <<'APPLESCRIPT'
 on run argv
