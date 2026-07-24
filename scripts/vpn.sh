@@ -11,6 +11,11 @@ if [[ -f "$SCRIPT_DIR/forge.sh" ]]; then source "$SCRIPT_DIR/forge.sh";
 elif [[ -f "$HOME/mac-forge/scripts/forge.sh" ]]; then source "$HOME/mac-forge/scripts/forge.sh";
 fi
 
+# Linux keeps private Forge configuration outside the repository and iCloud.
+if [[ "$(uname -s)" == "Linux" ]]; then
+	FORGE_SECRETS_FILE="${FORGE_LINUX_SECRETS_FILE:-${FORGE_HOME_ROOT:-/data/forge}/forge-secrets.sh}"
+fi
+
 # Load secrets
 if [[ -n "${FORGE_SECRETS_FILE:-}" && -f "$FORGE_SECRETS_FILE" ]]; then source "$FORGE_SECRETS_FILE"; fi
 
@@ -36,7 +41,12 @@ PY
 # Main
 #######################################
 main() {
-	local selection title url user vpn_id cert vpn_pwd
+	local selection title url user vpn_id cert vpn_pwd pwd_var
+
+	command -v openconnect >/dev/null 2>&1 || {
+		echo "ERROR: openconnect is not installed." >&2
+		exit 1
+	}
 
 	# Kill existing first for a clean state
 	if pgrep openconnect >/dev/null; then
@@ -45,13 +55,21 @@ main() {
 	fi
 
 	selection="$(choose_vpn)" || exit 1
+	[[ -n "$selection" ]] || {
+		echo "ERROR: No VPN connection is configured in $FORGE_WORK_STATE_FILE." >&2
+		exit 1
+	}
 	IFS=$'\t' read -r title url user vpn_id cert <<< "$selection"
 
 	# Construct secret variable name (e.g., FORGE_VPN_ARDIS_PASSWORD)
 	pwd_var="FORGE_VPN_${vpn_id}_PASSWORD"
-	
+
 	# Dynamically get the password from the environment (loaded from secrets)
 	vpn_pwd="${!pwd_var:-}"
+	[[ -n "$vpn_pwd" ]] || {
+		echo "ERROR: $pwd_var is missing from $FORGE_SECRETS_FILE." >&2
+		exit 1
+	}
 
 	echo -n "Connecting to $title... "
 	sudo -v # Cache sudo

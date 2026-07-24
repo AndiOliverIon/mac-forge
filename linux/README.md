@@ -53,6 +53,21 @@ in `linux/config/runtime.json`.
 The bootstrap creates `/data/forge` with owner-only permissions, but it does
 not create or copy secret values.
 
+## VPN
+
+The Linux shell provides the same VPN commands as macOS:
+
+```bash
+vpn
+vpns
+dvpn
+```
+
+They use OpenConnect's Fortinet protocol support, connection metadata from
+`configs/work-state.json`, and the matching password variable from
+`/data/forge/forge-secrets.sh`. For example, a connection with ID `ARDIS`
+requires `FORGE_VPN_ARDIS_PASSWORD`.
+
 ## Docker
 
 Install native Docker Engine with its daemon and containerd storage under

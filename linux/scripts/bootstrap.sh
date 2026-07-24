@@ -87,6 +87,7 @@ sudo apt install -y \
     fzf \
     lsof \
     netcat-openbsd \
+    openconnect \
     openssh-client \
     acl \
     zsh \
