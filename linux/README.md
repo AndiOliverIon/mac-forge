@@ -178,6 +178,17 @@ The command requires one of `qdbus6`, `qdbus-qt6`, or `qdbus`, plus
 and back in after bootstrap if it adds the user to the `input` group.
 
 ## Utilities
+
+### Cleanup
+
+Use `linux-clean --dry-run` to preview the approved reconstructible caches, then
+run `linux-clean` to clean them. `linux-clean --full` additionally includes
+desktop thumbnail and shader caches. The cleanup preserves credentials,
+sessions, configuration, project state, package stores needed for builds,
+Docker containers/images/volumes, SQL data, Rider history, and system logs.
+Every run ends with the gain from each cleaner and a combined total; dry runs
+show the estimated potential gain and applied runs show the measured reduction.
+
 - **Flameshot**: Powerful screenshot tool.
     - *Note: Add the following to `~/.config/i3/config`:*
       ```bash

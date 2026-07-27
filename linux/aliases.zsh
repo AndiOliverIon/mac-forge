@@ -119,6 +119,7 @@ alias dwkdata="/Users/oliver/mac-forge/scripts/deploy-wonderkitchen.sh"
 # ------------------------------------------------------------------------------
 # Cleanup
 # ------------------------------------------------------------------------------
+alias linux-clean="~/mac-forge/linux/scripts/linux-clean.sh"
 alias dela="rm -rf ./*"
 
 # ------------------------------------------------------------------------------
