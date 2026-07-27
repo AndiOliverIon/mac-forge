@@ -15,7 +15,8 @@ Usage:
   sim --help          Show this help
 
 The default cycle duration is ${DEFAULT_CYCLE_SECONDS} seconds. Press Ctrl+C to stop.
-The app collection is captured once at startup; window state is not changed.
+The app collection is captured once at startup. Each activated app receives a brief
+mouse movement without clicks; window state and app content are not changed.
 EOF
 }
 

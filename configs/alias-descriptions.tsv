@@ -54,7 +54,7 @@ alias	dotnet-clean	Remove generated build output and caches from the current tre
 alias	dnc	Shortcut for dotnet-clean; pass --node_modules to include dependencies.
 alias	clean	Delete contents of selected configured cleanup targets.
 alias	mac-clean	Run standard macOS cleanup scripts in sequence; use --full to include full-only items.
-alias	sim	Cycle focus through the currently open desktop apps; use --cycle SECONDS to save the interval.
+alias	sim	Cycle focus through the currently open desktop apps and simulate mouse movement on macOS; use --cycle SECONDS to save the interval.
 alias	present	Set external display presentation resolution/mode.
 alias	prs	Shortcut for present.
 alias	convert-mov	Convert a selected .mov in the current folder to a readable, high-quality GIF (half-res, ffmpeg+gifski); use -n to name output, -o to drop near-duplicate frames (smaller GIF).
@@ -216,7 +216,7 @@ script	mac-clean-stale-temp	Delete current-user temporary entries older than sev
 script	mac-clean-xcode-derived-data	Delete Xcode DerivedData entries whose entire contents are older than seven days while preserving archives, configuration, and recent build data.
 script	mac-clean-xcode-simulators	Quit Simulator, shut down and erase all devices, and delete unavailable devices.
 script	mac-clean-xcode-test-clones	Delete verified Xcode parallel-test simulator clones older than seven days.
-script	sim	Cycle focus through the desktop apps captured at startup until Ctrl+C.
+script	sim	Cycle focus through the desktop apps captured at startup until Ctrl+C, simulating mouse movement on macOS.
 script	convert-mov	Convert a selected .mov in the current folder to a readable, high-quality GIF (half-res, ffmpeg+gifski); use -n to name output, -o to drop near-duplicate frames (smaller GIF).
 script	db-admin	Administer a local SQL database: offline/online, drop, recovery, shrink.
 script	db-clear	Clear SQL databases; default hard mode removes container/data after typed confirmation.
