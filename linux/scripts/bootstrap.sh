@@ -86,6 +86,7 @@ sudo apt install -y \
     btop \
     fzf \
     jq \
+    libglib2.0-bin \
     lsof \
     netcat-openbsd \
     openconnect \
@@ -95,7 +96,17 @@ sudo apt install -y \
     zsh \
     build-essential \
     snapd \
+    python3-gi \
+    ydotool \
     software-properties-common
+
+sudo usermod -aG input "${USER}"
+systemctl --user enable ydotool.service
+if id -nG | tr ' ' '\n' | grep -qx input; then
+    systemctl --user restart ydotool.service
+else
+    echo "NOTICE: Sign out and back in to activate /dev/uinput access for ydotool."
+fi
 
 step "5/19" "Installing Microsoft sqlcmd..."
 MICROSOFT_REPO_PACKAGE="$(mktemp --suffix=.deb)"

@@ -167,8 +167,15 @@ sim --cycle 30
 
 The second form saves the interval in seconds. `sim` stays in the foreground
 and unloads its temporary KWin script when stopped with `Ctrl+C`. It supports
-Plasma on Wayland and X11 and requires one of `qdbus6`, `qdbus-qt6`, or
-`qdbus`.
+Plasma on Wayland and X11. After activating each app, it moves the pointer to
+the focused window, performs a brief 24-pixel horizontal and vertical movement
+without clicking, and restores the original pointer position. Window state and
+application content are not changed.
+
+The command requires one of `qdbus6`, `qdbus-qt6`, or `qdbus`, plus
+`libglib2.0-bin`, `python3-gi`, and `ydotool` with its user service running and
+`/dev/uinput` access. The bootstrap installs and enables this support. Sign out
+and back in after bootstrap if it adds the user to the `input` group.
 
 ## Utilities
 - **Flameshot**: Powerful screenshot tool.

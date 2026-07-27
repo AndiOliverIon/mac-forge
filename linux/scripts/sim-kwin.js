@@ -1,9 +1,15 @@
 "use strict";
 
 var SIM_CYCLE_MILLISECONDS = __SIM_CYCLE_MILLISECONDS__;
+var SIM_DBUS_SERVICE = "__SIM_DBUS_SERVICE__";
+var SIM_DBUS_PATH = "/io/github/AndiOliverIon/MacForge/Sim";
+var SIM_DBUS_INTERFACE = "io.github.AndiOliverIon.MacForge.Sim";
 var simApps = [];
 var simNextIndex = 0;
 var simTimer = null;
+var simActivationTimers = [];
+var SIM_ACTIVATION_DELAY_MILLISECONDS = 200;
+var SIM_MOUSE_MOVEMENT_PIXELS = 24;
 
 function simWindowList() {
     if (typeof workspace.windowList === "function") {
@@ -101,6 +107,85 @@ function simActivate(window) {
     }
 }
 
+function simRoundedCoordinate(value) {
+    return Math.round(Number(value));
+}
+
+function simMouseEvent(window) {
+    var geometry = window.clientGeometry || window.frameGeometry;
+    if (!geometry || geometry.width < 2 || geometry.height < 2) {
+        throw new Error("focused window has no usable geometry");
+    }
+
+    var original = workspace.cursorPos;
+    if (!original) {
+        throw new Error("KWin did not provide the current pointer position");
+    }
+
+    var minX = Math.ceil(Number(geometry.x));
+    var minY = Math.ceil(Number(geometry.y));
+    var maxX = Math.floor(Number(geometry.x) + Number(geometry.width) - 1);
+    var maxY = Math.floor(Number(geometry.y) + Number(geometry.height) - 1);
+    var targetX = Math.max(minX, Math.min(maxX, simRoundedCoordinate(
+        Number(geometry.x) + Number(geometry.width) / 2
+    )));
+    var targetY = Math.max(minY, Math.min(maxY, simRoundedCoordinate(
+        Number(geometry.y) + Number(geometry.height) / 2
+    )));
+    var horizontalX = Math.min(maxX, targetX + SIM_MOUSE_MOVEMENT_PIXELS);
+    var verticalY = Math.min(maxY, targetY + SIM_MOUSE_MOVEMENT_PIXELS);
+
+    if (horizontalX === targetX) {
+        horizontalX = Math.max(minX, targetX - SIM_MOUSE_MOVEMENT_PIXELS);
+    }
+    if (verticalY === targetY) {
+        verticalY = Math.max(minY, targetY - SIM_MOUSE_MOVEMENT_PIXELS);
+    }
+
+    callDBus(
+        SIM_DBUS_SERVICE,
+        SIM_DBUS_PATH,
+        SIM_DBUS_INTERFACE,
+        "Move",
+        simRoundedCoordinate(original.x),
+        simRoundedCoordinate(original.y),
+        targetX,
+        targetY,
+        horizontalX,
+        targetY,
+        horizontalX,
+        verticalY,
+        function(success) {
+            if (success !== true) {
+                print("sim: pointer service reported a movement failure");
+            }
+        }
+    );
+}
+
+function simScheduleMouseEvent(window, appLabel) {
+    var timer = new QTimer();
+    timer.interval = SIM_ACTIVATION_DELAY_MILLISECONDS;
+    timer.singleShot = true;
+    simActivationTimers.push(timer);
+
+    timer.timeout.connect(function() {
+        var timerIndex = simActivationTimers.indexOf(timer);
+        if (timerIndex !== -1) {
+            simActivationTimers.splice(timerIndex, 1);
+        }
+
+        try {
+            if (window.deleted !== true && window.minimized !== true) {
+                simMouseEvent(window);
+            }
+        } catch (error) {
+            print("sim: could not move pointer for " + appLabel + ": " + error);
+        }
+    });
+    timer.start();
+}
+
 function simCycle() {
     if (simAvailableAppCount() < 2) {
         print("sim: waiting because fewer than two captured apps are available");
@@ -118,6 +203,7 @@ function simCycle() {
 
         try {
             simActivate(window);
+            simScheduleMouseEvent(window, app.label);
         } catch (error) {
             print("sim: could not activate " + app.label + ": " + error);
         }
