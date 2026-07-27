@@ -53,6 +53,7 @@ alias	o	Short shortcut for organizer.
 alias	dotnet-clean	Remove generated build output and caches from the current tree; pass --node_modules to include dependencies.
 alias	dnc	Shortcut for dotnet-clean; pass --node_modules to include dependencies.
 alias	clean	Delete contents of selected configured cleanup targets.
+alias	mac-clean	Run standard macOS cleanup scripts in sequence; use --full to include full-only items.
 alias	sim	Cycle focus through the currently open desktop apps; use --cycle SECONDS to save the interval.
 alias	present	Set external display presentation resolution/mode.
 alias	prs	Shortcut for present.
@@ -199,6 +200,22 @@ script	bin-clear	Remove bin and debug directories from the current tree.
 script	branch-delete	Delete local git branches matching a pattern.
 script	branch-local-clean	Preview or delete local branches by safe prefix.
 script	clean	Delete contents of selected configured cleanup targets.
+script	mac-clean	Run standard macOS cleanup scripts in sequence; use --full to include full-only items.
+script	mac-clean-browser-caches	Clear only Arc and Chrome per-profile disk and code caches while preserving credentials, sessions, profiles, browsing data, and configuration.
+script	mac-clean-claude-cache	Clear only Claude Desktop browser response and code caches while preserving credentials, conversations, sessions, application data, runtime bundles, and configuration.
+script	mac-clean-codex-cache	Clear only Codex desktop browser response and code caches while preserving credentials, conversations, sessions, projects, worktrees, and configuration.
+script	mac-clean-copilot-index-cache	Clear only GitHub Copilot project-context and project-index caches while preserving authentication, sessions, configuration, plugins, binaries, and runtime packages.
+script	mac-clean-docker-build-cache	Prune only reclaimable Docker build cache unused for seven days; preserve containers, images, volumes, networks, builders, configuration, and credentials.
+script	mac-clean-homebrew	Clean Homebrew using its default cleanup and retention policy.
+script	mac-clean-nuget-transient	Clear NuGet HTTP, temporary, and plugin caches while preserving global packages and configuration.
+script	mac-clean-npm-cache	Verify npm's configured cache and garbage-collect unneeded content without changing npm configuration.
+script	mac-clean-rider-caches	Clear only Rider indexes, IDE caches, and ReSharper caches while preserving Local History, file/test history, plugins, settings, projects, VCS data, and credentials.
+script	mac-clean-yarn-cache	Clear Yarn v1's downloaded package cache while preserving projects, dependencies, lockfiles, global packages, configuration, and credentials.
+script	mac-clean-swiftpm-cache	Purge SwiftPM's global repository cache while preserving package resolution, project builds, configuration, security fingerprints, and credentials.
+script	mac-clean-stale-temp	Delete current-user temporary entries older than seven days, or recognized AI-tool entries older than 24 hours, while preserving open or recently modified content.
+script	mac-clean-xcode-derived-data	Delete Xcode DerivedData entries whose entire contents are older than seven days while preserving archives, configuration, and recent build data.
+script	mac-clean-xcode-simulators	Quit Simulator, shut down and erase all devices, and delete unavailable devices.
+script	mac-clean-xcode-test-clones	Delete verified Xcode parallel-test simulator clones older than seven days.
 script	sim	Cycle focus through the desktop apps captured at startup until Ctrl+C.
 script	convert-mov	Convert a selected .mov in the current folder to a readable, high-quality GIF (half-res, ffmpeg+gifski); use -n to name output, -o to drop near-duplicate frames (smaller GIF).
 script	db-admin	Administer a local SQL database: offline/online, drop, recovery, shrink.
