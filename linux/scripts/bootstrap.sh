@@ -62,17 +62,17 @@ echo "========================================="
 echo " Ubuntu Forge Bootstrap"
 echo "========================================="
 
-step "1/18" "Updating package index..."
+step "1/19" "Updating package index..."
 sudo apt update
 
-step "2/18" "Upgrading installed packages..."
+step "2/19" "Upgrading installed packages..."
 sudo apt full-upgrade -y
 
-step "3/18" "Removing unused packages..."
+step "3/19" "Removing unused packages..."
 sudo apt autoremove -y
 sudo apt autoclean
 
-step "4/18" "Installing essential tools..."
+step "4/19" "Installing essential tools..."
 sudo apt install -y \
     ca-certificates \
     git \
@@ -97,7 +97,19 @@ sudo apt install -y \
     snapd \
     software-properties-common
 
-step "5/18" "Installing Visual Studio Code..."
+step "5/19" "Installing Microsoft sqlcmd..."
+MICROSOFT_REPO_PACKAGE="$(mktemp --suffix=.deb)"
+trap 'rm -f "${MICROSOFT_REPO_PACKAGE}"' EXIT
+curl -fsSL \
+    "https://packages.microsoft.com/config/ubuntu/$(. /etc/os-release && printf '%s' "${VERSION_ID}")/packages-microsoft-prod.deb" \
+    -o "${MICROSOFT_REPO_PACKAGE}"
+sudo dpkg -i "${MICROSOFT_REPO_PACKAGE}"
+rm -f "${MICROSOFT_REPO_PACKAGE}"
+trap - EXIT
+sudo apt update
+sudo apt install -y sqlcmd
+
+step "6/19" "Installing Visual Studio Code..."
 wget -qO- https://packages.microsoft.com/keys/microsoft.asc \
     | sudo gpg --dearmor --yes -o /usr/share/keyrings/microsoft.gpg
 sudo chmod 644 /usr/share/keyrings/microsoft.gpg
@@ -114,12 +126,12 @@ EOF
 sudo apt update
 sudo apt install -y code
 
-step "6/18" "Installing JetBrains Rider..."
+step "7/19" "Installing JetBrains Rider..."
 if ! snap list rider > /dev/null 2>&1; then
     sudo snap install rider --classic
 fi
 
-step "7/18" "Installing .NET 8, .NET 9, and .NET 10 SDKs system-wide..."
+step "8/19" "Installing .NET 8, .NET 9, and .NET 10 SDKs system-wide..."
 dotnet_installer="$(mktemp)"
 trap 'rm -f "${dotnet_installer}"' EXIT
 curl -fsSL https://dot.net/v1/dotnet-install.sh -o "${dotnet_installer}"
@@ -146,7 +158,7 @@ sudo ln -sfn "${DOTNET_INSTALL_DIR}/dotnet" /usr/bin/dotnet
 rm -f "${dotnet_installer}"
 trap - EXIT
 
-step "8/18" "Installing or updating NVM..."
+step "9/19" "Installing or updating NVM..."
 
 if [ ! -d "${NVM_DIR}/.git" ]; then
     git clone https://github.com/nvm-sh/nvm.git "${NVM_DIR}"
@@ -174,28 +186,28 @@ export NVM_DIR="$HOME/.nvm"
 EOF
 fi
 
-step "9/18" "Installing the latest Node.js LTS release..."
+step "10/19" "Installing the latest Node.js LTS release..."
 nvm install --lts
 nvm use --lts
 nvm alias default 'lts/*'
 nvm install-latest-npm
 
-step "10/18" "Installing global npm development tools..."
+step "11/19" "Installing global npm development tools..."
 npm install --global @openai/codex
 npm install --global "@angular/cli@${ANGULAR_CLI_VERSION}"
 corepack enable
 corepack install --global "yarn@${YARN_VERSION}"
 
-step "11/18" "Configuring the Telerik license..."
+step "12/19" "Configuring the Telerik license..."
 install_telerik_license
 
-step "12/18" "Installing or updating Claude Code..."
+step "13/19" "Installing or updating Claude Code..."
 curl -fsSL https://claude.ai/install.sh | bash
 
-step "13/18" "Installing or updating GitHub Copilot CLI..."
+step "14/19" "Installing or updating GitHub Copilot CLI..."
 curl -fsSL https://gh.io/copilot-install | bash
 
-step "14/18" "Installing and configuring Ghostty..."
+step "15/19" "Installing and configuring Ghostty..."
 sudo apt install -y ghostty
 
 GHOSTTY_CONFIG_DIR="${HOME}/.config/ghostty"
@@ -211,7 +223,7 @@ gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-right \
 gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-up "[]"
 gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-down "[]"
 
-step "15/18" "Installing Oh My Zsh and Powerlevel10k..."
+step "16/19" "Installing Oh My Zsh and Powerlevel10k..."
 if [ ! -d "${HOME}/.oh-my-zsh/.git" ]; then
     RUNZSH=no CHSH=no KEEP_ZSHRC=yes sh -c \
         "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" \
@@ -243,15 +255,15 @@ fi
 
 "${FORGE_ROOT}/linux/scripts/link-dotfiles.sh"
 
-step "16/18" "Preparing the permanent Data SSD layout..."
+step "17/19" "Preparing the permanent Data SSD layout..."
 sudo "${FORGE_ROOT}/linux/scripts/setup-data-layout.sh"
 
 mkdir -p "${HOME}/work"
 
-step "17/18" "Installing and configuring Docker Engine..."
+step "18/19" "Installing and configuring Docker Engine..."
 sudo "${FORGE_ROOT}/linux/scripts/install-docker.sh"
 
-step "18/18" "Sharing /data over SMB..."
+step "19/19" "Sharing /data over SMB..."
 sudo "${FORGE_ROOT}/linux/scripts/install-data-share.sh"
 
 sudo chsh -s "$(command -v zsh)" "${USER}"
@@ -266,6 +278,7 @@ echo "  fzf:       $(fzf --version | awk '{ print $1 }')"
 echo "  Zsh:       $(zsh --version)"
 echo "  Docker:    $(docker --version)"
 echo "  Compose:   $(docker compose version)"
+echo "  sqlcmd:    $(sqlcmd --version 2>/dev/null | awk '/Version:/ { print $2; exit }')"
 echo "  .NET SDKs:"
 dotnet --list-sdks | sed 's/^/    /'
 echo "  NVM:       $(nvm --version)"

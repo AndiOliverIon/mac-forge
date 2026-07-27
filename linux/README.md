@@ -53,6 +53,20 @@ in `linux/config/runtime.json`.
 The bootstrap creates `/data/forge` with owner-only permissions, but it does
 not create or copy secret values.
 
+## Remote SQL backups
+
+Use `rdbsn` to select a remote SQL Server and create a compressed, copy-only
+backup in that server's configured backup directory. The command uses the
+shared `scripts/db-remote-backup.sh` workflow and requires remote targets in:
+
+```text
+~/mac-forge/config-local/local-store.json
+```
+
+The bootstrap installs Microsoft's standalone `sqlcmd` utility required by
+this workflow. Remote SQL credentials remain machine-local and are not created
+or copied by bootstrap.
+
 ## VPN
 
 The Linux shell provides the same VPN commands as macOS:

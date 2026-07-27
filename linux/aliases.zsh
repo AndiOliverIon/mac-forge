@@ -76,6 +76,7 @@ alias dcf=docker-clean-fact
 # ------------------------------------------------------------------------------
 alias dbr="~/mac-forge/linux/scripts/db-restore.sh"
 alias dbsn="~/mac-forge/linux/scripts/db-snapshot.sh"
+alias rdbsn="~/mac-forge/scripts/db-remote-backup.sh"
 alias ardis-migrate="~/mac-forge/linux/scripts/ardis-migrate.sh"
 alias am="ardis-migrate"
 alias publish-tt="~/mac-forge/scripts/publish-tt.sh"
