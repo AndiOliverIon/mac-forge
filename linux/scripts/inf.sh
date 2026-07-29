@@ -102,99 +102,211 @@ print_columns() {
   local left_name="$2"
   local right_title="$3"
   local right_name="$4"
+  local left_color="$5"
+  local right_color="$6"
   local -n left_lines="$left_name"
   local -n right_lines="$right_name"
+  local terminal_width
+  local left_width
+  local right_width
   local row
   local row_count="${#left_lines[@]}"
+
+  terminal_width="$(tput cols 2>/dev/null || printf '80')"
+  (( terminal_width < 40 )) && terminal_width=40
+  left_width=$(( (terminal_width - 2) / 2 ))
+  right_width=$(( terminal_width - left_width - 2 ))
 
   if (( ${#right_lines[@]} > row_count )); then
     row_count="${#right_lines[@]}"
   fi
 
-  printf '%-56s%s\n' "$left_title" "$right_title"
+  printf '%s%-*.*s%s  %s%-*.*s%s\n' \
+    "$left_color" "$left_width" "$left_width" "$left_title" "$RESET" \
+    "$right_color" "$right_width" "$right_width" "$right_title" "$RESET"
   for ((row = 0; row < row_count; row++)); do
-    printf '  %-54s  %s\n' "${left_lines[row]:-}" "${right_lines[row]:-}"
+    printf '%-*.*s  %-*.*s\n' \
+      "$left_width" "$left_width" "${left_lines[row]:-}" \
+      "$right_width" "$right_width" "${right_lines[row]:-}"
   done
-  printf '\n'
 }
 
-readarray -t STORAGE_INFO < <(storage_lines /)
-readarray -t MEMORY_INFO < <(memory_lines)
-DISK_NAME="${STORAGE_INFO[0]:-unknown}"
-FILESYSTEM="${STORAGE_INFO[1]:-unknown}"
-TOTAL_STORAGE="${STORAGE_INFO[2]:-unknown}"
-FREE_STORAGE="${STORAGE_INFO[3]:-unknown}"
-USED_STORAGE="${STORAGE_INFO[4]:-unknown}"
-USED_PERCENT="${STORAGE_INFO[5]:-unknown}"
-TOTAL_MEMORY="${MEMORY_INFO[0]:-unknown}"
-USED_MEMORY="${MEMORY_INFO[1]:-unknown}"
-AVAILABLE_MEMORY="${MEMORY_INFO[2]:-unknown}"
-CPU_EFFORT="$(cpu_effort_line || true)"
-CPU_TEMP="$(cpu_temp_line || true)"
-CPU_MODEL="$(cpu_model_line || true)"
-OS_NAME="$(. /etc/os-release 2>/dev/null && printf '%s' "${PRETTY_NAME:-Linux}" || printf 'Linux')"
+print_info() {
+  local disk_name
+  local filesystem
+  local total_storage
+  local free_storage
+  local used_storage
+  local used_percent
+  local total_memory
+  local used_memory
+  local available_memory
+  local cpu_effort
+  local cpu_temp
+  local cpu_model
+  local os_name
+  local battery_present
+  local battery_color
+  local storage_color
+  local storage_percent
+  local data_storage_percent
+  local -a storage_info
+  local -a memory_info
+  local -a battery_info
+  local -a system_lines
+  local -a cpu_lines
+  local -a memory_lines
+  local -a battery_lines
+  local -a storage_lines
+  local -a data_storage_info
+  local terminal_width
 
-BATTERY_INFO=()
-readarray -t BATTERY_INFO < <(battery_lines || true)
-if (( ${#BATTERY_INFO[@]} > 0 )); then
-  BATTERY_PRESENT=true
-else
-  BATTERY_PRESENT=false
-fi
+  readarray -t storage_info < <(storage_lines /)
+  readarray -t memory_info < <(memory_lines)
+  disk_name="${storage_info[0]:-unknown}"
+  filesystem="${storage_info[1]:-unknown}"
+  total_storage="${storage_info[2]:-unknown}"
+  free_storage="${storage_info[3]:-unknown}"
+  used_storage="${storage_info[4]:-unknown}"
+  used_percent="${storage_info[5]:-unknown}"
+  total_memory="${memory_info[0]:-unknown}"
+  used_memory="${memory_info[1]:-unknown}"
+  available_memory="${memory_info[2]:-unknown}"
+  cpu_effort="$(cpu_effort_line || true)"
+  cpu_temp="$(cpu_temp_line || true)"
+  cpu_model="$(cpu_model_line || true)"
+  os_name="$(. /etc/os-release 2>/dev/null && printf '%s' "${PRETTY_NAME:-Linux}" || printf 'Linux')"
 
-SYSTEM_LINES=(
-  "OS          $OS_NAME"
-  "Kernel      $(uname -r)"
-  "Hostname    $(hostname)"
-  "Uptime      $(uptime -p | sed 's/^up //')"
-)
-CPU_LINES=(
-  "Model       ${CPU_MODEL:-Unavailable}"
-  "Load        $(awk '{print $1 ", " $2 ", " $3}' /proc/loadavg)"
-  "Effort      ${CPU_EFFORT:-Unavailable}"
-  "Temperature ${CPU_TEMP:-Unavailable}"
-)
-MEMORY_LINES=(
-  "Total       $TOTAL_MEMORY"
-  "Available   $AVAILABLE_MEMORY"
-  "Used        $USED_MEMORY"
-)
-STORAGE_LINES=(
-  "Root        /"
-  "  Device    $DISK_NAME"
-  "  Filesystem $FILESYSTEM"
-  "  Total     $TOTAL_STORAGE"
-  "  Free      $FREE_STORAGE"
-  "  Occupied  $USED_STORAGE ($USED_PERCENT)"
-)
+  battery_info=()
+  readarray -t battery_info < <(battery_lines || true)
+  if (( ${#battery_info[@]} > 0 )); then
+    battery_present=true
+  else
+    battery_present=false
+  fi
 
-if mountpoint -q /data; then
-  DATA_STORAGE_INFO=()
-  readarray -t DATA_STORAGE_INFO < <(storage_lines /data)
-  STORAGE_LINES+=(
-    ""
-    "Data        /data"
-    "  Device    ${DATA_STORAGE_INFO[0]:-unknown}"
-    "  Filesystem ${DATA_STORAGE_INFO[1]:-unknown}"
-    "  Total     ${DATA_STORAGE_INFO[2]:-unknown}"
-    "  Free      ${DATA_STORAGE_INFO[3]:-unknown}"
-    "  Occupied  ${DATA_STORAGE_INFO[4]:-unknown} (${DATA_STORAGE_INFO[5]:-unknown})"
+  system_lines=(
+    "OS       $os_name"
+    "Host     $(hostname)"
+    "Kernel   $(uname -r) | Up $(uptime -p | sed 's/^up //')"
   )
+  cpu_lines=(
+    "Model    ${cpu_model:-Unavailable}"
+    "Load     $(awk '{print $1 ", " $2 ", " $3}' /proc/loadavg)"
+    "Effort   ${cpu_effort:-Unavailable} | Temp ${cpu_temp:-Unavailable}"
+  )
+  memory_lines=(
+    "Total    $total_memory | Used $used_memory"
+    "Free     $available_memory available"
+  )
+
+  if [[ "$battery_present" == true ]]; then
+    battery_color="$GREEN"
+    if [[ "${battery_info[0]:-}" =~ ^[0-9]+$ ]]; then
+      if (( 10#${battery_info[0]} < 20 )); then
+        battery_color="$RED"
+      elif (( 10#${battery_info[0]} < 50 )); then
+        battery_color="$YELLOW"
+      fi
+    fi
+    battery_lines=(
+      "Charge   ${battery_info[0]:-unknown}% | ${battery_info[1]:-unknown}"
+      "Health   ${battery_info[3]:-Unavailable} | Cycles ${battery_info[2]:-Unavailable}"
+    )
+  else
+    battery_color="$DIM"
+    battery_lines=("No battery available")
+  fi
+
+  storage_color="$GREEN"
+  storage_percent="${used_percent%\%}"
+  if [[ "$storage_percent" =~ ^[0-9]+$ ]]; then
+    if (( 10#$storage_percent >= 90 )); then
+      storage_color="$RED"
+    elif (( 10#$storage_percent >= 75 )); then
+      storage_color="$YELLOW"
+    fi
+  fi
+  storage_lines=(
+    "/      $filesystem on $disk_name | $used_storage / $total_storage ($used_percent) | $free_storage free"
+  )
+
+  if mountpoint -q /data; then
+    data_storage_info=()
+    readarray -t data_storage_info < <(storage_lines /data)
+    data_storage_percent="${data_storage_info[5]:-0}"
+    data_storage_percent="${data_storage_percent%\%}"
+    if [[ "$data_storage_percent" =~ ^[0-9]+$ ]]; then
+      if (( 10#$data_storage_percent >= 90 )); then
+        storage_color="$RED"
+      elif (( 10#$data_storage_percent >= 75 )) && [[ "$storage_color" != "$RED" ]]; then
+        storage_color="$YELLOW"
+      fi
+    fi
+    storage_lines+=(
+      "/data  ${data_storage_info[1]:-unknown} on ${data_storage_info[0]:-unknown} | ${data_storage_info[4]:-unknown} / ${data_storage_info[2]:-unknown} (${data_storage_info[5]:-unknown}) | ${data_storage_info[3]:-unknown} free"
+    )
+  fi
+
+  terminal_width="$(tput cols 2>/dev/null || printf '80')"
+  (( terminal_width < 40 )) && terminal_width=40
+
+  printf '%sForge Linux Info%s\n\n' "$BOLD" "$RESET"
+  print_columns '● System' system_lines '◆ CPU' cpu_lines "$BLUE" "$CYAN"
+  printf '\n'
+  print_columns '▣ Memory' memory_lines '♥ Battery' battery_lines "$MAGENTA" "$battery_color"
+  printf '\n%s■ Storage%s\n' "$storage_color" "$RESET"
+  printf '%.*s\n' "$terminal_width" "${storage_lines[0]}"
+  if (( ${#storage_lines[@]} > 1 )); then
+    printf '%.*s\n' "$terminal_width" "${storage_lines[1]}"
+  fi
+}
+
+BOLD=""
+DIM=""
+BLUE=""
+CYAN=""
+MAGENTA=""
+GREEN=""
+YELLOW=""
+RED=""
+RESET=""
+if [[ -t 1 && -z "${NO_COLOR+x}" ]]; then
+  BOLD=$'\033[1m'
+  DIM=$'\033[2m'
+  BLUE=$'\033[34m'
+  CYAN=$'\033[36m'
+  MAGENTA=$'\033[35m'
+  GREEN=$'\033[32m'
+  YELLOW=$'\033[33m'
+  RED=$'\033[31m'
+  RESET=$'\033[0m'
 fi
 
-printf '\n'
-printf 'Forge Linux Info\n'
-printf '================\n'
-printf '\n'
-print_columns System SYSTEM_LINES CPU CPU_LINES
-print_columns Memory MEMORY_LINES Storage STORAGE_LINES
-printf 'Battery\n'
-if [[ "$BATTERY_PRESENT" == true ]]; then
-  printf '  Charge      %s%%\n' "${BATTERY_INFO[0]:-unknown}"
-  printf '  Status      %s\n' "${BATTERY_INFO[1]:-unknown}"
-  printf '  Cycle count %s\n' "${BATTERY_INFO[2]:-Unavailable}"
-  printf '  Health      %s\n' "${BATTERY_INFO[3]:-Unavailable}"
-else
-  printf '  No battery (desktop or not available).\n'
+cycle_interval=""
+if [[ "${1:-}" == "--cycle" ]]; then
+  cycle_interval="${2:-5}"
+  if [[ ! "$cycle_interval" =~ ^[0-9]+([.][0-9]+)?$ ]] || ! awk -v value="$cycle_interval" 'BEGIN { exit !(value > 0) }'; then
+    printf 'Usage: inf [--cycle [SECONDS]]\n' >&2
+    exit 2
+  fi
+  if (( $# > 2 )); then
+    printf 'Usage: inf [--cycle [SECONDS]]\n' >&2
+    exit 2
+  fi
+elif (( $# > 0 )); then
+  printf 'Usage: inf [--cycle [SECONDS]]\n' >&2
+  exit 2
 fi
-printf '\n'
+
+if [[ -n "$cycle_interval" ]]; then
+  trap 'printf "\033[?25h"' EXIT
+  printf '\033[?25l'
+  while true; do
+    snapshot="$(print_info)"
+    printf '\033[H%s\n\033[J' "$snapshot"
+    sleep "$cycle_interval"
+  done
+else
+  print_info
+fi
