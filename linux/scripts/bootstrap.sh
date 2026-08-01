@@ -91,6 +91,7 @@ sudo apt install -y \
     netcat-openbsd \
     openconnect \
     openssh-client \
+    rsync \
     xdg-utils \
     acl \
     zsh \
