@@ -136,6 +136,9 @@ alias	clients	Go to shared SQL client backup/storage folder.
 alias	invoice	Go to the TNI invoice project.
 alias	inv	Shortcut for invoice.
 alias	ti	Shortcut for invoice.
+alias	tally-legacy-import	Rebuild only tally-dev without prompting, then import all live TniInvoice data and reconcile it.
+alias	tally-legacy-reset	Drop and rebuild only the disposable tally-dev database without prompting.
+alias	tally-legacy-refresh	Compatibility alias for the complete tally-legacy-import reset and import cycle.
 alias	borg	Go to the borg dev folder.
 alias	perflog	Go to Perform output logs.
 alias	andi-notes	Go to the Obsidian Andi notes folder.
