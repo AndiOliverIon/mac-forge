@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Script to load a test workspace layout on the primary monitor (DP-4).
+# Legacy i3-only workflow. The active Plasma/KWin environment does not use it.
 # Step 1: Ensure we are on Workspace 1 on the Primary Monitor
 # Step 2: Clear workspace
 # Step 3: Load tabbed layout
@@ -9,6 +10,16 @@ FORGE_LINUX_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 LAYOUT_FILE="${FORGE_LINUX_ROOT}/config/work-layout.json"
 PRIMARY_OUTPUT="DP-4"
 TARGET_WORKSPACE="1"
+
+if [[ "${XDG_CURRENT_DESKTOP:-}" != *i3* ]]; then
+    echo "This legacy workspace loader requires an i3 session; the active workstation uses Plasma/KWin." >&2
+    exit 1
+fi
+
+command -v i3-msg > /dev/null 2>&1 || {
+    echo "i3-msg is required." >&2
+    exit 1
+}
 
 echo "Step 1: Moving focus to ${PRIMARY_OUTPUT} and Workspace ${TARGET_WORKSPACE}..."
 # This command ensures Workspace 1 is on DP-4 and that it's the active workspace.

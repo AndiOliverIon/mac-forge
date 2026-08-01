@@ -1,5 +1,17 @@
 #!/bin/bash
 
+# Legacy X11 connector-specific setup. Plasma Wayland stores display state in
+# KScreen and must be configured through System Settings or kscreen-doctor.
+if [[ "${XDG_SESSION_TYPE:-}" != "x11" ]]; then
+    echo "This legacy display script requires X11; use Plasma Display Configuration on Wayland." >&2
+    exit 1
+fi
+
+command -v xrandr > /dev/null 2>&1 || {
+    echo "xrandr is required." >&2
+    exit 1
+}
+
 # Arguments handling:
 # 1. No arguments: Both set to 110%
 # 2. One argument: Both set to that value

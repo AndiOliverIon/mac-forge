@@ -8,6 +8,10 @@ ALIAS_FILES=(
   "$FORGE_ROOT/dotfiles/aliases"
   "$FORGE_ROOT/dotfiles/aliases-vps1"
 )
+
+if [[ -f "$FORGE_ROOT/linux/aliases.zsh" ]]; then
+  ALIAS_FILES+=("$FORGE_ROOT/linux/aliases.zsh")
+fi
 DESCRIPTIONS_FILE="${ALIAS_DESCRIPTIONS_FILE:-$FORGE_ROOT/configs/alias-descriptions.tsv}"
 SCRIPTS_DIR="$FORGE_ROOT/scripts"
 

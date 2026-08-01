@@ -7,6 +7,7 @@ ANGULAR_CLI_VERSION="20.3.16"
 YARN_VERSION="1.22.22"
 NVM_DIR="${HOME}/.nvm"
 DOTNET_INSTALL_DIR="/usr/share/dotnet"
+TOOLBOX_INSTALL_ROOT="${HOME}/.local/opt"
 FORGE_ROOT="${FORGE_ROOT:-$HOME/mac-forge}"
 export PATH="${HOME}/.local/bin:${PATH}"
 
@@ -68,8 +69,7 @@ sudo apt update
 step "2/19" "Upgrading installed packages..."
 sudo apt full-upgrade -y
 
-step "3/19" "Removing unused packages..."
-sudo apt autoremove -y
+step "3/19" "Cleaning the package cache..."
 sudo apt autoclean
 
 step "4/19" "Installing essential tools..."
@@ -137,10 +137,41 @@ EOF
 sudo apt update
 sudo apt install -y code
 
-step "7/19" "Installing JetBrains Rider..."
-if ! snap list rider > /dev/null 2>&1; then
-    sudo snap install rider --classic
+step "7/19" "Installing JetBrains Toolbox..."
+toolbox_release="$(curl -fsSL 'https://data.services.jetbrains.com/products/releases?code=TBA&latest=true&type=release')"
+toolbox_version="$(jq -r '.TBA[0].version' <<< "${toolbox_release}")"
+toolbox_url="$(jq -r '.TBA[0].downloads.linux.link' <<< "${toolbox_release}")"
+toolbox_checksum="$(jq -r '.TBA[0].downloads.linux.checksumLink' <<< "${toolbox_release}")"
+
+if [[ -z "${toolbox_version}" || "${toolbox_version}" == "null" \
+    || -z "${toolbox_url}" || "${toolbox_url}" == "null" \
+    || -z "${toolbox_checksum}" || "${toolbox_checksum}" == "null" ]]; then
+    echo "Could not resolve the latest JetBrains Toolbox release." >&2
+    exit 1
 fi
+
+toolbox_dir="${TOOLBOX_INSTALL_ROOT}/jetbrains-toolbox-${toolbox_version}"
+if [[ ! -x "${toolbox_dir}/bin/jetbrains-toolbox" ]]; then
+    toolbox_archive="$(mktemp --suffix=.tar.gz)"
+    toolbox_checksum_file="$(mktemp --suffix=.sha256)"
+    toolbox_stage="$(mktemp -d)"
+    trap 'rm -f "${toolbox_archive}" "${toolbox_checksum_file}"; rm -rf "${toolbox_stage}"' EXIT
+
+    curl -fsSL "${toolbox_url}" -o "${toolbox_archive}"
+    curl -fsSL "${toolbox_checksum}" -o "${toolbox_checksum_file}"
+    printf '%s  %s\n' "$(awk '{ print $1; exit }' "${toolbox_checksum_file}")" "${toolbox_archive}" \
+        | sha256sum --check --status
+    tar -xzf "${toolbox_archive}" -C "${toolbox_stage}"
+    mkdir -p "${TOOLBOX_INSTALL_ROOT}"
+    mv "$(find "${toolbox_stage}" -mindepth 1 -maxdepth 1 -type d -print -quit)" "${toolbox_dir}"
+
+    rm -f "${toolbox_archive}" "${toolbox_checksum_file}"
+    rm -rf "${toolbox_stage}"
+    trap - EXIT
+fi
+
+ln -sfn "${toolbox_dir}/bin/jetbrains-toolbox" "${HOME}/.local/bin/jetbrains-toolbox"
+echo "JetBrains Toolbox ${toolbox_version} installed. Open it after bootstrap and install Rider."
 
 step "8/19" "Installing .NET 8, .NET 9, and .NET 10 SDKs system-wide..."
 dotnet_installer="$(mktemp)"
@@ -226,13 +257,23 @@ GHOSTTY_CONFIG="${GHOSTTY_CONFIG_DIR}/config.ghostty"
 mkdir -p "${GHOSTTY_CONFIG_DIR}"
 ln -sfn "${FORGE_ROOT}/linux/config/ghostty.ghostty" "${GHOSTTY_CONFIG}"
 
-# Reserve Ctrl+Alt+Arrow for Ghostty split navigation.
-gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-left \
-    "['<Super>Page_Up', '<Super>KP_Prior', '<Super><Alt>Left']"
-gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-right \
-    "['<Super>Page_Down', '<Super>KP_Next', '<Super><Alt>Right']"
-gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-up "[]"
-gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-down "[]"
+# Reserve Ctrl+Alt+Arrow for Ghostty split navigation in Plasma.
+if command -v kwriteconfig6 > /dev/null 2>&1; then
+    kwriteconfig6 --file kglobalshortcutsrc --group kwin \
+        --key "Switch One Desktop to the Left" \
+        "Meta+Ctrl+Left,Meta+Ctrl+Left,Switch One Desktop to the Left"
+    kwriteconfig6 --file kglobalshortcutsrc --group kwin \
+        --key "Switch One Desktop to the Right" \
+        "Meta+Ctrl+Right,Meta+Ctrl+Right,Switch One Desktop to the Right"
+    kwriteconfig6 --file kglobalshortcutsrc --group kwin \
+        --key "Switch One Desktop Up" \
+        "Meta+Ctrl+Up,Meta+Ctrl+Up,Switch One Desktop Up"
+    kwriteconfig6 --file kglobalshortcutsrc --group kwin \
+        --key "Switch One Desktop Down" \
+        "Meta+Ctrl+Down,Meta+Ctrl+Down,Switch One Desktop Down"
+else
+    echo "NOTICE: kwriteconfig6 was not found; Plasma shortcuts were not configured."
+fi
 
 step "16/19" "Installing Oh My Zsh and Powerlevel10k..."
 if [ ! -d "${HOME}/.oh-my-zsh/.git" ]; then
@@ -264,6 +305,14 @@ export NVM_DIR="$HOME/.nvm"
 EOF
 fi
 
+if ! grep -q 'JetBrains/Toolbox/scripts' "${HOME}/.zshrc"; then
+    cat >> "${HOME}/.zshrc" <<'EOF'
+
+# JetBrains Toolbox command-line launchers
+export PATH="$PATH:$HOME/.local/share/JetBrains/Toolbox/scripts"
+EOF
+fi
+
 "${FORGE_ROOT}/linux/scripts/link-dotfiles.sh"
 
 step "17/19" "Preparing the permanent Data SSD layout..."
@@ -283,7 +332,12 @@ echo
 echo "Installed versions:"
 echo "  Git:       $(git --version)"
 echo "  VS Code:   $(code --version | head -n 1)"
-echo "  Rider:     $(snap list rider | awk 'NR == 2 { print $2 }')"
+echo "  Toolbox:   ${toolbox_version}"
+if command -v rider > /dev/null 2>&1; then
+    echo "  Rider:     installed"
+else
+    echo "  Rider:     install through JetBrains Toolbox"
+fi
 echo "  Ghostty:   $(ghostty --version | head -n 1)"
 echo "  fzf:       $(fzf --version | awk '{ print $1 }')"
 echo "  Zsh:       $(zsh --version)"

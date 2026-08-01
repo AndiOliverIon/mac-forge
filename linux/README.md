@@ -11,8 +11,15 @@ Run the workstation bootstrap from the repository root:
 ```
 
 The script installs the core development tools, IDEs, terminal, shell, and
-Powerlevel10k setup used on a fresh Ubuntu workstation. It also installs `fzf`
-and configures native Docker Engine with storage under `/data/docker`.
+Powerlevel10k setup used on the Plasma workstation. It also installs `fzf` and
+configures native Docker Engine with storage under `/data/docker`. It does not
+run `apt autoremove`; review that package list manually because desktop
+metapackage changes can make important system packages appear unused.
+
+The bootstrap installs JetBrains Toolbox from JetBrains' current Linux release
+and verifies its published SHA-256 checksum. After bootstrap, open Toolbox and
+install Rider from there. Do not install Rider through Snap; the native Toolbox
+installation integrates with KDE's launcher and existing-window activation.
 
 Before running the bootstrap, a Telerik license can be staged as
 `.telerik/telerik-license.txt` in the launch directory or under
@@ -101,6 +108,15 @@ sudo ./linux/scripts/install-docker.sh
 Log out and back in after installation so membership in the `docker` group
 takes effect.
 
+Docker Engine is disabled at boot on the secondary Linux station. Start it on
+demand and wait for the daemon to become ready with:
+
+```bash
+docker-on
+# Short form:
+don
+```
+
 ## Data share
 
 Share `/data` with authenticated SMB access on the local network:
@@ -157,6 +173,10 @@ Commercial UI licensing is also intentionally manual:
 
 The active Linux desktop is KDE Plasma with KWin.
 
+The bootstrap assigns virtual-desktop navigation to `Meta+Ctrl+Arrow`, leaving
+`Ctrl+Alt+Arrow` available for Ghostty split navigation. It does not write
+GNOME settings.
+
 Use `sim` to cycle focus through the open, non-minimized applications captured
 when the command starts:
 
@@ -179,6 +199,17 @@ and back in after bootstrap if it adds the user to the `input` group.
 
 ## Utilities
 
+Run the non-destructive workstation drift report after setup or desktop/package
+changes:
+
+```bash
+./linux/scripts/verify-workstation.sh
+```
+
+It checks Plasma/SDDM, `/data`, core packages and commands, services, portals,
+Docker configuration, SSH agent state, displays, and failed units. It does not
+start services, connect the VPN, access secrets, or change machine state.
+
 ### Cleanup
 
 Use `linux-clean --dry-run` to preview the approved reconstructible caches, then
@@ -189,12 +220,11 @@ Docker containers/images/volumes, SQL data, Rider history, and system logs.
 Every run ends with the gain from each cleaner and a combined total; dry runs
 show the estimated potential gain and applied runs show the measured reduction.
 
-- **Flameshot**: Powerful screenshot tool.
-    - *Note: Add the following to `~/.config/i3/config`:*
-      ```bash
-      # choice for screenshot screen
-      bindsym Print exec flameshot gui -c
-      ```
+- `load-workspace.sh` is retained only as a legacy i3 layout reference and
+  refuses to run outside i3 because it closes windows on its target workspace.
+- `setup-display.sh` is retained only for its old X11 connector layout and
+  refuses to run on Wayland. Configure the current displays through Plasma
+  System Settings; KScreen preserves their geometry and scaling.
 
 ## SSH & Shell Configuration
 

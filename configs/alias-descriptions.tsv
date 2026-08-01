@@ -13,6 +13,8 @@ alias	kp	Kill processes listening on a TCP port, for example kp 8080.
 alias	info	Show a forge machine/system health snapshot.
 alias	inf	Shortcut for info.
 alias	help	Open the forge command picker for aliases and scripts.
+alias	docker-on	Start the Linux Docker Engine on demand and wait until it is ready.
+alias	don	Shortcut for docker-on.
 alias	port-release	Port a commit onto a release branch by creating a local cherry-pick branch.
 alias	prl	Shortcut for port-release.
 alias	web	Open a configured web entry in the preferred browser; use web change to switch browser.
