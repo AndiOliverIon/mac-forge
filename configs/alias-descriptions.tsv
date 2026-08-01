@@ -279,8 +279,8 @@ alias	v1r	Restore a .bak from the vps1 snapshots folder into the vps1 SQL Server
 alias	vps1-restore	Long form of v1r: restore a vps1 snapshot into the vps1 SQL Server.
 alias	v1dbindex	Rebuild all indexes in a selected vps1 SQL database.
 alias	vps1-db-index	Long form of v1dbindex: rebuild all indexes in a selected vps1 SQL database.
-alias	v1down	Download a vps1 .bak snapshot to a local directory.
-alias	vps1-download	Long form of v1down: download a vps1 .bak snapshot locally.
+alias	v1down	Download vps1 .bak snapshots; multiple selections become a timestamped zip archive.
+alias	vps1-download	Long form of v1down: download vps1 snapshots locally.
 alias	v1up	Upload a local .bak into the vps1 snapshots folder for later restore.
 alias	vps1-upload	Long form of v1up: upload a local .bak into the vps1 snapshots folder.
 alias	rdown-to-v1	Relay a remote .bak from the portainer share straight to vps1 snapshots without touching the Mac SSD.
