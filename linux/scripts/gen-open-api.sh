@@ -7,6 +7,7 @@ PROJDIR="${ROOT}/Asms2.Web"
 OUTDIR="${ROOT}/ardis.perform.client/src/app/shared/api"
 OUTFILE="${OUTDIR}/PerformApiClient.ts"
 RUNTIME_ID="linux-x64"
+LOCKFILE="${TMPDIR:-/tmp}/ardis-perform-genopenapi-packages.lock.json"
 TARGET_FRAMEWORK="$(
     dotnet msbuild "${PROJDIR}/Asms2.Web.csproj" \
         -getProperty:TargetFramework \
@@ -20,10 +21,20 @@ fi
 
 cd "${ROOT}"
 dotnet tool restore
+dotnet restore "${PROJDIR}/Asms2.Web.csproj" \
+    -r "${RUNTIME_ID}" \
+    --disable-parallel \
+    --verbosity normal \
+    -m:1 \
+    -p:BuildInParallel=false \
+    -p:RestorePackagesWithLockFile=false \
+    -p:NuGetLockFilePath="${LOCKFILE}"
 dotnet build "${PROJDIR}/Asms2.Web.csproj" \
     -c Debug \
     -r "${RUNTIME_ID}" \
-    -p:RestorePackagesWithLockFile=false
+    -m:1 \
+    -p:BuildInParallel=false \
+    --no-restore
 
 DLL="${PROJDIR}/bin/Debug/${TARGET_FRAMEWORK}/${RUNTIME_ID}/Ardis.Perform.dll"
 if [[ ! -f "${DLL}" ]]; then
