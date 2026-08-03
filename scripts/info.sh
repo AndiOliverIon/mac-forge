@@ -21,6 +21,89 @@ format_size() {
     }'
 }
 
+date_epoch_utc() {
+  TZ=UTC date -j -f '%Y-%m-%d %H:%M:%S' "$1 00:00:00" '+%s' 2>/dev/null
+}
+
+days_in_month() {
+  local year="$1"
+  local month="$2"
+
+  case "$month" in
+    1|3|5|7|8|10|12) printf '31' ;;
+    4|6|9|11) printf '30' ;;
+    2)
+      if (( year % 400 == 0 || (year % 4 == 0 && year % 100 != 0) )); then
+        printf '29'
+      else
+        printf '28'
+      fi
+      ;;
+  esac
+}
+
+format_calendar_interval() {
+  local start_date="$1"
+  local end_date="$2"
+  local start_year start_month start_day
+  local end_year end_month end_day
+  local total_months candidate_year candidate_month candidate_day candidate_max_day
+  local end_epoch candidate_epoch years months days
+  local result=""
+
+  IFS=- read -r start_year start_month start_day <<< "$start_date"
+  IFS=- read -r end_year end_month end_day <<< "$end_date"
+  start_year=$((10#$start_year))
+  start_month=$((10#$start_month))
+  start_day=$((10#$start_day))
+  end_year=$((10#$end_year))
+  end_month=$((10#$end_month))
+  end_day=$((10#$end_day))
+  total_months=$(( (end_year - start_year) * 12 + end_month - start_month ))
+  end_epoch="$(date_epoch_utc "$end_date")"
+
+  while true; do
+    candidate_year=$(( start_year + (start_month - 1 + total_months) / 12 ))
+    candidate_month=$(( (start_month - 1 + total_months) % 12 + 1 ))
+    candidate_max_day="$(days_in_month "$candidate_year" "$candidate_month")"
+    candidate_day="$start_day"
+    (( candidate_day > candidate_max_day )) && candidate_day="$candidate_max_day"
+    candidate_epoch="$(date_epoch_utc "$(printf '%04d-%02d-%02d' "$candidate_year" "$candidate_month" "$candidate_day")")"
+    (( candidate_epoch <= end_epoch )) && break
+    total_months=$((total_months - 1))
+  done
+
+  years=$(( total_months / 12 ))
+  months=$(( total_months % 12 ))
+  days=$(( (end_epoch - candidate_epoch) / 86400 ))
+
+  if (( years > 0 )); then
+    result="$years year"
+    (( years != 1 )) && result+="s"
+  fi
+  if (( months > 0 )); then
+    [[ -n "$result" ]] && result+=", "
+    result+="$months month"
+    (( months != 1 )) && result+="s"
+  fi
+  if (( days > 0 || (years == 0 && months == 0) )); then
+    [[ -n "$result" ]] && result+=", "
+    result+="$days day"
+    (( days != 1 )) && result+="s"
+  fi
+
+  printf '%s' "$result"
+}
+
+mac_first_used_date() {
+  local setup_epoch
+
+  setup_epoch="$(stat -f '%B' /var/db/.AppleSetupDone 2>/dev/null || true)"
+  if [[ "$setup_epoch" =~ ^[0-9]+$ ]] && (( setup_epoch > 0 )); then
+    date -r "$setup_epoch" '+%Y-%m-%d'
+  fi
+}
+
 print_columns() {
   local left_title="$1"
   local right_title="$2"
@@ -82,6 +165,9 @@ print_info() {
   local system_os
   local system_host
   local system_kernel
+  local system_since
+  local system_days
+  local system_age
   local cpu_model_row
   local cpu_load_row
   local cpu_effort_row
@@ -90,6 +176,12 @@ print_info() {
   local battery_charge
   local battery_health
   local storage_row
+  local first_used_date
+  local first_used_epoch
+  local today_date
+  local today_epoch
+  local elapsed_days
+  local elapsed_interval
 
   top_output="$(top -l 1 -n 0)"
   cpu_effort="$(printf '%s\n' "$top_output" | awk -F': ' '/CPU usage/ {
@@ -114,6 +206,22 @@ print_info() {
   uptime_value="$(uptime | awk -F'up ' '{print $2}' | sed 's/, [0-9] user.*//')"
   cpu_model="$(sysctl -n machdep.cpu.brand_string 2>/dev/null || sysctl -n hw.model)"
   cpu_load="$(sysctl -n vm.loadavg | awk '{print $2 ", " $3 ", " $4}')"
+
+  first_used_date="$(mac_first_used_date)"
+  today_date="$(date '+%Y-%m-%d')"
+  first_used_epoch="$(date_epoch_utc "$first_used_date" || true)"
+  today_epoch="$(date_epoch_utc "$today_date")"
+  if [[ "$first_used_epoch" =~ ^[0-9]+$ ]] && (( first_used_epoch <= today_epoch )); then
+    elapsed_days=$(( (today_epoch - first_used_epoch) / 86400 ))
+    elapsed_interval="$(format_calendar_interval "$first_used_date" "$today_date")"
+    system_since="Since    $first_used_date"
+    system_days="Days     $elapsed_days total"
+    system_age="Age      $elapsed_interval"
+  else
+    system_since="Since    Unavailable"
+    system_days="Days     Unavailable"
+    system_age="Age      Unavailable"
+  fi
 
   battery_output="$(pmset -g batt 2>/dev/null || true)"
   charge="$(printf '%s\n' "$battery_output" | grep -Eo '[0-9]+%' | head -n1 || true)"
@@ -179,7 +287,10 @@ print_info() {
   print_columns '● System' '◆ CPU' "$BLUE" "$CYAN" \
     "$system_os" "$cpu_model_row" \
     "$system_host" "$cpu_load_row" \
-    "$system_kernel" "$cpu_effort_row"
+    "$system_kernel" "$cpu_effort_row" \
+    "$system_since" "" \
+    "$system_days" "" \
+    "$system_age" ""
   printf '\n'
   print_columns '▣ Memory' '♥ Battery' "$MAGENTA" "$battery_color" \
     "$memory_total" "$battery_charge" \

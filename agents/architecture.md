@@ -69,7 +69,7 @@ Default SQL container identity:
 - `scripts/help.sh`: interactive launcher over aliases and scripts.
 - `scripts/info.sh`: machine health snapshot.
 - `scripts/clean.sh`: interactive cleaner for configured target directories.
-- `scripts/perform-prep.sh`, `scripts/ardis-migrate.sh`, `scripts/gen-open-api.sh`: work-specific Ardis/Perform helpers.
+- `scripts/perform-prep.sh`, `scripts/perform-test.sh`, `scripts/ardis-migrate.sh`, `scripts/gen-open-api.sh`: work-specific Ardis/Perform helpers.
 
 ## Operational context
 
