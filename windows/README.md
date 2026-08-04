@@ -123,6 +123,22 @@ ssh vps1
 
 SQL clients connect through `localhost,14333`.
 
+### Hades development tunnel
+
+When the Angular and Perform API development servers run on Hades, expose them
+only to the Windows guest through the Hades SSH tunnel:
+
+```powershell
+hades-tunnel-up
+hades-tunnel-down
+```
+
+While the tunnel is up, Windows reaches the Hades services at
+`http://localhost:4200` and `http://localhost:8080`. Hades must have Remote
+Login enabled and key-based SSH access must work from Windows. The tunnel uses
+`oliver@10.211.55.2` and `~/.ssh/id_ed25519_hades_tunnel` by default; set
+`HADES_SSH_HOST` or `HADES_SSH_IDENTITY_FILE` to override them.
+
 ## Shared versus station-specific state
 
 The shared Bash runtime now derives the repository root from its own location
