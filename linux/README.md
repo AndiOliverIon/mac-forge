@@ -241,6 +241,25 @@ v1-license-tunnel-down
 The tunnel forwards local `127.0.0.1:22350` to the private CodeMeter service on
 `vps1`. It is only active after running the `up` command.
 
+### Hades development tunnel
+
+When the Angular and Perform API development servers run on Hades, expose them
+to this Linux station over the LAN through the Hades SSH tunnel:
+
+```bash
+hades-tunnel-up      # htu
+hades-tunnel-down    # htd
+hades-tunnel-status
+```
+
+While the tunnel is up, the station reaches the Hades services at
+`http://localhost:4200` (Angular) and `http://localhost:8080` (Perform API).
+Hades must have Remote Login enabled and key-based SSH access must work. The
+tunnel connects through the `hades` SSH host alias by default; set
+`HADES_SSH_HOST` (e.g. `oliver@192.168.68.108`) or `HADES_TUNNEL_PORTS` to
+override the defaults.
+
+
 - **SSH Agent**: Automatically start the agent and add keys in `~/.zshrc`:
   ```bash
   # Make sure the ssh keys are in
