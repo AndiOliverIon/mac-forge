@@ -16,6 +16,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
 The bootstrap is repeatable. It:
 
 - installs the workstation baseline with `winget`;
+- installs the Windows-native Claude Code and GitHub Copilot CLI packages;
+- installs global Node developer CLIs: Codex, Angular CLI, Yarn, and
+  `vsts-npm-auth`;
+- stages a Telerik license from `.telerik\telerik-license.txt`,
+  `config-local\.telerik\telerik-license.txt`, or `TELERIK_LICENSE_SOURCE_DIR`
+  when one is available;
 - sets the current-user PowerShell execution policy to `RemoteSigned`;
 - loads Forge from both Windows PowerShell and PowerShell 7 profiles;
 - applies the shared minimal prompt through Oh My Posh;
@@ -27,6 +33,8 @@ Use these switches when only part of the setup is wanted:
 
 ```powershell
 .\windows\scripts\bootstrap.ps1 -SkipPackages
+.\windows\scripts\bootstrap.ps1 -SkipGlobalTools
+.\windows\scripts\bootstrap.ps1 -SkipLicense
 .\windows\scripts\bootstrap.ps1 -SkipTerminal
 .\windows\scripts\bootstrap.ps1 -WhatIf
 ```
@@ -65,6 +73,31 @@ The launcher automatically:
 - uses `config-local\forge-secrets.sh` when present.
 
 Do not commit `config-local`; it is ignored and may contain private values.
+
+## Development tool parity
+
+The Windows bootstrap is intended to give Thanatos the same terminal flavor as
+the macOS and Linux stations for daily .NET, Angular, SQL, Docker, Git, AI CLI,
+and VPS1 work.
+
+Installed by bootstrap:
+
+- PowerShell 7, Windows Terminal, Git Bash, Oh My Posh, JetBrainsMono Nerd Font;
+- ripgrep, fzf, jq, Python, Node.js LTS, Yarn `1.22.22`, Angular CLI `20.3.16`;
+- GitHub CLI, GitHub Copilot CLI, Codex CLI, Claude Code;
+- SQL Server `sqlcmd`, VS Code, Rider, Docker Desktop;
+- .NET SDK 8, 9, and 10.
+
+Manual station-local setup still required:
+
+- authenticate `gh`, `copilot`, `codex`, and `claude`;
+- make `ssh vps1`, `ssh oliver@masterchief`, and `ssh oliver@thanatos` work;
+- configure user-level `.npmrc` or run `vsts-npm-auth` for private Azure
+  Artifacts packages;
+- verify commercial UI licenses from the relevant Angular client, for example
+  `npx kendo-ui-license activate`;
+- install or provide `rsync` before using VPS1 transfer commands such as
+  `v1up`, `v1down`, and `rdown-to-v1`.
 
 ## Native Windows commands
 

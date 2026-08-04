@@ -183,7 +183,6 @@ alias clients="cd /Volumes/shared/sql/clients"
 alias invoice="cd ~/tni-invoice"
 alias inv=invoice
 alias ti=invoice
-alias borg="cd ~/dev/borg"
 alias perflog="cd ~/work/perform-output/logs/perform"
 alias andi-notes="cd ~/Library/Mobile\ Documents/iCloud~md~obsidian/Documents/andi-notes"
 alias an="cd ~/Library/Mobile\ Documents/iCloud~md~obsidian/Documents/andi-notes"

@@ -41,7 +41,7 @@ function global:Invoke-ForgeBash {
       $env:FORGE_SECRETS_FILE = (& $script:ForgeBash -c 'export PATH="/usr/bin:/mingw64/bin:$PATH"; cygpath -u "$1"' -- $windowsSecrets)
     }
 
-    $bashScriptPath = (& $script:ForgeBash -c 'cygpath -u "$1"' -- $scriptPath)
+    $bashScriptPath = (& $script:ForgeBash -c 'export PATH="/usr/bin:/mingw64/bin:$PATH"; cygpath -u "$1"' -- $scriptPath)
     & $script:ForgeBash -c 'export PATH="/usr/bin:/mingw64/bin:$PATH"; script="$1"; shift; exec bash "$script" "$@"' -- $bashScriptPath @Arguments
   } finally {
     $env:FORGE_MACHINE_NAME = $previousMachine
@@ -216,7 +216,6 @@ $locations = @{
   "wk" = "C:\projects\alice-in-wonderkitchen"
   "wkdata" = "C:\projects\alice-in-wonderkitchen\wonderkitchen-data"
   "invoice" = (Join-Path $HOME "tni-invoice")
-  "borg" = "C:\dev\borg"
   "perflog" = "C:\work\perform-output\logs\perform"
   "locsql" = (Join-Path $HOME "sql")
   "locsnapshots" = (Join-Path $HOME "sql\snapshots")

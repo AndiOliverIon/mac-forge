@@ -1,5 +1,8 @@
 # mac-forge PowerShell profile entry point.
 
+if ($global:ForgeWindowsProfileLoaded) { return }
+$global:ForgeWindowsProfileLoaded = $true
+
 $script:ForgeWindowsRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $script:ForgeRoot = Split-Path -Parent $script:ForgeWindowsRoot
 
@@ -7,7 +10,14 @@ $script:ForgeRoot = Split-Path -Parent $script:ForgeWindowsRoot
 
 if (Get-Command oh-my-posh -ErrorAction SilentlyContinue) {
   $theme = Join-Path $script:ForgeRoot "profiles\minimal.json"
-  oh-my-posh init pwsh --config $theme | Invoke-Expression
+  try {
+    $poshInit = & oh-my-posh init pwsh --config $theme 2>$null
+    if ($LASTEXITCODE -eq 0 -and $poshInit) {
+      $poshInit | Invoke-Expression
+    }
+  } catch {
+    # Prompt setup is cosmetic; Forge commands should still load.
+  }
 }
 
 if (Get-Module -ListAvailable -Name PSReadLine) {

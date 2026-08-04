@@ -100,84 +100,98 @@ esac
 #       * block_start + block_end (block mode)
 #######################################
 parse_manifest() {
-  python3 - "$CONFIG_FILE" <<'PY'
-import sys, json, base64
+  node - "$CONFIG_FILE" <<'JS'
+const fs = require('fs');
+const path = process.argv[2];
+const data = JSON.parse(fs.readFileSync(path, 'utf8'));
 
-path = sys.argv[1]
-with open(path, "r", encoding="utf-8") as f:
-    data = json.load(f)
+const items = data && !Array.isArray(data) && Array.isArray(data.interventions)
+  ? data.interventions
+  : data;
 
-items = data["interventions"] if isinstance(data, dict) and "interventions" in data else data
-if not isinstance(items, list):
-    raise SystemExit("Manifest must be a list or {interventions:[...]}")
+if (!Array.isArray(items)) {
+  throw new Error('Manifest must be a list or {interventions:[...]}');
+}
 
-for item in items:
-    if not isinstance(item, dict):
-        raise SystemExit("Each intervention must be an object")
+for (const item of items) {
+  if (!item || typeof item !== 'object' || Array.isArray(item)) {
+    throw new Error('Each intervention must be an object');
+  }
 
-    if "id" not in item or "file" not in item:
-        raise SystemExit("Each intervention must include id and file")
+  if (!('id' in item) || !('file' in item)) {
+    throw new Error('Each intervention must include id and file');
+  }
 
-    t_raw = str(item.get("type", "Inject")).strip().lower()
-    print(f"ID|{item['id']}")
-    print(f"FILE|{item['file']}")
-    print(f"TYPE|{t_raw}")
+  const type = String(item.type || 'Inject').trim().toLowerCase();
+  console.log(`ID|${item.id}`);
+  console.log(`FILE|${item.file}`);
+  console.log(`TYPE|${type}`);
 
-    if t_raw == "inject":
-        required = {"anchor", "position", "lines"}
-        missing = required - set(item.keys())
-        if missing:
-            raise SystemExit(f"Inject intervention missing fields {sorted(missing)}: {item['id']}")
-        if item["position"] not in ("before","after"):
-            raise SystemExit(f"Invalid position for {item['id']}: {item['position']} (use before/after)")
-        if not isinstance(item["lines"], list):
-            raise SystemExit(f"lines must be an array for {item['id']}")
+  if (type === 'inject') {
+    const required = ['anchor', 'position', 'lines'];
+    const missing = required.filter((key) => !(key in item));
+    if (missing.length) {
+      throw new Error(`Inject intervention missing fields ${JSON.stringify(missing)}: ${item.id}`);
+    }
+    if (!['before', 'after'].includes(item.position)) {
+      throw new Error(`Invalid position for ${item.id}: ${item.position} (use before/after)`);
+    }
+    if (!Array.isArray(item.lines)) {
+      throw new Error(`lines must be an array for ${item.id}`);
+    }
 
-        joined = "\n".join(str(x) for x in item["lines"])
-        encoded = base64.b64encode(joined.encode("utf-8")).decode("utf-8")
+    const joined = item.lines.map((line) => String(line)).join('\n');
+    const encoded = Buffer.from(joined, 'utf8').toString('base64');
+    console.log(`ANCHOR|${item.anchor}`);
+    console.log(`POSITION|${item.position}`);
+    console.log(`LINES|${encoded}`);
+  } else if (type === 'comment') {
+    const prefix = String(item.comment_prefix || '// ');
+    if (prefix === '') {
+      throw new Error(`comment_prefix must be non-empty for ${item.id}`);
+    }
 
-        print(f"ANCHOR|{item['anchor']}")
-        print(f"POSITION|{item['position']}")
-        print(f"LINES|{encoded}")
-    elif t_raw == "comment":
-        prefix = str(item.get("comment_prefix", "// "))
-        if prefix == "":
-            raise SystemExit(f"comment_prefix must be non-empty for {item['id']}")
+    const maxMatches = item.max_matches ?? 1;
+    if (!Number.isInteger(maxMatches) || maxMatches < 1) {
+      throw new Error(`max_matches must be an integer >= 1 for ${item.id}`);
+    }
 
-        max_matches = item.get("max_matches", 1)
-        if not isinstance(max_matches, int) or max_matches < 1:
-            raise SystemExit(f"max_matches must be an integer >= 1 for {item['id']}")
+    const hasIdentifier = 'identifier' in item;
+    const hasBlock = 'block_start' in item || 'block_end' in item;
+    if (hasIdentifier && hasBlock) {
+      throw new Error(`Use either identifier or block_start/block_end for ${item.id}, not both`);
+    }
 
-        has_identifier = "identifier" in item
-        has_block = "block_start" in item or "block_end" in item
+    if (hasIdentifier) {
+      const ident = String(item.identifier);
+      if (ident === '') {
+        throw new Error(`identifier must be non-empty for ${item.id}`);
+      }
+      console.log('COMMENT_MODE|line');
+      console.log(`IDENTIFIER|${ident}`);
+    } else {
+      if (!('block_start' in item) || !('block_end' in item)) {
+        throw new Error(`Comment intervention ${item.id} needs either identifier OR block_start+block_end`);
+      }
+      const start = String(item.block_start);
+      const end = String(item.block_end);
+      if (start === '' || end === '') {
+        throw new Error(`block_start/block_end must be non-empty for ${item.id}`);
+      }
+      console.log('COMMENT_MODE|block');
+      console.log(`BLOCK_START|${start}`);
+      console.log(`BLOCK_END|${end}`);
+    }
 
-        if has_identifier and has_block:
-            raise SystemExit(f"Use either identifier or block_start/block_end for {item['id']}, not both")
+    console.log(`COMMENT_PREFIX|${prefix}`);
+    console.log(`MAX_MATCHES|${maxMatches}`);
+  } else {
+    throw new Error(`Unsupported intervention type for ${item.id}: ${item.type}`);
+  }
 
-        if has_identifier:
-            ident = str(item["identifier"])
-            if ident == "":
-                raise SystemExit(f"identifier must be non-empty for {item['id']}")
-            print("COMMENT_MODE|line")
-            print(f"IDENTIFIER|{ident}")
-        else:
-            if "block_start" not in item or "block_end" not in item:
-                raise SystemExit(f"Comment intervention {item['id']} needs either identifier OR block_start+block_end")
-            start = str(item["block_start"])
-            end = str(item["block_end"])
-            if start == "" or end == "":
-                raise SystemExit(f"block_start/block_end must be non-empty for {item['id']}")
-            print("COMMENT_MODE|block")
-            print(f"BLOCK_START|{start}")
-            print(f"BLOCK_END|{end}")
-
-        print(f"COMMENT_PREFIX|{prefix}")
-        print(f"MAX_MATCHES|{max_matches}")
-    else:
-        raise SystemExit(f"Unsupported intervention type for {item['id']}: {item.get('type')}")
-
-    print("END_ITEM")
-PY
+  console.log('END_ITEM');
+}
+JS
 }
 
 #######################################
@@ -505,6 +519,39 @@ restore_targets() {
   done
 }
 
+target_uses_crlf() {
+  local file="$1"
+  grep -q $'\r$' "$file"
+}
+
+replace_target_with_work() {
+  local target="$1"
+  local work="$2"
+
+  if target_uses_crlf "$target"; then
+    awk '{ sub(/\r$/, ""); printf "%s\r\n", $0 }' "$work" > "$target"
+    rm -f "$work"
+  else
+    mv "$work" "$target"
+  fi
+}
+
+refresh_clean_worktree_files() {
+  local seen=""
+
+  for i in "${!IDS[@]}"; do
+    local rel="${FILES[$i]}"
+    if grep -Fxq "$rel" <<< "$seen"; then
+      continue
+    fi
+    seen+="${rel}"$'\n'
+
+    if git diff --quiet -- "$rel" 2>/dev/null; then
+      git checkout-index -f -- "$rel" >/dev/null 2>&1 || true
+    fi
+  done
+}
+
 #######################################
 # status
 #######################################
@@ -666,10 +713,7 @@ cmd_apply() {
 
         # Build blockfile from manifest lines
         local blockfile="$TEMP_DIR/block.$i"
-        python3 - <<PY > "$blockfile"
-import base64
-print(base64.b64decode("${lines_b64}").decode("utf-8"), end="")
-PY
+        node -e 'process.stdout.write(Buffer.from(process.argv[1], "base64").toString("utf8"))' "$lines_b64" > "$blockfile"
 
         validate_block_tokens "$id" "$blockfile"
 
@@ -703,7 +747,7 @@ PY
         die "Unsupported intervention type '$type' for '$id'."
       fi
 
-      mv "$work" "$target"
+      replace_target_with_work "$target" "$work"
     done
   )
   local rc=$?
@@ -775,8 +819,10 @@ cmd_remove() {
         die "Unsupported intervention type '$type' for '$id'."
       fi
 
-      mv "$work" "$target"
+      replace_target_with_work "$target" "$work"
     done
+
+    refresh_clean_worktree_files
   )
   local rc=$?
   set -e

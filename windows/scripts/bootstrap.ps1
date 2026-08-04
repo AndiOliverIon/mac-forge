@@ -1,12 +1,16 @@
 [CmdletBinding(SupportsShouldProcess)]
 param(
   [switch]$SkipPackages,
-  [switch]$SkipTerminal
+  [switch]$SkipTerminal,
+  [switch]$SkipGlobalTools,
+  [switch]$SkipLicense
 )
 
 $ErrorActionPreference = "Stop"
 $windowsRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $forgeRoot = Split-Path -Parent $windowsRoot
+$angularCliVersion = "20.3.16"
+$yarnVersion = "1.22.22"
 $script:PackageFailures = @()
 
 function Write-Step([string]$Message) {
@@ -35,6 +39,131 @@ function Install-WingetPackage([string]$Id) {
   }
 }
 
+function Add-ForgeUserPathEntry([string]$Path) {
+  if (-not $Path) { return }
+  $expandedPath = [Environment]::ExpandEnvironmentVariables($Path)
+  $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+  $entries = @($userPath -split ";" | Where-Object { $_ })
+  if ($entries -notcontains $expandedPath) {
+    if ($PSCmdlet.ShouldProcess($expandedPath, "Add to current-user PATH")) {
+      $entries += $expandedPath
+      [Environment]::SetEnvironmentVariable("Path", ($entries -join ";"), "User")
+    }
+  }
+  if (($env:Path -split ";") -notcontains $expandedPath) {
+    $env:Path = "$env:Path;$expandedPath"
+  }
+}
+
+function Sync-ForgeSessionPath {
+  $machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+  $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+  $processPath = [Environment]::GetEnvironmentVariable("Path", "Process")
+  $env:Path = @($processPath, $machinePath, $userPath) -join ";"
+}
+
+function Invoke-ForgeInstaller([string]$Command, [string[]]$Arguments, [string]$Target) {
+  if ($PSCmdlet.ShouldProcess($Target, "$Command $($Arguments -join ' ')")) {
+    & $Command @Arguments
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -ne 0) {
+      Write-Warning "$Command failed for $Target (exit code $exitCode)."
+      $script:PackageFailures += $Target
+    }
+  }
+}
+
+function Install-NpmGlobalPackage([string]$Spec, [string]$Name, [string]$RequiredVersion = "") {
+  $npm = Get-Command npm.cmd -ErrorAction SilentlyContinue
+  if (-not $npm) {
+    Write-Warning "npm was not found; skipping $Spec."
+    $script:PackageFailures += $Spec
+    return
+  }
+
+  $installedVersion = ""
+  $listOutput = & $npm.Source list --global --depth=0 --json $Name 2>$null
+  if ($LASTEXITCODE -eq 0 -and $listOutput) {
+    try {
+      $packageInfo = ($listOutput | Out-String | ConvertFrom-Json)
+      $dependency = $packageInfo.dependencies.PSObject.Properties[$Name]
+      if ($dependency) {
+        $installedVersion = $dependency.Value.version
+      }
+    } catch {
+      $installedVersion = ""
+    }
+  }
+
+  if ($installedVersion -and (-not $RequiredVersion -or $installedVersion -eq $RequiredVersion)) {
+    Write-Host "Already installed: $Name $installedVersion"
+    return
+  }
+
+  Invoke-ForgeInstaller $npm.Source @("install", "--global", $Spec) $Spec
+}
+
+function Install-ForgeGlobalTools {
+  Sync-ForgeSessionPath
+  Add-ForgeUserPathEntry (Join-Path $HOME ".local\bin")
+  Add-ForgeUserPathEntry (Join-Path $env:APPDATA "npm")
+  Sync-ForgeSessionPath
+
+  Install-NpmGlobalPackage "@openai/codex" "@openai/codex"
+  Install-NpmGlobalPackage "@angular/cli@$angularCliVersion" "@angular/cli" $angularCliVersion
+  Install-NpmGlobalPackage "vsts-npm-auth" "vsts-npm-auth"
+
+  $corepack = Get-Command corepack.cmd -ErrorAction SilentlyContinue
+  if ($corepack) {
+    Invoke-ForgeInstaller $corepack.Source @("enable") "corepack"
+    Invoke-ForgeInstaller $corepack.Source @("install", "--global", "yarn@$yarnVersion") "yarn@$yarnVersion"
+  } else {
+    Write-Warning "corepack was not found; skipping Yarn $yarnVersion."
+    $script:PackageFailures += "yarn@$yarnVersion"
+  }
+}
+
+function Install-TelerikLicense {
+  $destinationDirectory = Join-Path $HOME ".telerik"
+  $destinationFile = Join-Path $destinationDirectory "telerik-license.txt"
+  $candidates = @()
+  if ($env:TELERIK_LICENSE_SOURCE_DIR) {
+    $candidates += $env:TELERIK_LICENSE_SOURCE_DIR
+  }
+  $candidates += @(
+    (Join-Path (Get-Location) ".telerik"),
+    (Join-Path $forgeRoot ".telerik"),
+    (Join-Path $forgeRoot "config-local\.telerik"),
+    $destinationDirectory
+  )
+
+  $sourceFile = $null
+  foreach ($candidate in $candidates) {
+    $candidateFile = Join-Path $candidate "telerik-license.txt"
+    if (Test-Path -LiteralPath $candidateFile -PathType Leaf) {
+      $sourceFile = $candidateFile
+      break
+    }
+  }
+
+  if (-not $sourceFile) {
+    Write-Warning "Telerik license was not found. Stage .telerik\telerik-license.txt or set TELERIK_LICENSE_SOURCE_DIR, then rerun bootstrap."
+    return
+  }
+
+  if ($sourceFile -eq $destinationFile) {
+    Write-Host "Telerik license already installed at $destinationFile."
+    return
+  }
+
+  if ($PSCmdlet.ShouldProcess($destinationFile, "Install staged Telerik license")) {
+    New-Item -ItemType Directory -Path $destinationDirectory -Force | Out-Null
+    Copy-Item -LiteralPath $sourceFile -Destination $destinationFile -Force
+    Write-Host "Telerik license installed at $destinationFile."
+    Write-Host "The source copy was left in place; remove it after verifying the workstation."
+  }
+}
+
 Write-Step "Checking prerequisites"
 if (-not $SkipPackages) {
   if (-not (Get-Command winget.exe -ErrorAction SilentlyContinue)) {
@@ -53,6 +182,8 @@ if (-not $SkipPackages) {
     "Python.Python.3.13",
     "OpenJS.NodeJS.LTS",
     "GitHub.cli",
+    "GitHub.Copilot",
+    "Anthropic.ClaudeCode",
     "Microsoft.Sqlcmd",
     "Microsoft.VisualStudioCode",
     "JetBrains.Rider",
@@ -66,6 +197,16 @@ if (-not $SkipPackages) {
   foreach ($package in $packages) {
     Install-WingetPackage $package
   }
+}
+
+if (-not $SkipGlobalTools) {
+  Write-Step "Installing global developer CLIs"
+  Install-ForgeGlobalTools
+}
+
+if (-not $SkipLicense) {
+  Write-Step "Configuring commercial UI license files"
+  Install-TelerikLicense
 }
 
 Write-Step "Allowing locally authored profile scripts for the current user"
@@ -85,7 +226,9 @@ Write-Step "Configuring the Windows PowerShell and PowerShell 7 profiles"
 $loader = ". `"$windowsRoot\profile.ps1`""
 $profilePaths = @(
   (Join-Path ([Environment]::GetFolderPath("MyDocuments")) "WindowsPowerShell\profile.ps1"),
-  (Join-Path ([Environment]::GetFolderPath("MyDocuments")) "PowerShell\profile.ps1")
+  (Join-Path ([Environment]::GetFolderPath("MyDocuments")) "WindowsPowerShell\Microsoft.PowerShell_profile.ps1"),
+  (Join-Path ([Environment]::GetFolderPath("MyDocuments")) "PowerShell\profile.ps1"),
+  (Join-Path ([Environment]::GetFolderPath("MyDocuments")) "PowerShell\Microsoft.PowerShell_profile.ps1")
 )
 foreach ($profilePath in $profilePaths) {
   $profileDirectory = Split-Path -Parent $profilePath
