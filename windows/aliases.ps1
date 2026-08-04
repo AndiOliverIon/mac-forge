@@ -101,7 +101,7 @@ function global:help {
   $names = @(
     "forge", "perf", "info", "switch", "dnc", "binclear", "genopenapi",
     "script-run", "sqlexec", "v1sn", "v1r", "v1list",
-    "hades-tunnel-up", "hades-tunnel-down",
+    "hades-tunnel-up", "hades-tunnel-status", "hades-tunnel-down",
     "v1-sql-tunnel-up", "v1-sql-tunnel-status", "v1-sql-tunnel-down",
     "v1-license-tunnel-up", "v1-license-tunnel-status", "v1-license-tunnel-down"
   )
@@ -319,6 +319,9 @@ function global:hades-tunnel-up {
 }
 function global:hades-tunnel-down {
   & (Join-Path $script:ForgeWindowsRoot "scripts\hades-tunnel.ps1") -Action down
+}
+function global:hades-tunnel-status {
+  & (Join-Path $script:ForgeWindowsRoot "scripts\hades-tunnel.ps1") -Action status
 }
 
 $nativeTunnel = Join-Path $script:ForgeWindowsRoot "scripts\vps1-tunnel.ps1"

@@ -130,6 +130,7 @@ only to the Windows guest through the Hades SSH tunnel:
 
 ```powershell
 hades-tunnel-up
+hades-tunnel-status
 hades-tunnel-down
 ```
 

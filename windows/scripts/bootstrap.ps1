@@ -264,7 +264,7 @@ if ($WhatIfPreference) {
   Write-Host "Skipped command loading validation during -WhatIf."
 } else {
   . (Join-Path $windowsRoot "profile.ps1")
-  foreach ($command in @("forge", "switch", "dnc", "v1sn", "v1-sql-tunnel-status")) {
+  foreach ($command in @("forge", "switch", "dnc", "v1sn", "hades-tunnel-status", "v1-sql-tunnel-status")) {
     if (-not (Get-Command $command -ErrorAction SilentlyContinue)) {
       throw "Expected Forge command was not loaded: $command"
     }

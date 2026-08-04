@@ -1,6 +1,6 @@
 param(
   [Parameter(Mandatory)]
-  [ValidateSet("up", "down")]
+  [ValidateSet("up", "down", "status")]
   [string]$Action
 )
 
@@ -110,7 +110,31 @@ function Close-Tunnel {
   Write-Host "OK - Hades Angular and Perform API tunnels closed."
 }
 
+function Show-TunnelStatus {
+  $processes = @(Get-TunnelProcess)
+  $listeners = @(Get-PortListeners)
+  $processIds = @($processes | Select-Object -ExpandProperty ProcessId)
+  $tunnelListeners = @($listeners | Where-Object { $_.OwningProcess -in $processIds })
+  $conflicts = @($listeners | Where-Object { $_.OwningProcess -notin $processIds })
+
+  if ($conflicts.Count -gt 0) {
+    $ports = @($conflicts | Select-Object -ExpandProperty LocalPort -Unique)
+    Write-Host "CONFLICT - port(s) $($ports -join ', ') are used by a process that is not this Forge tunnel."
+    return
+  }
+
+  $tunnelPorts = @($tunnelListeners | Select-Object -ExpandProperty LocalPort -Unique)
+  if ($processes.Count -gt 0 -and $tunnelPorts.Count -eq $forwards.Count) {
+    Write-Host "UP - localhost:4200 and localhost:8080 -> $sshHost (ssh pid: $($processIds -join ', '))."
+  } elseif ($processes.Count -gt 0 -or $tunnelPorts.Count -gt 0) {
+    Write-Host "PARTIAL - the Hades tunnel is not listening on every configured port. Reopen with: hades-tunnel-up"
+  } else {
+    Write-Host "DOWN - no Hades Forge tunnel found. Open with: hades-tunnel-up"
+  }
+}
+
 switch ($Action) {
   "up" { Open-Tunnel }
   "down" { Close-Tunnel }
+  "status" { Show-TunnelStatus }
 }

@@ -261,7 +261,7 @@ script	gen-open-api	Regenerate the Perform OpenAPI JSON and TypeScript client.
 script	gen-open-api-timetrack	Regenerate the TimeTrack OpenAPI JSON and TypeScript client.
 script	git-del	Delete local git branches containing a keyword.
 script	git-switch	Interactively switch git branches.
-script	hades-tunnel	Open/close/status the SSH tunnel from Linux to Hades dev servers.
+script	hades-tunnel	Open/close/status the SSH tunnel from Windows or Linux to Hades dev servers.
 script	hdd-clean	Find old large files by extension and delete them after confirmation.
 script	help	Open the forge command picker for aliases and scripts.
 script	info	Show a forge machine/system health snapshot.
