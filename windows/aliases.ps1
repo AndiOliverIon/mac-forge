@@ -314,9 +314,12 @@ Register-ForgeBashCommand -Name "workinfo" -Script "scripts/work.sh" -PrefixArgu
 Register-ForgeBashCommand -Name "v1-sql-up" -Script "scripts/vps1/vps1-db-state.sh" -PrefixArguments @("online")
 Register-ForgeBashCommand -Name "v1-sql-down" -Script "scripts/vps1/vps1-db-state.sh" -PrefixArguments @("offline")
 
-$hadesTunnel = Join-Path $script:ForgeWindowsRoot "scripts\hades-tunnel.ps1"
-function global:hades-tunnel-up { & $hadesTunnel -Action up }
-function global:hades-tunnel-down { & $hadesTunnel -Action down }
+function global:hades-tunnel-up {
+  & (Join-Path $script:ForgeWindowsRoot "scripts\hades-tunnel.ps1") -Action up
+}
+function global:hades-tunnel-down {
+  & (Join-Path $script:ForgeWindowsRoot "scripts\hades-tunnel.ps1") -Action down
+}
 
 $nativeTunnel = Join-Path $script:ForgeWindowsRoot "scripts\vps1-tunnel.ps1"
 function Invoke-ForgeTunnel([string]$Name, [string]$Action) {
