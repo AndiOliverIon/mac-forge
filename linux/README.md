@@ -217,6 +217,8 @@ run `linux-clean` to clean them. `linux-clean --full` additionally includes
 desktop thumbnail and shader caches. The cleanup preserves credentials,
 sessions, configuration, project state, package stores needed for builds,
 Docker containers/images/volumes, SQL data, Rider history, and system logs.
+Chrome and Brave cleanup is limited to per-profile disk and compiled-code
+caches and is skipped for each browser while that browser is running.
 Every run ends with the gain from each cleaner and a combined total; dry runs
 show the estimated potential gain and applied runs show the measured reduction.
 

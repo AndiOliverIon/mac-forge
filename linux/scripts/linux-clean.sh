@@ -63,10 +63,14 @@ cleaner_size_kib() {
 
   case "$cleaner_name" in
     linux-clean-browser-caches.sh)
-      while IFS= read -r -d '' path; do paths+=("$path"); done < <(
-        find "$HOME/.cache/google-chrome" -mindepth 2 -maxdepth 2 -type d \
-          \( -name Cache -o -name 'Code Cache' \) -print0 2>/dev/null
-      )
+      for cache_dir in \
+        "$HOME/.cache/google-chrome" \
+        "$HOME/.cache/BraveSoftware/Brave-Browser"; do
+        while IFS= read -r -d '' path; do paths+=("$path"); done < <(
+          find "$cache_dir" -mindepth 2 -maxdepth 2 -type d \
+            \( -name Cache -o -name 'Code Cache' \) -print0 2>/dev/null
+        )
+      done
       ;;
     linux-clean-claude-cache.sh)
       paths=("$HOME/.cache/claude/staging")
