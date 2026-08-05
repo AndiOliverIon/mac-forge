@@ -13,7 +13,7 @@ usage() {
   cat <<'EOF'
 Usage: mac-clean-browser-caches [--dry-run]
 
-Clear Arc and Chrome per-profile disk and code caches. Profiles, accounts,
+Clear Arc, Chrome, and Brave per-profile disk and code caches. Profiles, accounts,
 cookies, sessions, passwords, history, bookmarks, extensions, settings,
 downloads, service-worker data, local storage, and Arc Easel images are kept.
 
@@ -176,6 +176,7 @@ main() {
   local uid
   local arc_profiles="$HOME/Library/Caches/Arc/User Data"
   local chrome_profiles="$HOME/Library/Caches/Google/Chrome"
+  local brave_profiles="$HOME/Library/Caches/BraveSoftware/Brave-Browser"
 
   (( $# <= 1 )) || die "Too many arguments (use --help)"
 
@@ -210,6 +211,8 @@ main() {
   clean_browser "Arc" "$arc_profiles" '[/]Arc[.]app/Contents/' "$dry_run" "$uid"
   echo
   clean_browser "Chrome" "$chrome_profiles" '[/]Google Chrome[.]app/Contents/' "$dry_run" "$uid"
+  echo
+  clean_browser "Brave" "$brave_profiles" '[/]Brave Browser[.]app/Contents/' "$dry_run" "$uid"
 
   if (( dry_run )); then
     echo
