@@ -42,7 +42,10 @@ MOUNT_RECHECK_SECONDS="${RDOWN_MOUNT_RECHECK_SECONDS:-2}"
 [[ "$MOUNT_RECHECK_SECONDS" =~ ^[0-9]+$ && "$MOUNT_RECHECK_SECONDS" -gt 0 ]] || die "RDOWN_MOUNT_RECHECK_SECONDS must be a positive integer."
 
 file_size_bytes() {
-  stat -f '%z' -- "$1"
+  case "$(uname -s)" in
+    Darwin) stat -f '%z' -- "$1" ;;
+    Linux) stat -c '%s' -- "$1" ;;
+  esac
 }
 
 human_file_size() {
