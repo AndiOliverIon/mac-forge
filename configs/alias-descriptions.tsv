@@ -98,7 +98,7 @@ alias	db-index	Rebuild all indexes in a selected local Docker SQL database.
 alias	dbsn	Create a SQL backup snapshot from a selected database.
 alias	rdbsn	Create a backup from a configured remote SQL Server target.
 alias	rdbr	Restore a snapshot back into a remote SQL Server, overriding an existing database or cloning into a new one with mdf/ldf collision protection.
-alias	rdown	Download a remote .bak backup to a selected local destination.
+alias	rdown	Choose a remote .bak with its size shown, then download it to a selected local destination.
 alias	rup	Upload a local .bak backup to a selected remote destination.
 alias	dbc	Clear SQL databases; default hard mode removes container/data after typed confirmation.
 alias	dbo	Run configured SQL table cleanup and shrink; data loss is possible.
@@ -223,7 +223,7 @@ script	mac-clean-npm-cache	Verify npm's configured cache and garbage-collect unn
 script	mac-clean-rider-caches	Clear only Rider indexes, IDE caches, and ReSharper caches while preserving Local History, file/test history, plugins, settings, projects, VCS data, and credentials.
 script	mac-clean-yarn-cache	Clear Yarn v1's downloaded package cache while preserving projects, dependencies, lockfiles, global packages, configuration, and credentials.
 script	mac-clean-swiftpm-cache	Purge SwiftPM's global repository cache while preserving package resolution, project builds, configuration, security fingerprints, and credentials.
-script	mac-clean-stale-temp	Delete current-user temporary entries older than seven days, or recognized AI-tool entries older than 24 hours, while preserving open or recently modified content.
+script	mac-clean-stale-temp	Delete current-user temporary entries older than seven days, or recognized AI-tool entries older than 24 hours, while preserving open, recently modified, or macOS-protected content.
 script	mac-clean-xcode-derived-data	Delete Xcode DerivedData entries whose entire contents are older than seven days while preserving archives, configuration, and recent build data.
 script	mac-clean-xcode-simulators	Quit Simulator, shut down and erase all devices, and delete unavailable devices.
 script	mac-clean-xcode-test-clones	Delete verified Xcode parallel-test simulator clones older than seven days.
@@ -246,7 +246,7 @@ script	db-fix	Run SQL fix scripts from the repo sqls folder against a chosen dat
 script	db-index	Rebuild all indexes in a selected local Docker SQL database.
 script	db-optimize	Run configured SQL table cleanup and shrink; data loss is possible.
 script	db-remote-backup	Create a backup from a configured remote SQL Server target.
-script	db-remote-download	Download a remote .bak backup to a selected local destination.
+script	db-remote-download	Choose a remote .bak with its size shown, then download it to a selected local destination.
 script	db-remote-upload	Upload a local .bak backup to a selected remote destination.
 script	db-restore	Restore a selected .bak into the forge SQL Server container.
 script	db-snapshot	Create a SQL backup snapshot from a selected database.
@@ -295,8 +295,8 @@ alias	v1down	Download vps1 .bak snapshots; multiple selections become a timestam
 alias	vps1-download	Long form of v1down: download vps1 snapshots locally.
 alias	v1up	Upload a local .bak into the vps1 snapshots folder for later restore.
 alias	vps1-upload	Long form of v1up: upload a local .bak into the vps1 snapshots folder.
-alias	rdown-to-v1	Relay a remote .bak from the portainer share straight to vps1 snapshots without touching the Mac SSD.
-alias	vps1-relay-download	Long form of rdown-to-v1: stream a remote .bak from the share to vps1 with no local copy.
+alias	rdown-to-v1	Choose a remote .bak with its size shown, then relay it from the portainer share straight to vps1 snapshots without touching the Mac SSD.
+alias	vps1-relay-download	Long form of rdown-to-v1: choose a remote .bak with its size shown and stream it from the share to vps1 with no local copy.
 alias	v1drop	Drop live user database(s) on vps1 (multi-select, confirm with 'delete').
 alias	vps1-drop	Long form of v1drop: drop live user database(s) on vps1.
 alias	v1sndrop	Delete .bak snapshot file(s) from the vps1 snapshots folder (multi-select).

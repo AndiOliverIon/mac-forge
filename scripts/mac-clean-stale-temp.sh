@@ -22,7 +22,7 @@ Usage: mac-clean-stale-temp [--dry-run]
 Delete stale entries owned by the current user from macOS temporary folders.
 Recognized AI-tool entries must be older than 24 hours; all other entries must
 be older than seven days. Open entries, symlinks, mixed-ownership trees, and
-entries containing newer content are preserved.
+entries containing newer or protected content are preserved.
 
 Options:
   -n, --dry-run Show eligible entries without deleting them.
@@ -68,6 +68,16 @@ candidate_has_open_path() {
   ' "$OPEN_PATHS_FILE"
 }
 
+candidate_has_protected_flags() {
+  local candidate="$1"
+
+  find "$candidate" \
+    \( -flags +uchg -o -flags +uappnd -o -flags +schg -o \
+    -flags +sappnd -o -flags +restricted -o -flags +sunlnk -o \
+    -flags +datavault \) \
+    -print -quit | grep -q .
+}
+
 candidate_is_safe() {
   local root="$1"
   local candidate="$2"
@@ -84,6 +94,10 @@ candidate_is_safe() {
   fi
 
   if find "$candidate" -mmin "-$retention_minutes" -print -quit | grep -q .; then
+    return 1
+  fi
+
+  if candidate_has_protected_flags "$candidate"; then
     return 1
   fi
 

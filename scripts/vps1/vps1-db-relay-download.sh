@@ -26,6 +26,7 @@ source "$SCRIPT_DIR/vps1.sh"
 vps1_require_cmd fzf
 vps1_require_cmd rsync
 vps1_require_cmd ssh
+vps1_require_cmd stat
 
 #######################################
 # Share / mount config (mirrors db-remote-download.sh)
@@ -48,6 +49,34 @@ MOUNT_RECHECK_SECONDS="${RDOWN_MOUNT_RECHECK_SECONDS:-2}"
 
 [[ "$MOUNT_WAIT_SECONDS" =~ ^[0-9]+$ && "$MOUNT_WAIT_SECONDS" -gt 0 ]] || vps1_die "RDOWN_MOUNT_WAIT_SECONDS must be a positive integer."
 [[ "$MOUNT_RECHECK_SECONDS" =~ ^[0-9]+$ && "$MOUNT_RECHECK_SECONDS" -gt 0 ]] || vps1_die "RDOWN_MOUNT_RECHECK_SECONDS must be a positive integer."
+
+file_size_bytes() {
+  case "$(uname -s)" in
+    Darwin) stat -f '%z' -- "$1" ;;
+    Linux) stat -c '%s' -- "$1" ;;
+  esac
+}
+
+human_file_size() {
+  local bytes="$1"
+  local unit_index=0
+  local unit_size=1
+  local scaled_tenths
+  local -a units=(B KiB MiB GiB TiB)
+
+  while ((bytes >= unit_size * 1024 && unit_index < ${#units[@]} - 1)); do
+    unit_size=$((unit_size * 1024))
+    unit_index=$((unit_index + 1))
+  done
+
+  if ((unit_index == 0)); then
+    printf '%d B' "$bytes"
+    return
+  fi
+
+  scaled_tenths=$(((bytes * 10 + unit_size / 2) / unit_size))
+  printf '%d.%d %s' "$((scaled_tenths / 10))" "$((scaled_tenths % 10))" "${units[$unit_index]}"
+}
 
 is_mount_ready() {
   [[ -d "$MOUNT_PATH" ]] || return 1
@@ -101,9 +130,23 @@ mapfile -t BACKUP_LIST < <(
 
 ((${#BACKUP_LIST[@]} > 0)) || vps1_die "No .bak files found on the share."
 
-SELECTED_REL="$(
-  printf '%s\n' "${BACKUP_LIST[@]}" | fzf --prompt="Select backup to relay to vps1 > " --height=70% --reverse
+BACKUP_ROWS=()
+for backup_rel in "${BACKUP_LIST[@]}"; do
+  backup_full="$MOUNT_PATH/$backup_rel"
+  [[ -f "$backup_full" ]] || continue
+  size_bytes="$(file_size_bytes "$backup_full")" || continue
+  printf -v backup_row '[%9s]  %s\t%s' "$(human_file_size "$size_bytes")" "$backup_rel" "$backup_rel"
+  BACKUP_ROWS+=("$backup_row")
+done
+
+((${#BACKUP_ROWS[@]} > 0)) || vps1_die "No readable .bak files found on the share."
+
+SELECTED_ROW="$(
+  printf '%s\n' "${BACKUP_ROWS[@]}" |
+    fzf --prompt="Select backup to relay to vps1 > " --delimiter=$'\t' --with-nth=1 --height=70% --reverse
 )" || vps1_die "No backup selected."
+[[ "$SELECTED_ROW" == *$'\t'* ]] || vps1_die "Unexpected backup selection."
+SELECTED_REL="${SELECTED_ROW#*$'\t'}"
 
 SOURCE_FULL="$MOUNT_PATH/$SELECTED_REL"
 name="$(basename "$SOURCE_FULL")"
