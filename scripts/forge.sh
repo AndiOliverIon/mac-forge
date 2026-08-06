@@ -105,7 +105,7 @@ try:
     j = json.load(fp)
   docker_path = (j.get("docker-path") or "").strip()
   snap_path = (j.get("docker-snapshot-path") or "").strip()
-  browser = (j.get("browser") or "Arc").strip()
+  browser = (j.get("browser") or "Brave Browser").strip()
   if docker_path:
     print("FORGE_SQL_DATA_BIND_PATH\t" + docker_path)
   if snap_path:

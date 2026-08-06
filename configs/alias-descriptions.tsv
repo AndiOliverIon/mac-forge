@@ -213,7 +213,7 @@ script	branch-delete	Delete local git branches matching a pattern.
 script	branch-local-clean	Preview or delete local branches by safe prefix.
 script	clean	Delete contents of selected configured cleanup targets.
 script	mac-clean	Run standard macOS cleanup scripts in sequence; use --full to include full-only items.
-script	mac-clean-browser-caches	Clear only Arc, Chrome, and Brave per-profile disk and code caches while preserving credentials, sessions, profiles, browsing data, and configuration.
+script	mac-clean-browser-caches	Clear only Chrome and Brave per-profile disk and code caches while preserving credentials, sessions, profiles, browsing data, and configuration.
 script	mac-clean-claude-cache	Clear only Claude Desktop browser response and code caches while preserving credentials, conversations, sessions, application data, runtime bundles, and configuration.
 script	mac-clean-codex-cache	Clear only Codex desktop browser response and code caches while preserving credentials, conversations, sessions, projects, worktrees, and configuration.
 script	mac-clean-copilot-index-cache	Clear only GitHub Copilot project-context and project-index caches while preserving authentication, sessions, configuration, plugins, binaries, and runtime packages.

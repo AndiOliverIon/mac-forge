@@ -15,7 +15,7 @@ CONFIG_FILE="$ROOT_DIR/configs/web.json"
 source "$SCRIPT_DIR/forge.sh"
 
 # Default browser from forge if not set
-BROWSER="${FORGE_BROWSER:-Arc}"
+BROWSER="${FORGE_BROWSER:-Brave Browser}"
 PLATFORM="$(uname -s)"
 
 #######################################
@@ -60,9 +60,9 @@ if [[ "$ACTION" == "change" ]]; then
   # Settle a default browser
   echo "Select a default browser for 'web' command:"
   if [[ "$PLATFORM" == "Darwin" ]]; then
-    browser_choices=$'Arc\nGoogle Chrome\nSafari\nFirefox\nMicrosoft Edge'
+    browser_choices=$'Brave Browser\nGoogle Chrome\nSafari\nFirefox\nMicrosoft Edge'
   else
-    browser_choices=$'Default browser\nGoogle Chrome\nFirefox\nChromium\nMicrosoft Edge'
+    browser_choices=$'Default browser\nBrave Browser\nGoogle Chrome\nFirefox\nChromium\nMicrosoft Edge'
   fi
   selected_browser=$(printf '%s\n' "$browser_choices" | fzf --prompt="browser > ")
   
@@ -122,6 +122,9 @@ if [[ "$PLATFORM" == "Linux" ]]; then
     "Chromium")
       browser_command="chromium"
       ;;
+    "Brave Browser")
+      browser_command="brave-browser"
+      ;;
     "Microsoft Edge")
       browser_command="microsoft-edge"
       ;;
@@ -136,48 +139,6 @@ if [[ "$PLATFORM" == "Linux" ]]; then
   fi
 
   "$browser_command" "$url" >/dev/null 2>&1 &
-elif [[ "$BROWSER" == "Arc" ]]; then
-  # Use argv passing so quotes/spaces don't break AppleScript
-  if ! osascript - "$url" "$space" <<'APPLESCRIPT'
-on run argv
-  set theURL to item 1 of argv
-  set theSpace to ""
-  if (count of argv) ≥ 2 then set theSpace to item 2 of argv
-
-  tell application "Arc"
-    activate
-    if (count of windows) = 0 then
-      try
-        make new window
-      end try
-    end if
-
-    if (count of windows) = 0 then error "No Arc window available"
-
-    if theSpace is not "" then
-      try
-        tell front window
-          tell space theSpace
-            make new tab with properties {URL:theURL}
-            focus
-          end tell
-        end tell
-        return
-      on error
-        -- fallthrough to default tab open
-      end try
-    end if
-
-    tell front window
-      make new tab with properties {URL:theURL}
-    end tell
-  end tell
-end run
-APPLESCRIPT
-  then
-    # Fallback if AppleScript fails (Arc scripting changed, space missing, etc.)
-    open -a "Arc" "$url"
-  fi
 else
   # Generic browser open
   open -a "$BROWSER" "$url"
