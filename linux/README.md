@@ -82,6 +82,11 @@ the kernel CIFS guest-session limitation. Run `mnt` first. Interrupted files
 remain with a `.part` suffix and resume on the next attempt. During transfer,
 the command shows percentage, downloaded size, total size, and current speed.
 
+Use `dbr` to restore a selected `.bak` into this station's `forge-sql` Docker
+container. Use `dbo`, select `Local Docker (Default)`, then select the restored
+database to run the configured Ardis table cleanup and database shrink. The
+optimization can delete data and requires confirmation before it starts.
+
 Use `mnt` to select and mount a saved network share by friendly title. Mounts
 are configured under `mounts` in `linux/config/runtime.json`. The picker shows
 the title, remote source, and local mountpoint, and supports type-to-filter.
