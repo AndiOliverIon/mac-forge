@@ -80,6 +80,7 @@ alias dcf=docker-clean-fact
 alias dbr="~/mac-forge/linux/scripts/db-restore.sh"
 alias dbsn="~/mac-forge/linux/scripts/db-snapshot.sh"
 alias rdbsn="~/mac-forge/scripts/db-remote-backup.sh"
+alias rdown="~/mac-forge/scripts/db-remote-download.sh"
 alias ardis-migrate="~/mac-forge/linux/scripts/ardis-migrate.sh"
 alias am="ardis-migrate"
 alias publish-tt="~/mac-forge/scripts/publish-tt.sh"
@@ -129,6 +130,7 @@ alias dela="rm -rf ./*"
 # Remote & Network
 # ------------------------------------------------------------------------------
 alias display="~/mac-forge/linux/scripts/setup-display.sh"
+alias mnt='~/mac-forge/linux/scripts/mount.sh'
 alias mnthadesw='~/mac-forge/linux/scripts/hades-mount.sh'
 alias mnthw=mnthadesw
 alias umnthadesw='~/mac-forge/linux/scripts/hades-umount.sh'

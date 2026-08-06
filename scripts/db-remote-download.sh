@@ -1,4 +1,4 @@
-#!/opt/homebrew/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 #######################################
@@ -22,8 +22,19 @@ require_cmd rsync
 require_cmd stat
 
 # Configuration
-MOUNT_PATH="/Volumes/shared-files"
-SMB_URL="smb://portainer.ardis.eu/shared-files"
+case "$(uname -s)" in
+  Darwin)
+    MOUNT_PATH="${RDOWN_MOUNT_PATH:-/Volumes/shared-files}"
+    SMB_URL="${RDOWN_SMB_URL:-smb://portainer.ardis.eu/shared-files}"
+    ;;
+  Linux)
+    MOUNT_PATH="${RDOWN_MOUNT_PATH:-/mnt/shared-files}"
+    SMB_URL="${RDOWN_SMB_URL:-//portainer.ardis.eu/shared-files}"
+    ;;
+  *)
+    die "Unsupported operating system: $(uname -s)"
+    ;;
+esac
 MOUNT_WAIT_SECONDS="${RDOWN_MOUNT_WAIT_SECONDS:-120}"
 MOUNT_RECHECK_SECONDS="${RDOWN_MOUNT_RECHECK_SECONDS:-2}"
 
@@ -57,7 +68,11 @@ human_file_size() {
 
 is_mount_ready() {
   [[ -d "$MOUNT_PATH" ]] || return 1
-  mount | grep -F " on $MOUNT_PATH " >/dev/null 2>&1
+  if command -v mountpoint >/dev/null 2>&1; then
+    mountpoint -q "$MOUNT_PATH"
+  else
+    mount | grep -F " on $MOUNT_PATH " >/dev/null 2>&1
+  fi
 }
 
 wait_for_mount() {
@@ -80,14 +95,15 @@ wait_for_mount() {
   return 1
 }
 
-# Pre-check: Is it mounted? If not, try to mount it.
+# Pre-check: Is it mounted? On macOS, try to mount it through Finder.
 if ! is_mount_ready; then
-  echo "📡 Mount not found. Attempting to connect to $SMB_URL..."
-
-  # On macOS, 'open' is the cleanest way to trigger a mount with keychain credentials
-  open "$SMB_URL"
-
-  wait_for_mount || die "Failed to mount $MOUNT_PATH. Please check your connection or connect manually in Finder once."
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    echo "📡 Mount not found. Attempting to connect to $SMB_URL..."
+    open "$SMB_URL"
+    wait_for_mount || die "Failed to mount $MOUNT_PATH. Please check your connection or connect manually in Finder once."
+  else
+    die "SMB share is not mounted at $MOUNT_PATH. Mount $SMB_URL there or set RDOWN_MOUNT_PATH."
+  fi
 fi
 
 #######################################

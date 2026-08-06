@@ -84,6 +84,7 @@ sudo apt install -y \
     tree \
     htop \
     btop \
+    cifs-utils \
     fzf \
     jq \
     libglib2.0-bin \

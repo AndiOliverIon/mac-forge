@@ -74,6 +74,34 @@ The bootstrap installs Microsoft's standalone `sqlcmd` utility required by
 this workflow. Remote SQL credentials remain machine-local and are not created
 or copied by bootstrap.
 
+Use `rdown` to select a `.bak` or `.bkp` file from the Portainer SMB share and
+download it to one of the destinations configured in
+`configs/work-state.json`. On Linux, mount `//portainer.ardis.eu/shared-files`
+at `/mnt/shared-files` first. Set `RDOWN_MOUNT_PATH` if the share is mounted at
+a different location.
+
+Use `mnt` to select and mount a saved network share by friendly title. Mounts
+are configured under `mounts` in `linux/config/runtime.json`. The picker shows
+the title, remote source, and local mountpoint, and supports type-to-filter.
+
+SMB passwords are not stored in the JSON configuration. Create the credential
+file named by each mount with owner-only permissions, using this format:
+
+```text
+username=your-user
+password=your-password
+```
+
+For the Ardis SQL backup share, use `~/.smbcredentials-ardis`; the Hades work
+share uses `~/.smbcredentials`. Then secure the file, reload the shell, and
+mount the selected share:
+
+```bash
+chmod 600 ~/.smbcredentials-ardis
+reloadterm
+mnt
+```
+
 ## VPN
 
 The Linux shell provides the same VPN commands as macOS:

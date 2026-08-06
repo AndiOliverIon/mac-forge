@@ -194,6 +194,7 @@ alias	ldf	Shortcut for link-dotfiles.
 alias	workspace-primary	Load the primary Linux workspace layout.
 alias	wp	Shortcut for workspace-primary.
 alias	display	Set Linux display scaling.
+alias	mnt	Select and mount a saved Linux network share.
 alias	mnthadesw	Mount the Hades work share on Linux.
 alias	mnthw	Shortcut for mnthadesw.
 alias	umnthadesw	Unmount the Hades work share on Linux.
