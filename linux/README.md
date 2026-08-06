@@ -76,9 +76,11 @@ or copied by bootstrap.
 
 Use `rdown` to select a `.bak` or `.bkp` file from the Portainer SMB share and
 download it to one of the destinations configured in
-`configs/work-state.json`. On Linux, mount `//portainer.ardis.eu/shared-files`
-at `/mnt/shared-files` first. Set `RDOWN_MOUNT_PATH` if the share is mounted at
-a different location.
+`configs/work-state.json`. On Linux, `rdown` uses the mounted share for its
+file picker, then downloads through the authenticated Samba client to avoid
+the kernel CIFS guest-session limitation. Run `mnt` first. Interrupted files
+remain with a `.part` suffix and resume on the next attempt. During transfer,
+the command shows percentage, downloaded size, total size, and current speed.
 
 Use `mnt` to select and mount a saved network share by friendly title. Mounts
 are configured under `mounts` in `linux/config/runtime.json`. The picker shows

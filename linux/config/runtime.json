@@ -22,6 +22,7 @@
   },
   "mounts": [
     {
+      "id": "ardis-sql-backups",
       "title": "Ardis SQL backup share",
       "protocol": "smb",
       "source": "//portainer.ardis.eu/shared-files",
@@ -30,6 +31,7 @@
       "options": "vers=3.0,iocharset=utf8,file_mode=0644,dir_mode=0755"
     },
     {
+      "id": "hades-work",
       "title": "Hades work share",
       "protocol": "smb",
       "source": "//hadesw/shared",
