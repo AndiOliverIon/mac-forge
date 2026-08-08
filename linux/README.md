@@ -87,6 +87,9 @@ container. Use `dbo`, select `Local Docker (Default)`, then select the restored
 database to run the configured Ardis table cleanup and database shrink. The
 optimization can delete data and requires confirmation before it starts.
 
+Use `dblist` to list the local SQL databases with their total, data, and log
+allocation, state, and recovery model.
+
 Use `mnt` to select and mount a saved network share by friendly title. Mounts
 are configured under `mounts` in `linux/config/runtime.json`. The picker shows
 the title, remote source, and local mountpoint, and supports type-to-filter.

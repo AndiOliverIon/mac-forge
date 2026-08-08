@@ -125,6 +125,7 @@ alias dcf=docker-clean-fact
 # Database Scripts
 # ------------------------------------------------------------------------------
 alias dba="~/mac-forge/scripts/db-admin.sh"
+alias dblist="~/mac-forge/scripts/db-list.sh"
 alias dbs="~/mac-forge/scripts/docker-start.sh"
 alias dbu="~/mac-forge/scripts/db-upload-bak.sh"
 alias dbr="~/mac-forge/scripts/db-restore.sh"

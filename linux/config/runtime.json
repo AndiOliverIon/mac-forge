@@ -17,7 +17,8 @@
     "backup_source_paths": [
       "/data/sql",
       "/data/sql/snapshot",
-      "/data/sql/snapshots"
+      "/data/sql/snapshots",
+      "/home/oliver/sql/snapshots"
     ]
   },
   "mounts": [

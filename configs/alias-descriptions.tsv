@@ -91,6 +91,7 @@ alias	dps	List running Docker containers.
 alias	dcu	Start the current docker compose stack.
 alias	dcd	Stop and remove the current docker compose stack.
 alias	dba	Administer a local SQL database: offline/online, drop, recovery, shrink.
+alias	dblist	List local SQL databases with friendly total, data, and log sizes.
 alias	dbs	Start stopped Docker containers, launching Docker Desktop if needed.
 alias	dbu	Upload a selected .bak from the current folder into the SQL container.
 alias	dbr	Restore a selected .bak into the forge SQL Server container.
