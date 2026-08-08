@@ -21,6 +21,32 @@ format_size() {
     }'
 }
 
+friendly_uptime() {
+  local value
+  local prefix=""
+  local hours
+  local minutes
+
+  value="$(uptime | awk -F'up ' '{print $2}' | sed 's/, [0-9] user.*//')"
+  if [[ "$value" =~ ^(.*),[[:space:]]*([0-9]+):([0-9][0-9])$ ]]; then
+    prefix="${BASH_REMATCH[1]}, "
+    hours="${BASH_REMATCH[2]}"
+    minutes="${BASH_REMATCH[3]}"
+  elif [[ "$value" =~ ^([0-9]+):([0-9][0-9])$ ]]; then
+    hours="${BASH_REMATCH[1]}"
+    minutes="${BASH_REMATCH[2]}"
+  else
+    printf '%s' "$value"
+    return
+  fi
+
+  printf '%s%d hour' "$prefix" "$((10#$hours))"
+  (( 10#$hours != 1 )) && printf 's'
+  printf ' %d minute' "$((10#$minutes))"
+  (( 10#$minutes != 1 )) && printf 's'
+  return 0
+}
+
 date_epoch_utc() {
   TZ=UTC date -j -f '%Y-%m-%d %H:%M:%S' "$1 00:00:00" '+%s' 2>/dev/null
 }
@@ -165,6 +191,7 @@ print_info() {
   local system_os
   local system_host
   local system_kernel
+  local system_uptime
   local system_since
   local system_days
   local system_age
@@ -203,7 +230,7 @@ print_info() {
   os_name="$(sw_vers -productName) $(sw_vers -productVersion)"
   kernel="$(uname -r)"
   host_name="$(hostname)"
-  uptime_value="$(uptime | awk -F'up ' '{print $2}' | sed 's/, [0-9] user.*//')"
+  uptime_value="$(friendly_uptime)"
   cpu_model="$(sysctl -n machdep.cpu.brand_string 2>/dev/null || sysctl -n hw.model)"
   cpu_load="$(sysctl -n vm.loadavg | awk '{print $2 ", " $3 ", " $4}')"
 
@@ -272,7 +299,8 @@ print_info() {
 
   system_os="OS       $os_name"
   system_host="Host     $host_name"
-  system_kernel="Kernel   $kernel | Up $uptime_value"
+  system_kernel="Kernel   $kernel"
+  system_uptime="Uptime   $uptime_value"
   cpu_model_row="Model    ${cpu_model:-Unavailable}"
   cpu_load_row="Load     $cpu_load"
   cpu_effort_row="Effort   ${cpu_effort:-Unavailable} | Temp Unavailable"
@@ -288,6 +316,7 @@ print_info() {
     "$system_os" "$cpu_model_row" \
     "$system_host" "$cpu_load_row" \
     "$system_kernel" "$cpu_effort_row" \
+    "$system_uptime" "" \
     "$system_since" "" \
     "$system_days" "" \
     "$system_age" ""

@@ -16,6 +16,10 @@ cpu_effort_line() {
   }'
 }
 
+friendly_uptime() {
+  uptime -p | sed -E 's/^up //; s/, ([0-9]+ minutes?)$/ \1/'
+}
+
 cpu_model_line() {
   awk -F: '/^model name[[:space:]]*:/ {
     value=$2
@@ -188,7 +192,8 @@ print_info() {
   system_lines=(
     "OS       $os_name"
     "Host     $(hostname)"
-    "Kernel   $(uname -r) | Up $(uptime -p | sed 's/^up //')"
+    "Kernel   $(uname -r)"
+    "Uptime   $(friendly_uptime)"
   )
   cpu_lines=(
     "Model    ${cpu_model:-Unavailable}"
