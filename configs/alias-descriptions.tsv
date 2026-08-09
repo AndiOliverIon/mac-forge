@@ -190,6 +190,7 @@ alias	tboot	Shortcut for thboot.
 alias	thb	Shortcut for thboot.
 alias	rider	Open JetBrains Rider.
 alias	aliases	Print the alias file.
+alias	codex-local-register	Register the local LAN LLM bundle from the current directory as Codex profile local-lan; use --verify to test it.
 alias	link-dotfiles	Link Linux dotfiles into place.
 alias	ldf	Shortcut for link-dotfiles.
 alias	workspace-primary	Load the primary Linux workspace layout.

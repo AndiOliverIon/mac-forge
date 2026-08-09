@@ -60,6 +60,14 @@ in `linux/config/runtime.json`.
 The bootstrap creates `/data/forge` with owner-only permissions, but it does
 not create or copy secret values.
 
+## Local LAN Codex profile
+
+Copy the secure `llm cli deploy` bundle to the Linux station, open a terminal
+in that folder, and run `codex-local-register`. The command asks for sudo only
+to trust the bundled certificate, then creates the `local-lan` Codex profile.
+Use `codex --profile local-lan` afterwards. The bundle contains an API key and
+must not be committed or left on shared storage.
+
 ## Remote SQL backups
 
 Use `rdbsn` to select a remote SQL Server and create a compressed, copy-only

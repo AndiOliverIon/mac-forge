@@ -64,6 +64,15 @@ v1list
 
 Run `help` for common commands or `aliases` to inspect the complete surface.
 
+## Local LAN Codex profile
+
+Copy the secure `llm cli deploy` bundle to a station, open PowerShell in that
+folder, then run `codex-local-register`. The command trusts the bundled local
+certificate for the current user and creates the `local-lan` Codex profile.
+Use `codex --profile local-lan` afterwards, or append `--verify` during
+registration to make one test request. The bundle contains an API key and must
+not be committed, emailed, or left on shared storage.
+
 The launcher automatically:
 
 - finds Git Bash;

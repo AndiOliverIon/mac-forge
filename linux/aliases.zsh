@@ -27,6 +27,7 @@ alias kp=__kp
 alias forge="cd ~/mac-forge"
 alias aliases="sed -n '1,240p' ~/mac-forge/linux/aliases.zsh"
 alias help="~/mac-forge/scripts/help.sh"
+alias codex-local-register="bash ~/mac-forge/linux/scripts/codex-local-register.sh"
 alias link-dotfiles="~/mac-forge/linux/scripts/link-dotfiles.sh"
 alias ldf=link-dotfiles
 alias inf="clear && ~/mac-forge/linux/scripts/inf.sh"
