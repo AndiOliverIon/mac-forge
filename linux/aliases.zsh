@@ -165,3 +165,19 @@ alias mcbt=mcboot
 alias thboot='~/mac-forge/scripts/thboot.sh'
 alias tboot=thboot
 alias thbt=thboot
+
+# ------------------------------------------------------------------------------
+# zoxide & yazi
+# ------------------------------------------------------------------------------
+# zoxide: smarter cd (adds `z` and `zi`)
+command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
+
+# yazi: `y` opens the file manager and cd's to the last dir on exit
+function y() {
+	local tmp="$(mktemp -t yazi-cwd.XXXXXX)" cwd
+	yazi "$@" --cwd-file="$tmp"
+	if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+		builtin cd -- "$cwd"
+	fi
+	rm -f -- "$tmp"
+}
