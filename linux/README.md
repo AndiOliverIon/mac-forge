@@ -95,6 +95,11 @@ container. Use `dbo`, select `Local Docker (Default)`, then select the restored
 database to run the configured Ardis table cleanup and database shrink. The
 optimization can delete data and requires confirmation before it starts.
 
+Use `dbrf` for the file-based variant of `dbr`: instead of a `.bak`, it attaches
+a database from a selected `.mdf` (plus its matching `.ldf` when present),
+proposing a database name extracted from the file that you can accept or
+override.
+
 Use `dblist` to list the local SQL databases with their total, data, and log
 allocation, state, and recovery model.
 

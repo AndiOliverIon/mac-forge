@@ -95,6 +95,7 @@ alias	dblist	List local SQL databases with friendly total, data, and log sizes.
 alias	dbs	Start stopped Docker containers, launching Docker Desktop if needed.
 alias	dbu	Upload a selected .bak from the current folder into the SQL container.
 alias	dbr	Restore a selected .bak into the forge SQL Server container.
+alias	dbrf	Attach a database from a selected .mdf (+ optional matching .ldf) into the forge SQL Server container, proposing a name extracted from the file.
 alias	db-index	Rebuild all indexes in a selected local Docker SQL database.
 alias	dbsn	Create a SQL backup snapshot from a selected database.
 alias	rdbsn	Create a backup from a configured remote SQL Server target.
@@ -252,6 +253,7 @@ script	db-remote-backup	Create a backup from a configured remote SQL Server targ
 script	db-remote-download	Choose a remote .bak with its size shown, then download it to a selected local destination.
 script	db-remote-upload	Upload a local .bak backup to a selected remote destination.
 script	db-restore	Restore a selected .bak into the forge SQL Server container.
+script	db-restore-files	Attach a database from a selected .mdf (+ optional matching .ldf) into the forge SQL Server container, proposing a name extracted from the file.
 script	db-snapshot	Create a SQL backup snapshot from a selected database.
 script	db-upload-bak	Upload a selected .bak from the current folder into the SQL container.
 script	docker-start	Start stopped Docker containers, launching Docker Desktop if needed.

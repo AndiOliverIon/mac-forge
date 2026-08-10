@@ -80,6 +80,7 @@ alias dcf=docker-clean-fact
 # ------------------------------------------------------------------------------
 alias dblist="~/mac-forge/linux/scripts/db-list.sh"
 alias dbr="~/mac-forge/linux/scripts/db-restore.sh"
+alias dbrf="~/mac-forge/linux/scripts/db-restore-files.sh"
 alias dbsn="~/mac-forge/linux/scripts/db-snapshot.sh"
 alias rdbsn="~/mac-forge/scripts/db-remote-backup.sh"
 alias rdown="~/mac-forge/linux/scripts/db-remote-download.sh"
