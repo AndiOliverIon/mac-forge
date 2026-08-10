@@ -1,0 +1,36 @@
+# Oliver's Ghostty configuration (shared across macOS and Linux stations)
+# Symlinked into ~/.config/ghostty/config.ghostty on each station.
+# Ghostty reloads most settings after saving this file.
+# Fully restart Ghostty after changing background opacity.
+
+# Appearance
+theme = dark:Catppuccin Mocha,light:Catppuccin Latte
+font-size = 21
+background-opacity = 0.96
+split-divider-color = #f38ba8
+
+# Spacing
+window-padding-x = 10
+window-padding-y = 8
+window-padding-balance = true
+
+# macOS window appearance (ignored on Linux)
+macos-titlebar-style = transparent
+
+# Terminal behavior
+cursor-style = block
+copy-on-select = true
+confirm-close-surface = false
+
+# Split panels
+keybind = ctrl+shift+o=unbind
+keybind = ctrl+shift+e=unbind
+keybind = alt+d=new_split:right
+keybind = alt+shift+d=new_split:down
+keybind = alt+w=close_surface
+
+# Navigate split panels
+keybind = ctrl+alt+arrow_left=goto_split:left
+keybind = ctrl+alt+arrow_down=goto_split:down
+keybind = ctrl+alt+arrow_up=goto_split:up
+keybind = ctrl+alt+arrow_right=goto_split:right

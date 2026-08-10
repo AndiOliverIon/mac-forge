@@ -257,7 +257,7 @@ sudo apt install -y ghostty
 GHOSTTY_CONFIG_DIR="${HOME}/.config/ghostty"
 GHOSTTY_CONFIG="${GHOSTTY_CONFIG_DIR}/config.ghostty"
 mkdir -p "${GHOSTTY_CONFIG_DIR}"
-ln -sfn "${FORGE_ROOT}/linux/config/ghostty.ghostty" "${GHOSTTY_CONFIG}"
+ln -sfn "${FORGE_ROOT}/dotfiles/ghostty.ghostty" "${GHOSTTY_CONFIG}"
 
 # Reserve Ctrl+Alt+Arrow for Ghostty split navigation in Plasma.
 if command -v kwriteconfig6 > /dev/null 2>&1; then
