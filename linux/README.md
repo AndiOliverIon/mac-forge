@@ -45,6 +45,10 @@ Ghostty split shortcuts:
 
 Focused panels close immediately without a confirmation prompt.
 
+The Ghostty config is shared with macOS from the neutral repo file
+`dotfiles/ghostty.ghostty`; bootstrap symlinks it to
+`~/.config/ghostty/config.ghostty`. Edit the shared file, not a local copy.
+
 ## Private Forge configuration
 
 Linux reads its private configuration from:

@@ -10,6 +10,20 @@ Read this file when working on Forge runtime, `configs/work-state.json`, SQL/Doc
 - `profiles/`: optional shell/profile presets.
 - `config-local/`: local-only machine-specific state if present.
 
+## Cross-platform shared configuration
+
+Some configuration is intentionally shared across station architectures and lives
+in a neutral location so a single file is the source of truth. Each station
+symlinks its local config path to the repo file rather than keeping a divergent copy.
+
+- `dotfiles/ghostty.ghostty`: shared Ghostty terminal config, currently used by
+  **macOS and Linux**. Symlinked to `~/.config/ghostty/config.ghostty` on each
+  station (Linux wires this in `linux/scripts/bootstrap.sh` step 15; macOS is
+  symlinked manually). Windows is not covered yet — Ghostty is not in use there
+  and its availability on Windows is unconfirmed. The shared file uses the login
+  shell by default (no hardcoded `command` path) so it stays OS-agnostic;
+  `macos-titlebar-style` is kept and harmlessly ignored on Linux.
+
 ## Forge runtime
 
 `scripts/forge.sh` is the central shared runtime. Most important scripts source it first.
