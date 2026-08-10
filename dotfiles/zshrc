@@ -128,6 +128,19 @@ source <(ng completion script)
 
 export PATH="$HOME/Library/Python/3.9/bin:$PATH"
 
+# zoxide: smarter cd (adds `z` and `zi`)
+eval "$(zoxide init zsh)"
+
+# yazi: `y` opens the file manager and cd's to the last dir on exit
+function y() {
+	local tmp="$(mktemp -t yazi-cwd.XXXXXX)" cwd
+	yazi "$@" --cwd-file="$tmp"
+	if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+		builtin cd -- "$cwd"
+	fi
+	rm -f -- "$tmp"
+}
+
 # load environment variables
 source ~/.env
 
