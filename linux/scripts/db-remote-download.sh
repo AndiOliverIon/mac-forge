@@ -49,6 +49,42 @@ smbclient_escape() {
   printf '%s\n' "$value"
 }
 
+is_mounted() {
+  local target="$1"
+
+  if command -v mountpoint >/dev/null 2>&1; then
+    mountpoint -q "$target"
+  else
+    findmnt -rn --target "$target" >/dev/null 2>&1
+  fi
+}
+
+ensure_mount() {
+  local source="$1" target="$2" credentials="$3" extra_options="$4"
+  local options
+
+  is_mounted "$target" && return 0
+
+  require_cmd mount.cifs
+  require_cmd sudo
+  require_cmd timeout
+
+  echo "Share not mounted. Mounting $source at $target..."
+  if [[ ! -d "$target" ]]; then
+    sudo mkdir -p -- "$target"
+  fi
+
+  options="uid=$(id -u),gid=$(id -g),credentials=$credentials"
+  [[ -z "$extra_options" ]] || options+=",$extra_options"
+
+  timeout --foreground 30s \
+    sudo mount -t cifs "$source" "$target" -o "$options" \
+    || die "Failed to mount $source at $target. Mount it manually with 'mnt' or check credentials."
+
+  is_mounted "$target" || die "Mount command completed but $target is not mounted."
+  echo "Mounted: $target"
+}
+
 require_cmd find
 require_cmd fzf
 require_cmd jq
@@ -61,18 +97,19 @@ mount_row="$(
     | map(select(.id == "ardis-sql-backups"))
     | first
     | select(.source and .mountpoint and .credentials_file)
-    | [.source, .mountpoint, .credentials_file]
+    | [.source, .mountpoint, .credentials_file, (.options // "")]
     | @tsv
   ' "$RUNTIME_CONFIG_FILE"
 )"
 [[ -n "$mount_row" ]] || die "Mount 'ardis-sql-backups' is not configured in $RUNTIME_CONFIG_FILE."
 
-IFS=$'\t' read -r smb_source mountpoint_raw credentials_raw <<< "$mount_row"
+IFS=$'\t' read -r smb_source mountpoint_raw credentials_raw mount_options <<< "$mount_row"
 mountpoint="${RDOWN_MOUNT_PATH:-$(expand_home "$mountpoint_raw")}"
 credentials_file="${RDOWN_CREDENTIALS_FILE:-$(expand_home "$credentials_raw")}"
 
 [[ -f "$credentials_file" ]] || die "Credentials file not found: $credentials_file"
-[[ -d "$mountpoint" ]] || die "Share is not mounted at $mountpoint. Run 'mnt' first."
+
+ensure_mount "$smb_source" "$mountpoint" "$credentials_file" "$mount_options"
 
 echo "Scanning backups on $mountpoint..."
 

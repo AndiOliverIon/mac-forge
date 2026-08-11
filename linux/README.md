@@ -90,7 +90,9 @@ Use `rdown` to select a `.bak` or `.bkp` file from the Portainer SMB share and
 download it to one of the destinations configured in
 `configs/work-state.json`. On Linux, `rdown` uses the mounted share for its
 file picker, then downloads through the authenticated Samba client to avoid
-the kernel CIFS guest-session limitation. Run `mnt` first. Interrupted files
+the kernel CIFS guest-session limitation. If the share is not mounted yet,
+`rdown` mounts it automatically (prompting for sudo once); you can also mount
+it beforehand with `mnt`. Interrupted files
 remain with a `.part` suffix and resume on the next attempt. During transfer,
 the command shows percentage, downloaded size, total size, and current speed.
 
