@@ -62,7 +62,12 @@ storage_lines() {
 }
 
 memory_lines() {
-  free -h 2>/dev/null | awk '/^Mem:/ {print $2 "\n" $3 "\n" $7}'
+  # total used available free cache
+  free -h 2>/dev/null | awk '/^Mem:/ {print $2 "\n" $3 "\n" $7 "\n" $4 "\n" $6}'
+}
+
+memory_percent() {
+  free -k 2>/dev/null | awk '/^Mem:/ { if ($2 > 0) printf "%.0f", $3 / $2 * 100; else printf "0" }'
 }
 
 battery_lines() {
@@ -135,6 +140,65 @@ print_columns() {
   done
 }
 
+print_mounts() {
+  local source target fstype opts rest
+  local size used avail usep
+  local terminal_width row
+  local -a rows=()
+  local -A seen=()
+
+  while read -r source target fstype opts rest; do
+    # Decode common octal escapes used in /proc/mounts.
+    target="${target//\\040/ }"
+    source="${source//\\040/ }"
+
+    case "$target" in
+      /|/data) continue ;;
+      /boot|/boot/*) continue ;;
+    esac
+    [[ -n "${seen[$target]:-}" ]] && continue
+
+    case "$fstype" in
+      proc|sysfs|tmpfs|devtmpfs|devpts|cgroup|cgroup2|mqueue|hugetlbfs|debugfs|tracefs|securityfs|pstore|bpf|configfs|fusectl|autofs|binfmt_misc|overlay|squashfs|ramfs|efivarfs|rpc_pipefs|nsfs|selinuxfs|fuse.gvfsd-fuse|"" )
+        continue ;;
+    esac
+
+    local keep=false
+    case "$source" in
+      /dev/*) keep=true ;;
+    esac
+    case "$fstype" in
+      nfs|nfs4|cifs|smb3|smbfs|sshfs|fuse.sshfs|9p|afs|ceph|glusterfs) keep=true ;;
+    esac
+    case "$target" in
+      /mnt/*|/media/*|/run/media/*) keep=true ;;
+    esac
+    [[ "$keep" == true ]] || continue
+
+    seen[$target]=1
+    read -r size used avail usep < <(
+      df -hT "$target" 2>/dev/null | awk 'NR==2 {print $3, $4, $5, $6}'
+    )
+    if [[ -n "$size" ]]; then
+      rows+=("$target   $fstype on $source | $used / $size ($usep) | $avail free")
+    else
+      rows+=("$target   $fstype on $source")
+    fi
+  done < /proc/mounts
+
+  terminal_width="$(tput cols 2>/dev/null || printf '80')"
+  (( terminal_width < 40 )) && terminal_width=40
+
+  printf '\n%s◈ Mounts%s\n' "$BLUE" "$RESET"
+  if (( ${#rows[@]} == 0 )); then
+    printf '%sNone%s\n' "$DIM" "$RESET"
+  else
+    for row in "${rows[@]}"; do
+      printf '%.*s\n' "$terminal_width" "$row"
+    done
+  fi
+}
+
 print_info() {
   local disk_name
   local filesystem
@@ -145,6 +209,9 @@ print_info() {
   local total_memory
   local used_memory
   local available_memory
+  local free_memory
+  local cache_memory
+  local mem_pct
   local cpu_effort
   local cpu_temp
   local cpu_model
@@ -176,6 +243,9 @@ print_info() {
   total_memory="${memory_info[0]:-unknown}"
   used_memory="${memory_info[1]:-unknown}"
   available_memory="${memory_info[2]:-unknown}"
+  free_memory="${memory_info[3]:-unknown}"
+  cache_memory="${memory_info[4]:-unknown}"
+  mem_pct="$(memory_percent || true)"
   cpu_effort="$(cpu_effort_line || true)"
   cpu_temp="$(cpu_temp_line || true)"
   cpu_model="$(cpu_model_line || true)"
@@ -201,8 +271,9 @@ print_info() {
     "Effort   ${cpu_effort:-Unavailable} | Temp ${cpu_temp:-Unavailable}"
   )
   memory_lines=(
-    "Total    $total_memory | Used $used_memory"
-    "Free     $available_memory available"
+    "Total    $total_memory | Used $used_memory (${mem_pct:-?}%) now"
+    "Avail    $available_memory free | $cache_memory cached"
+    "Free     $free_memory unused"
   )
 
   if [[ "$battery_present" == true ]]; then
@@ -265,6 +336,7 @@ print_info() {
   if (( ${#storage_lines[@]} > 1 )); then
     printf '%.*s\n' "$terminal_width" "${storage_lines[1]}"
   fi
+  print_mounts
 }
 
 BOLD=""

@@ -21,6 +21,35 @@ format_size() {
     }'
 }
 
+# Emits current memory usage in KiB: used cached free available percent
+# "used" mirrors Activity Monitor (app + wired + compressed), i.e. what is
+# actually occupied right now, unlike top's PhysMem "used" which also counts
+# reclaimable cached/inactive pages.
+memory_stats() {
+  local total_bytes
+  total_bytes="$(sysctl -n hw.memsize)"
+  vm_stat | awk -v total="$total_bytes" '
+    /page size of/ { for (i = 1; i <= NF; i++) if ($i ~ /^[0-9]+$/) ps = $i }
+    /Pages free/ { free = $3 }
+    /Pages speculative/ { spec = $3 }
+    /Pages wired down/ { wired = $4 }
+    /Pages purgeable/ { purge = $3 }
+    /File-backed pages/ { fileb = $3 }
+    /Anonymous pages/ { anon = $3 }
+    /occupied by compressor/ { comp = $5 }
+    END {
+      gsub(/\./, "", free); gsub(/\./, "", spec); gsub(/\./, "", wired)
+      gsub(/\./, "", purge); gsub(/\./, "", fileb); gsub(/\./, "", anon)
+      gsub(/\./, "", comp)
+      used = (anon - purge + wired + comp) * ps
+      cached = fileb * ps
+      freeb = free * ps
+      avail = freeb + cached + (purge + spec) * ps
+      pct = (total > 0) ? used / total * 100 : 0
+      printf "%d %d %d %d %.0f\n", used / 1024, cached / 1024, freeb / 1024, avail / 1024, pct
+    }'
+}
+
 friendly_uptime() {
   local value
   local prefix=""
@@ -156,6 +185,54 @@ print_columns() {
   done
 }
 
+print_mounts() {
+  local line dev rest mp opts fstype
+  local rows=()
+  local terminal_width
+
+  while IFS= read -r line; do
+    dev="${line%% on *}"
+    rest="${line#* on }"
+    mp="${rest%% (*}"
+    opts="${rest#*(}"
+    opts="${opts%)}"
+    fstype="${opts%%,*}"
+
+    case "$mp" in
+      /Volumes/*) ;;
+      *)
+        case "$fstype" in
+          smbfs|nfs|afpfs|webdav|cifs|ftp) ;;
+          *) continue ;;
+        esac
+        ;;
+    esac
+
+    local total_kib used_kib free_kib percent
+    read -r total_kib used_kib free_kib percent < <(
+      df -k "$mp" 2>/dev/null | awk 'NR==2 {print $2, $3, $4, $5}'
+    )
+    if [[ -n "$total_kib" ]]; then
+      rows+=("$mp   ${fstype} on ${dev} | $(format_size "$used_kib") / $(format_size "$total_kib") (${percent}) | $(format_size "$free_kib") free")
+    else
+      rows+=("$mp   ${fstype} on ${dev}")
+    fi
+  done < <(mount)
+
+  terminal_width="$(tput cols 2>/dev/null || printf '80')"
+  (( terminal_width < 40 )) && terminal_width=40
+
+  printf '\n%s◈ Mounts%s\n' "$BLUE" "$RESET"
+  if (( ${#rows[@]} == 0 )); then
+    printf '%sNone%s\n' "$DIM" "$RESET"
+  else
+    local row
+    for row in "${rows[@]}"; do
+      printf '%.*s\n' "$terminal_width" "$row"
+    done
+  fi
+}
+
 print_info() {
   local top_output
   local cpu_effort
@@ -200,6 +277,12 @@ print_info() {
   local cpu_effort_row
   local memory_total
   local memory_free
+  local memory_boot
+  local mem_used_kib
+  local mem_cached_kib
+  local mem_free_kib
+  local mem_avail_kib
+  local mem_pct
   local battery_charge
   local battery_health
   local storage_row
@@ -220,6 +303,7 @@ print_info() {
   used_memory="$(printf '%s\n' "$phys_mem" | sed -E 's/.*PhysMem: ([^ ]+) used.*/\1/')"
   available_memory="$(printf '%s\n' "$phys_mem" | sed -E 's/.*, ([^ ]+) unused.*/\1/')"
   total_memory_kib="$(( $(sysctl -n hw.memsize) / 1024 ))"
+  read -r mem_used_kib mem_cached_kib mem_free_kib mem_avail_kib mem_pct < <(memory_stats)
 
   read -r disk_name disk_total_kib disk_used_kib disk_free_kib disk_percent < <(
     df -k / | awk 'NR==2 {print $1, $2, $3, $4, $5}'
@@ -304,8 +388,9 @@ print_info() {
   cpu_model_row="Model    ${cpu_model:-Unavailable}"
   cpu_load_row="Load     $cpu_load"
   cpu_effort_row="Effort   ${cpu_effort:-Unavailable} | Temp Unavailable"
-  memory_total="Total    $(format_size "$total_memory_kib") | Used ${used_memory:-unknown}"
-  memory_free="Free     ${available_memory:-unknown} available"
+  memory_total="Total    $(format_size "$total_memory_kib") | Used $(format_size "$mem_used_kib") (${mem_pct}%) now"
+  memory_free="Avail    $(format_size "$mem_avail_kib") free | $(format_size "$mem_cached_kib") cached"
+  memory_boot="Boot     ${used_memory:-?} used, ${available_memory:-?} free (cached)"
   storage_row="/      ${filesystem:-unknown} on $disk_name | $(format_size "$disk_used_kib") / $(format_size "$disk_total_kib") ($disk_percent) | $(format_size "$disk_free_kib") free"
 
   terminal_width="$(tput cols 2>/dev/null || printf '80')"
@@ -323,9 +408,11 @@ print_info() {
   printf '\n'
   print_columns '▣ Memory' '♥ Battery' "$MAGENTA" "$battery_color" \
     "$memory_total" "$battery_charge" \
-    "$memory_free" "$battery_health"
+    "$memory_free" "$battery_health" \
+    "$memory_boot" ""
   printf '\n%s■ Storage%s\n' "$storage_color" "$RESET"
   printf '%.*s\n' "$terminal_width" "$storage_row"
+  print_mounts
 }
 
 BOLD=""
