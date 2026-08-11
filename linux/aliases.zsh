@@ -170,6 +170,9 @@ alias thbt=thboot
 # zoxide & yazi
 # ------------------------------------------------------------------------------
 # zoxide: smarter cd (adds `z` and `zi`)
+# Ensure ~/.local/bin is on PATH first: this file may be sourced before
+# ~/.zshrc adds it, which would otherwise hide the zoxide binary.
+[[ ":$PATH:" == *":$HOME/.local/bin:"* ]] || export PATH="$HOME/.local/bin:$PATH"
 command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
 
 # yazi: `y` opens the file manager and cd's to the last dir on exit
