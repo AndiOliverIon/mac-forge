@@ -31,3 +31,27 @@ LINUX_DOTFILES_DIR="${FORGE_ROOT}/linux/dotfiles"
 
 link_file "$LINUX_DOTFILES_DIR/zshrc" "$HOME/.zshrc"
 link_file "$LINUX_DOTFILES_DIR/p10k.zsh" "$HOME/.p10k.zsh"
+
+MC_CONFIG_DIR="$HOME/.config/mc"
+MC_SKINS_DIR="$HOME/.local/share/mc/skins"
+mkdir -p "$MC_CONFIG_DIR" "$MC_SKINS_DIR"
+link_file "$LINUX_DOTFILES_DIR/mc/skins/xoria256.ini" "$MC_SKINS_DIR/xoria256.ini"
+
+if [[ -f "$MC_CONFIG_DIR/ini" ]]; then
+  if grep -q '^skin=' "$MC_CONFIG_DIR/ini"; then
+    sed -i 's/^skin=.*/skin=xoria256/' "$MC_CONFIG_DIR/ini"
+  elif grep -q '^\[Midnight-Commander\]$' "$MC_CONFIG_DIR/ini"; then
+    sed -i '/^\[Midnight-Commander\]$/a skin=xoria256' "$MC_CONFIG_DIR/ini"
+  else
+    cat >> "$MC_CONFIG_DIR/ini" <<'EOF'
+
+[Midnight-Commander]
+skin=xoria256
+EOF
+  fi
+else
+  cat > "$MC_CONFIG_DIR/ini" <<'EOF'
+[Midnight-Commander]
+skin=xoria256
+EOF
+fi
