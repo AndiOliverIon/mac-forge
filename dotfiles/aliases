@@ -80,6 +80,7 @@ alias sim="~/mac-forge/scripts/sim.sh"
 alias present="~/mac-forge/scripts/present.sh"
 alias prs=present
 alias convert-mov="~/mac-forge/scripts/convert-mov.sh"
+alias convert-heic="~/mac-forge/scripts/convert-heic.sh"
 alias patch="~/mac-forge/scripts/patch.sh"
 alias p=patch
 alias pr="patch -R"
