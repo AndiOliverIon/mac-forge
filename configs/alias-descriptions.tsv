@@ -19,6 +19,7 @@ alias	port-release	Port a commit onto a release branch by creating a local cherr
 alias	prl	Shortcut for port-release.
 alias	web	Open a configured web entry in the preferred browser; use web change to switch browser.
 alias	ftp	Pick an ftp-connection via fzf and open a dual-pane browser (remote left, local right); type to filter fzf-style, F5 download, F6 upload.
+alias	sshc	Pick a station via fzf (or pass a name) and open a dual-pane SSH/SFTP browser (remote left, local right); same keys as ftp.
 alias	winappclean	Delete Parallels Windows app shortcuts except Visual Studio.app.
 alias	vpn	Start a configured VPN connection from forge state/secrets.
 alias	dvpn	Disconnect the active VPN connection.
@@ -290,6 +291,7 @@ script	thsleep	Put Thanatos into sleep over SSH.
 script	vpn	Start a configured VPN connection from forge state/secrets.
 script	web	Open a configured web entry in the preferred browser; use web change to switch browser.
 script	ftp	Pick an ftp-connection via fzf and open a dual-pane browser (remote left, local right); type to filter fzf-style, F5 download, F6 upload.
+script	sshc	Pick a station via fzf (or pass a name) and open a dual-pane SSH/SFTP browser (remote left, local right); same keys as ftp.
 script	win-shortcut-clean	Delete Parallels Windows app shortcuts except Visual Studio.app.
 script	work	Switch or inspect the active SQL Docker data and snapshot storage paths.
 alias	v1sn	Create a .bak snapshot of a vps1 database into the vps1 snapshots folder.
