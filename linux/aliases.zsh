@@ -32,6 +32,7 @@ alias link-dotfiles="~/mac-forge/linux/scripts/link-dotfiles.sh"
 alias ldf=link-dotfiles
 alias inf="clear && ~/mac-forge/linux/scripts/inf.sh"
 alias web="~/mac-forge/scripts/web.sh"
+alias ftp="~/mac-forge/scripts/ftp.sh"
 alias vpn="~/mac-forge/scripts/vpn.sh"
 alias dvpn="~/mac-forge/scripts/dvpn.sh"
 alias vpns="~/mac-forge/scripts/vpn-status.sh"
