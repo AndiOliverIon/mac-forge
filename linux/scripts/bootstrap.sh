@@ -86,7 +86,6 @@ sudo apt install -y \
     btop \
     cifs-utils \
     fzf \
-    mc \
     jq \
     libglib2.0-bin \
     lsof \

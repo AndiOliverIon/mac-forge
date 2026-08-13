@@ -11,8 +11,8 @@ Run the workstation bootstrap from the repository root:
 ```
 
 The script installs the core development tools, IDEs, terminal, shell, and
-Powerlevel10k setup used on the Plasma workstation. It also installs `fzf`,
-Midnight Commander (`mc`), and configures native Docker Engine with storage
+Powerlevel10k setup used on the Plasma workstation. It also installs `fzf` and
+configures native Docker Engine with storage
 under `/data/docker`. It does not
 run `apt autoremove`; review that package list manually because desktop
 metapackage changes can make important system packages appear unused.
@@ -49,13 +49,6 @@ Focused panels close immediately without a confirmation prompt.
 The Ghostty config is shared with macOS from the neutral repo file
 `dotfiles/ghostty.ghostty`; bootstrap symlinks it to
 `~/.config/ghostty/config.ghostty`. Edit the shared file, not a local copy.
-
-Midnight Commander uses the repository-managed Xoria256 skin from
-`linux/dotfiles/mc/skins/xoria256.ini`. The dotfile-linking step deploys it to
-`~/.local/share/mc/skins/xoria256.ini` and selects it in `~/.config/mc/ini`.
-The skin keeps the dark Xoria panels and uses fixed 256-color black for the top
-menu and bottom function-key bars, so Ghostty's customized ANSI palette does
-not turn those bars gray.
 
 ## Private Forge configuration
 
