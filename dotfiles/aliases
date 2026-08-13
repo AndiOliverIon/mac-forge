@@ -36,6 +36,7 @@ alias codex-local-register="bash ~/mac-forge/scripts/codex-local-register.sh"
 alias port-release="~/mac-forge/scripts/port-release.sh"
 alias prl=port-release
 alias web="~/mac-forge/scripts/web.sh"
+alias ftp="~/mac-forge/scripts/ftp.sh"
 alias winappclean="~/mac-forge/scripts/win-shortcut-clean.sh"
 alias vpn="~/mac-forge/scripts/vpn.sh"
 alias dvpn="~/mac-forge/scripts/dvpn.sh"
