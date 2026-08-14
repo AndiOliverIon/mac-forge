@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 # vps1-db-download.sh — download .bak files from the dedicated vps1 snapshots
-# folder to a local directory. Multiple selections are downloaded concurrently
+# folder to the current directory. Multiple selections are downloaded concurrently
 # and packaged as snapshot-YYYY-MM-DD-HHMMSS.zip.
 #
-# Usage: vps1-db-download.sh [destination-dir]
-#        (default destination: ~/sql/snapshots, override via VPS1_DOWNLOAD_DIR)
+# Usage: vps1-db-download.sh
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -21,8 +20,8 @@ vps1_require_cmd rsync
 #######################################
 # Destination
 #######################################
-DEST_DIR="${1:-${VPS1_DOWNLOAD_DIR:-$HOME/sql/snapshots}}"
-mkdir -p "$DEST_DIR"
+[[ $# -eq 0 ]] || vps1_die "Usage: $(basename "$0")"
+DEST_DIR="$PWD"
 [[ -d "$DEST_DIR" && -w "$DEST_DIR" ]] || vps1_die "Destination not writable: $DEST_DIR"
 
 #######################################
