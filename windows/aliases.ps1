@@ -121,6 +121,9 @@ function global:codex-thanatos { codex --profile lmstudio @args }
 function global:codex-local-register {
   & (Join-Path $script:ForgeWindowsRoot "scripts\codex-local-register.ps1") @args
 }
+function global:winget-update {
+  & (Join-Path $script:ForgeWindowsRoot "scripts\winget-update.ps1") @args
+}
 function global:showeth {
   Get-NetIPConfiguration | Select-Object InterfaceAlias, InterfaceDescription,
     @{Name = "IPv4Address"; Expression = { $_.IPv4Address.IPAddress }}

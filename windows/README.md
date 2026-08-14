@@ -64,6 +64,10 @@ v1list
 
 Run `help` for common commands or `aliases` to inspect the complete surface.
 
+Use `winget-update` to run Windows package updates listed in
+`config-local\winget.json`. The file is local to the station; each non-empty,
+non-comment line is appended to `winget update`.
+
 ## Local LAN Codex profile
 
 Copy the secure `llm cli deploy` bundle to a station, open PowerShell in that
