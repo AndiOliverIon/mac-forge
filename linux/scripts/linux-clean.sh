@@ -12,11 +12,15 @@ usage() {
   cat <<'EOF'
 Usage: linux-clean [--dry-run] [--full] [--list]
 
-Run the approved Linux cleanup scripts in order.
+Run the approved Linux cleanup scripts.
+
+With no arguments (in an interactive terminal with fzf installed), linux-clean
+opens a picker: choose "All" to run the standard cleanup, or select specific
+segments with TAB and clean only those.
 
 Options:
   -n, --dry-run Preview every selected cleaner without deleting.
-  --full        Include full-only desktop cache cleanup.
+  --full        Include full-only desktop cache cleanup (non-interactive).
   --list        Show approved cleaners and their classification.
   -h, --help    Show this help.
 EOF
@@ -44,6 +48,48 @@ list_cleaners() {
   for cleaner in "${STANDARD_CLEANERS[@]}"; do printf '  - %s\n' "$(basename "$cleaner")"; done
   echo "Full-only:"
   for cleaner in "${FULL_CLEANERS[@]}"; do printf '  - %s\n' "$(basename "$cleaner")"; done
+}
+
+# Friendly, human-readable description for each cleaner.
+describe() {
+  case "$1" in
+    linux-clean-browser-caches.sh)       echo "Browser caches — Chrome/Brave cache & code cache" ;;
+    linux-clean-claude-cache.sh)         echo "Claude cache — staging/temp files" ;;
+    linux-clean-copilot-index-cache.sh)  echo "Copilot index cache — project context & index" ;;
+    linux-clean-docker-build-cache.sh)   echo "Docker build cache — old buildx layers" ;;
+    linux-clean-nuget-transient.sh)      echo "NuGet transient — http-cache, scratch & plugin cache" ;;
+    linux-clean-npm-cache.sh)            echo "npm cache — global download cache" ;;
+    linux-clean-rider-caches.sh)         echo "JetBrains Rider — caches, indexes & host temp" ;;
+    linux-clean-yarn-cache.sh)           echo "Yarn cache — global package cache" ;;
+    linux-clean-stale-temp.sh)           echo "Stale temp — old /tmp entries" ;;
+    linux-clean-desktop-caches.sh)       echo "Desktop caches — thumbnails & shader caches (full-only)" ;;
+    *)                                   echo "$1" ;;
+  esac
+}
+
+# Step 1: choose scope. Returns 0 for "All", 1 for custom selection, 2 for cancel.
+prompt_scope() {
+  local choice
+  choice="$(printf '%s\n' "All — run the standard cleanup" "Select specific segments…" |
+    fzf --height=40% --reverse --prompt='Scope > ' \
+      --header='linux-clean: choose cleanup scope (Enter to confirm, ESC to cancel)')" || return 2
+  [[ "$choice" == All* ]] && return 0
+  return 1
+}
+
+# Step 2: multi-select segments. Prints selected cleaner paths (one per line).
+prompt_segments() {
+  local master=() c
+  master=("${STANDARD_CLEANERS[@]}" "${FULL_CLEANERS[@]}")
+
+  {
+    for c in "${master[@]}"; do
+      printf '%s\t%s\n' "$c" "$(describe "$(basename "$c")")"
+    done
+  } | fzf --multi --delimiter='\t' --with-nth='2..' \
+      --height=60% --reverse --prompt='Segments > ' \
+      --header='TAB toggles a segment, Enter confirms, ESC cancels' |
+    cut -f1
 }
 
 sum_paths_kib() {
@@ -175,6 +221,8 @@ main() {
   local child_args=()
   local summary_names=()
   local summary_gains=()
+  local argc=$#
+  local line scope_rc
 
   [[ "$(uname -s)" == "Linux" ]] || die "linux-clean only runs on Linux."
   while (( $# > 0 )); do
@@ -189,8 +237,32 @@ main() {
   done
 
   (( list )) && { list_cleaners; exit 0; }
-  cleaners=("${STANDARD_CLEANERS[@]}")
-  (( full )) && cleaners+=("${FULL_CLEANERS[@]}")
+
+  if (( argc == 0 )) && [[ -t 0 && -t 1 ]] && command -v fzf >/dev/null 2>&1; then
+    scope_rc=0
+    prompt_scope || scope_rc=$?
+    case "$scope_rc" in
+      0)
+        cleaners=("${STANDARD_CLEANERS[@]}")
+        ;;
+      1)
+        while IFS= read -r line; do
+          [[ -n "$line" ]] && cleaners+=("$line")
+        done < <(prompt_segments)
+        if (( ${#cleaners[@]} == 0 )); then
+          echo "No segments selected. Nothing to do."
+          exit 0
+        fi
+        ;;
+      *)
+        echo "Cancelled."
+        exit 0
+        ;;
+    esac
+  else
+    cleaners=("${STANDARD_CLEANERS[@]}")
+    (( full )) && cleaners+=("${FULL_CLEANERS[@]}")
+  fi
   (( dry_run )) && child_args=(--dry-run)
 
   for cleaner in "${cleaners[@]}"; do

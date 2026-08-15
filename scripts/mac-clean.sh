@@ -12,13 +12,39 @@ usage() {
   cat <<'EOF'
 Usage: mac-clean [--full | --list]
 
-Run the approved standard macOS cleanup scripts in order.
+Run the approved macOS cleanup scripts.
+
+With no arguments (in an interactive terminal with fzf installed), mac-clean
+opens a picker: choose "All" to run the standard cleanup, or select specific
+segments with TAB and clean only those.
 
 Options:
-  --full     Run standard and full-only cleanup scripts.
+  --full     Run standard and full-only cleanup scripts (non-interactive).
   --list     Show all approved cleanup scripts and their classification.
   -h, --help Show this help.
 EOF
+}
+
+# Friendly, human-readable description for each cleaner (portable case; no bash 4 assoc arrays).
+describe() {
+  case "$1" in
+    mac-clean-homebrew.sh)             echo "Homebrew — prune old formulae, downloads & cache" ;;
+    mac-clean-browser-caches.sh)       echo "Browser caches — Chrome/Brave cache & code cache" ;;
+    mac-clean-claude-cache.sh)         echo "Claude cache — staging/temp files" ;;
+    mac-clean-codex-cache.sh)          echo "Codex cache — CLI staging/temp files" ;;
+    mac-clean-copilot-index-cache.sh)  echo "Copilot index cache — project context & index" ;;
+    mac-clean-docker-build-cache.sh)   echo "Docker build cache — old buildx layers" ;;
+    mac-clean-nuget-transient.sh)      echo "NuGet transient — http-cache, scratch & plugin cache" ;;
+    mac-clean-npm-cache.sh)            echo "npm cache — global download cache" ;;
+    mac-clean-rider-caches.sh)         echo "JetBrains Rider — caches, indexes & host temp" ;;
+    mac-clean-yarn-cache.sh)           echo "Yarn cache — global package cache" ;;
+    mac-clean-swiftpm-cache.sh)        echo "Swift Package Manager — package cache" ;;
+    mac-clean-stale-temp.sh)           echo "Stale temp — old /tmp & TMPDIR entries" ;;
+    mac-clean-xcode-derived-data.sh)   echo "Xcode DerivedData — build products & indexes" ;;
+    mac-clean-xcode-simulators.sh)     echo "Xcode simulators — remove unavailable devices" ;;
+    mac-clean-xcode-test-clones.sh)    echo "Xcode test clones — leftover clone data" ;;
+    *)                                 echo "$1" ;;
+  esac
 }
 
 # Add a child script here only after its behavior has been reviewed and approved.
@@ -65,6 +91,32 @@ list_cleaners() {
   fi
 }
 
+# Step 1: choose scope. Returns 0 for "All", 1 for custom segment selection, 2 for cancel.
+prompt_scope() {
+  local choice
+  choice="$(printf '%s\n' "All — run the standard cleanup" "Select specific segments…" |
+    fzf --height=40% --reverse --prompt='Scope > ' \
+      --header='mac-clean: choose cleanup scope (Enter to confirm, ESC to cancel)')" || return 2
+  [[ "$choice" == All* ]] && return 0
+  return 1
+}
+
+# Step 2: multi-select segments. Prints selected cleaner paths (one per line).
+prompt_segments() {
+  local master=() c
+  master=("${STANDARD_CLEANERS[@]}")
+  (( ${#FULL_CLEANERS[@]} > 0 )) && master+=("${FULL_CLEANERS[@]}")
+
+  {
+    for c in "${master[@]}"; do
+      printf '%s\t%s\n' "$c" "$(describe "$(basename "$c")")"
+    done
+  } | fzf --multi --delimiter='\t' --with-nth='2..' \
+      --height=60% --reverse --prompt='Segments > ' \
+      --header='TAB toggles a segment, Enter confirms, ESC cancels' |
+    cut -f1
+}
+
 main() {
   local mode="standard"
   local cleaner
@@ -72,12 +124,17 @@ main() {
   local index
   local status
   local cleaners=()
+  local line
+  local scope_rc
 
   [[ "$(uname -s)" == "Darwin" ]] || die "mac-clean only runs on macOS."
   (( $# <= 1 )) || die "Too many arguments (use --help)"
 
   case "${1:-}" in
     "")
+      if [[ -t 0 && -t 1 ]] && command -v fzf >/dev/null 2>&1; then
+        mode="interactive"
+      fi
       ;;
     --full)
       mode="full"
@@ -95,11 +152,34 @@ main() {
       ;;
   esac
 
-  if (( ${#STANDARD_CLEANERS[@]} > 0 )); then
-    cleaners=("${STANDARD_CLEANERS[@]}")
-  fi
-  if [[ "$mode" == "full" ]] && (( ${#FULL_CLEANERS[@]} > 0 )); then
-    cleaners+=("${FULL_CLEANERS[@]}")
+  if [[ "$mode" == "interactive" ]]; then
+    scope_rc=0
+    prompt_scope || scope_rc=$?
+    case "$scope_rc" in
+      0)
+        cleaners=("${STANDARD_CLEANERS[@]}")
+        ;;
+      1)
+        while IFS= read -r line; do
+          [[ -n "$line" ]] && cleaners+=("$line")
+        done < <(prompt_segments)
+        if (( ${#cleaners[@]} == 0 )); then
+          echo "No segments selected. Nothing to do."
+          exit 0
+        fi
+        ;;
+      *)
+        echo "Cancelled."
+        exit 0
+        ;;
+    esac
+  else
+    if (( ${#STANDARD_CLEANERS[@]} > 0 )); then
+      cleaners=("${STANDARD_CLEANERS[@]}")
+    fi
+    if [[ "$mode" == "full" ]] && (( ${#FULL_CLEANERS[@]} > 0 )); then
+      cleaners+=("${FULL_CLEANERS[@]}")
+    fi
   fi
 
   if (( ${#cleaners[@]} == 0 )); then
@@ -113,7 +193,7 @@ main() {
     [[ -x "$cleaner" ]] || die "Cleaner is not executable: $cleaner"
   done
 
-  echo "mac-clean ($mode): ${#cleaners[@]} approved item(s)"
+  echo "mac-clean ($mode): ${#cleaners[@]} selected item(s)"
 
   for index in "${!cleaners[@]}"; do
     cleaner="${cleaners[$index]}"
