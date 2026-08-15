@@ -19,10 +19,12 @@ opens a picker: choose "All" to run the standard cleanup, or select specific
 segments with TAB and clean only those.
 
 Options:
-  -n, --dry-run Preview every selected cleaner without deleting.
-  --full        Include full-only desktop cache cleanup (non-interactive).
-  --list        Show approved cleaners and their classification.
-  -h, --help    Show this help.
+  -n, --dry-run  Preview every selected cleaner without deleting.
+  --full         Include full-only desktop cache cleanup (non-interactive).
+  --list         Show approved cleaners and their classification.
+  -v, --verbose  Stream each cleaner's full output live (default: quiet, with
+                 output shown only when a cleaner fails).
+  -h, --help     Show this help.
 EOF
 }
 
@@ -65,6 +67,13 @@ describe() {
     linux-clean-desktop-caches.sh)       echo "Desktop caches — thumbnails & shader caches (full-only)" ;;
     *)                                   echo "$1" ;;
   esac
+}
+
+# Short label for progress/summary lines (text before the em dash in describe()).
+short_label() {
+  local desc
+  desc="$(describe "$1")"
+  printf '%s' "${desc%% — *}"
 }
 
 # Step 1: choose scope. Returns 0 for "All", 1 for custom selection, 2 for cancel.
@@ -216,13 +225,13 @@ format_size() {
 }
 
 main() {
-  local dry_run=0 full=0 list=0 cleaner cleaner_name status before after gain total_gain=0
+  local dry_run=0 full=0 list=0 verbose=0 cleaner cleaner_name status before after gain total_gain=0
   local cleaners=()
   local child_args=()
   local summary_names=()
   local summary_gains=()
   local argc=$#
-  local line scope_rc
+  local line scope_rc index out_file
 
   [[ "$(uname -s)" == "Linux" ]] || die "linux-clean only runs on Linux."
   while (( $# > 0 )); do
@@ -230,6 +239,7 @@ main() {
       -n | --dry-run) dry_run=1 ;;
       --full) full=1 ;;
       --list) list=1 ;;
+      -v | --verbose) verbose=1 ;;
       -h | --help) usage; exit 0 ;;
       *) die "Unknown argument: $1 (use --help)" ;;
     esac
@@ -271,18 +281,33 @@ main() {
   done
 
   echo "linux-clean ($([[ $full == 1 ]] && echo full || echo standard), $([[ $dry_run == 1 ]] && echo dry-run || echo apply)): ${#cleaners[@]} approved item(s)"
-  for cleaner in "${cleaners[@]}"; do
+  for index in "${!cleaners[@]}"; do
+    cleaner="${cleaners[$index]}"
     cleaner_name="$(basename "$cleaner")"
     before="$(cleaner_size_kib "$cleaner_name")"
     echo
-    echo "[$cleaner_name]"
-    if "$cleaner" "${child_args[@]}"; then
-      echo "✓ Completed: $cleaner_name"
+    printf '[%d/%d] %s\n' "$((index + 1))" "${#cleaners[@]}" "$(short_label "$cleaner_name")"
+
+    status=0
+    out_file=""
+    if (( verbose )); then
+      "$cleaner" "${child_args[@]}" || status=$?
     else
-      status=$?
+      out_file="$(mktemp -t linux-clean-out.XXXXXX)"
+      "$cleaner" "${child_args[@]}" >"$out_file" 2>&1 || status=$?
+    fi
+
+    if (( status != 0 )); then
+      if [[ -n "$out_file" ]]; then
+        echo "--- output from $cleaner_name ---" >&2
+        cat "$out_file" >&2
+        echo "--- end output ---" >&2
+        rm -f -- "$out_file"
+      fi
       echo "✗ Failed: $cleaner_name (exit $status). Stopping." >&2
       exit "$status"
     fi
+    [[ -n "$out_file" ]] && rm -f -- "$out_file"
 
     if (( dry_run )); then
       gain="$before"
@@ -290,7 +315,13 @@ main() {
       after="$(cleaner_size_kib "$cleaner_name")"
       (( before > after )) && gain="$((before - after))" || gain=0
     fi
-    summary_names+=("$cleaner_name")
+
+    if (( dry_run )); then
+      printf '  ~ est. %s\n' "$(format_size "$gain")"
+    else
+      printf '  ✓ freed %s\n' "$(format_size "$gain")"
+    fi
+    summary_names+=("$(short_label "$cleaner_name")")
     summary_gains+=("$gain")
     total_gain="$((total_gain + gain))"
   done
@@ -298,15 +329,15 @@ main() {
   echo "linux-clean completed."
   echo
   if (( dry_run )); then
-    echo "Estimated gain:"
+    echo "Estimated space freed:"
   else
-    echo "Measured gain:"
+    echo "Space freed:"
   fi
   for status in "${!summary_names[@]}"; do
-    printf '  %-45s %10s\n' "${summary_names[$status]}" \
+    printf '  %-26s %10s\n' "${summary_names[$status]}" \
       "$(format_size "${summary_gains[$status]}")"
   done
-  printf '  %-45s %10s\n' "Total" "$(format_size "$total_gain")"
+  printf '  %-26s %10s\n' "Total" "$(format_size "$total_gain")"
 }
 
 main "$@"

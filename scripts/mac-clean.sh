@@ -19,10 +19,38 @@ opens a picker: choose "All" to run the standard cleanup, or select specific
 segments with TAB and clean only those.
 
 Options:
-  --full     Run standard and full-only cleanup scripts (non-interactive).
-  --list     Show all approved cleanup scripts and their classification.
-  -h, --help Show this help.
+  --full      Run standard and full-only cleanup scripts (non-interactive).
+  --list      Show all approved cleanup scripts and their classification.
+  -v, --verbose  Stream each cleaner's full output live (default: quiet, with
+                 output shown only when a cleaner fails).
+  -h, --help  Show this help.
+
+Each run ends with a summary of approximate space freed per segment and in
+total. Freed sizes are measured as free-space deltas on the boot volume, so
+they are approximate and can be skewed by concurrent disk activity.
 EOF
+}
+
+# Free space (in 1 KiB blocks) on the boot volume.
+free_kib() {
+  df -Pk / | awk 'NR == 2 { print $4 }'
+}
+
+# Human-readable size from a KiB amount; negatives are clamped to zero.
+format_kib() {
+  awk -v k="$1" 'BEGIN {
+    if (k < 0) k = 0
+    if (k >= 1048576) printf "%.2f GiB", k / 1048576
+    else if (k >= 1024) printf "%.1f MiB", k / 1024
+    else printf "%d KiB", k
+  }'
+}
+
+# Short label for the summary (text before the em dash in describe()).
+short_label() {
+  local desc
+  desc="$(describe "$1")"
+  printf '%s' "${desc%% — *}"
 }
 
 # Friendly, human-readable description for each cleaner (portable case; no bash 4 assoc arrays).
@@ -127,6 +155,8 @@ prompt_segments() {
 
 main() {
   local mode="standard"
+  local verbose=0
+  local want_full=0
   local cleaner
   local cleaner_name
   local index
@@ -134,31 +164,44 @@ main() {
   local cleaners=()
   local line
   local scope_rc
+  local arg
+  local seg_labels=()
+  local seg_freed=()
+  local out_file=""
+  local before_kib
+  local after_kib
+  local delta_kib
+  local total_kib=0
 
   [[ "$(uname -s)" == "Darwin" ]] || die "mac-clean only runs on macOS."
-  (( $# <= 1 )) || die "Too many arguments (use --help)"
 
-  case "${1:-}" in
-    "")
-      if [[ -t 0 && -t 1 ]] && command -v fzf >/dev/null 2>&1; then
-        mode="interactive"
-      fi
-      ;;
-    --full)
-      mode="full"
-      ;;
-    --list)
-      list_cleaners
-      exit 0
-      ;;
-    -h | --help)
-      usage
-      exit 0
-      ;;
-    *)
-      die "Unknown argument: $1 (use --help)"
-      ;;
-  esac
+  for arg in "$@"; do
+    case "$arg" in
+      --full)
+        want_full=1
+        ;;
+      --list)
+        list_cleaners
+        exit 0
+        ;;
+      -v | --verbose)
+        verbose=1
+        ;;
+      -h | --help)
+        usage
+        exit 0
+        ;;
+      *)
+        die "Unknown argument: $arg (use --help)"
+        ;;
+    esac
+  done
+
+  if (( want_full )); then
+    mode="full"
+  elif [[ -t 0 && -t 1 ]] && command -v fzf >/dev/null 2>&1; then
+    mode="interactive"
+  fi
 
   if [[ "$mode" == "interactive" ]]; then
     scope_rc=0
@@ -208,12 +251,34 @@ main() {
     cleaner_name="$(basename "$cleaner")"
 
     echo
-    printf '[%d/%d] %s\n' "$((index + 1))" "${#cleaners[@]}" "$cleaner_name"
+    printf '[%d/%d] %s\n' "$((index + 1))" "${#cleaners[@]}" "$(short_label "$cleaner_name")"
 
-    if "$cleaner"; then
-      echo "✓ Completed: $cleaner_name"
+    before_kib="$(free_kib)"
+    status=0
+    if (( verbose )); then
+      "$cleaner" || status=$?
     else
-      status=$?
+      out_file="$(mktemp -t mac-clean-out)"
+      "$cleaner" >"$out_file" 2>&1 || status=$?
+    fi
+    after_kib="$(free_kib)"
+    delta_kib="$((after_kib - before_kib))"
+
+    if (( status == 0 )); then
+      total_kib="$((total_kib + delta_kib))"
+      seg_labels+=("$(short_label "$cleaner_name")")
+      seg_freed+=("$delta_kib")
+      printf '  ✓ freed %s\n' "$(format_kib "$delta_kib")"
+      [[ -n "$out_file" ]] && rm -f -- "$out_file"
+      out_file=""
+    else
+      if [[ -n "$out_file" ]]; then
+        echo "--- output from $cleaner_name ---" >&2
+        cat "$out_file" >&2
+        echo "--- end output ---" >&2
+        rm -f -- "$out_file"
+        out_file=""
+      fi
       echo "✗ Failed: $cleaner_name (exit $status). Stopping." >&2
       exit "$status"
     fi
@@ -221,6 +286,12 @@ main() {
 
   echo
   echo "mac-clean completed."
+  echo
+  echo "Space freed (approximate):"
+  for index in "${!seg_labels[@]}"; do
+    printf '  %-26s %10s\n' "${seg_labels[$index]}" "$(format_kib "${seg_freed[$index]}")"
+  done
+  printf '  %-26s %10s\n' "Total" "$(format_kib "$total_kib")"
 }
 
 main "$@"
