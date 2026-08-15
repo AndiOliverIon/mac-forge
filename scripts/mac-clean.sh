@@ -36,11 +36,15 @@ describe() {
     mac-clean-docker-build-cache.sh)   echo "Docker build cache — old buildx layers" ;;
     mac-clean-nuget-transient.sh)      echo "NuGet transient — http-cache, scratch & plugin cache" ;;
     mac-clean-npm-cache.sh)            echo "npm cache — global download cache" ;;
+    mac-clean-pip-cache.sh)            echo "pip cache — download & wheel cache" ;;
     mac-clean-rider-caches.sh)         echo "JetBrains Rider — caches, indexes & host temp" ;;
     mac-clean-yarn-cache.sh)           echo "Yarn cache — global package cache" ;;
     mac-clean-swiftpm-cache.sh)        echo "Swift Package Manager — package cache" ;;
+    mac-clean-go-build-cache.sh)       echo "Go build cache — compiled build artifacts (GOCACHE)" ;;
+    mac-clean-vscode-caches.sh)        echo "VS Code — reconstructable Cache/CachedData/GPUCache" ;;
     mac-clean-stale-temp.sh)           echo "Stale temp — old /tmp & TMPDIR entries" ;;
     mac-clean-xcode-derived-data.sh)   echo "Xcode DerivedData — build products & indexes" ;;
+    mac-clean-xcode-device-support.sh) echo "Xcode iOS DeviceSupport — old symbol bundles (>30d)" ;;
     mac-clean-xcode-simulators.sh)     echo "Xcode simulators — remove unavailable devices" ;;
     mac-clean-xcode-test-clones.sh)    echo "Xcode test clones — leftover clone data" ;;
     *)                                 echo "$1" ;;
@@ -57,11 +61,15 @@ STANDARD_CLEANERS=(
   "$SCRIPT_DIR/mac-clean-docker-build-cache.sh"
   "$SCRIPT_DIR/mac-clean-nuget-transient.sh"
   "$SCRIPT_DIR/mac-clean-npm-cache.sh"
+  "$SCRIPT_DIR/mac-clean-pip-cache.sh"
   "$SCRIPT_DIR/mac-clean-rider-caches.sh"
   "$SCRIPT_DIR/mac-clean-yarn-cache.sh"
   "$SCRIPT_DIR/mac-clean-swiftpm-cache.sh"
+  "$SCRIPT_DIR/mac-clean-go-build-cache.sh"
+  "$SCRIPT_DIR/mac-clean-vscode-caches.sh"
   "$SCRIPT_DIR/mac-clean-stale-temp.sh"
   "$SCRIPT_DIR/mac-clean-xcode-derived-data.sh"
+  "$SCRIPT_DIR/mac-clean-xcode-device-support.sh"
   "$SCRIPT_DIR/mac-clean-xcode-simulators.sh"
   "$SCRIPT_DIR/mac-clean-xcode-test-clones.sh"
 )
