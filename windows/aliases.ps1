@@ -99,7 +99,7 @@ function global:reloadterm {
 }
 function global:help {
   $names = @(
-    "forge", "perf", "info", "switch", "dnc", "binclear", "genopenapi",
+    "forge", "perf", "info", "ftp", "switch", "dnc", "binclear", "genopenapi",
     "script-run", "sqlexec", "v1sn", "v1r", "v1list",
     "hades-tunnel-up", "hades-tunnel-status", "hades-tunnel-down", "codex-local-register",
     "v1-sql-tunnel-up", "v1-sql-tunnel-status", "v1-sql-tunnel-down",
@@ -118,6 +118,9 @@ function global:fixdock { Stop-Process -Name explorer -Force }
 function global:rider { Start-Process "rider64.exe" -ArgumentList $args }
 function global:copilot { gh copilot @args }
 function global:codex-thanatos { codex --profile lmstudio @args }
+function global:ftp {
+  & (Join-Path $script:ForgeWindowsRoot "scripts\ftp.ps1") @args
+}
 function global:codex-local-register {
   & (Join-Path $script:ForgeWindowsRoot "scripts\codex-local-register.ps1") @args
 }

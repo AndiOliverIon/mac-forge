@@ -68,6 +68,11 @@ Use `winget-update` to run Windows package updates listed in
 `config-local\winget.json`. The file is local to the station; each non-empty,
 non-comment line is appended to `winget update`.
 
+Use `ftp` to open the `ftp-connections` entry from
+`config-local\local-store.json` in a simple terminal FTP browser. The Windows
+implementation uses the local PowerShell/.NET FTP stack and supports two
+panels, navigation, refresh, F5 download, and F6 upload.
+
 ## Local LAN Codex profile
 
 Copy the secure `llm cli deploy` bundle to a station, open PowerShell in that
