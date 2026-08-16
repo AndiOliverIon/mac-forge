@@ -135,6 +135,7 @@ alias dela="rm -rf ./*"
 # Remote & Network
 # ------------------------------------------------------------------------------
 alias display="~/mac-forge/linux/scripts/setup-display.sh"
+alias disp="~/mac-forge/linux/scripts/disp.sh"
 alias mnt='~/mac-forge/linux/scripts/mount.sh'
 alias mnthadesw='~/mac-forge/linux/scripts/hades-mount.sh'
 alias mnthw=mnthadesw
