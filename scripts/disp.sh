@@ -64,9 +64,9 @@ n_external=0
 for seg in "${segments[@]}"; do
   id="$(seg_id "$seg")"
   if [[ "${IS_INTERNAL[$id]:-0}" == 1 ]]; then
-    ((n_internal++))
+    n_internal=$((n_internal + 1))
   else
-    ((n_external++))
+    n_external=$((n_external + 1))
   fi
 done
 
