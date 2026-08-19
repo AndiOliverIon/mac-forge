@@ -127,6 +127,9 @@ function global:codex-local-register {
 function global:winget-update {
   & (Join-Path $script:ForgeWindowsRoot "scripts\winget-update.ps1") @args
 }
+function global:drive-fill {
+  & (Join-Path $script:ForgeWindowsRoot "scripts\drive-fill.ps1") @args
+}
 function global:showeth {
   Get-NetIPConfiguration | Select-Object InterfaceAlias, InterfaceDescription,
     @{Name = "IPv4Address"; Expression = { $_.IPv4Address.IPAddress }}
