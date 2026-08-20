@@ -55,15 +55,17 @@ The Ghostty config is shared with macOS from the neutral repo file
 Linux reads its private configuration from:
 
 ```text
-/data/forge/forge-secrets.sh
+~/.config/forge/forge-secrets.sh
 ```
 
 The existing macOS-compatible `FORGE_SQL_SA_PASSWORD` variable is reused by
 Linux commands such as `dbr`, `dbsn`, and `am`. Non-sensitive Linux paths stay
 in `linux/config/runtime.json`.
 
-The bootstrap creates `/data/forge` with owner-only permissions, but it does
-not create or copy secret values.
+The bootstrap creates `~/.config/forge` with owner-only permissions, but it
+does not create or copy secret values. `XDG_CONFIG_HOME` and `FORGE_HOME_ROOT`
+can override this default. Existing `/data/forge/forge-secrets.sh` files remain
+supported as a legacy fallback.
 
 ## Local LAN Codex profile
 
@@ -144,7 +146,7 @@ dvpn
 
 They use OpenConnect's Fortinet protocol support, connection metadata from
 `configs/work-state.json`, and the matching password variable from
-`/data/forge/forge-secrets.sh`. For example, a connection with ID `ARDIS`
+`~/.config/forge/forge-secrets.sh`. For example, a connection with ID `ARDIS`
 requires `FORGE_VPN_ARDIS_PASSWORD`.
 
 ## Web launcher

@@ -9,6 +9,7 @@ NVM_DIR="${HOME}/.nvm"
 DOTNET_INSTALL_DIR="/usr/share/dotnet"
 TOOLBOX_INSTALL_ROOT="${HOME}/.local/opt"
 FORGE_ROOT="${FORGE_ROOT:-$HOME/mac-forge}"
+FORGE_CONFIG_HOME="${XDG_CONFIG_HOME:-${HOME}/.config}/forge"
 export PATH="${HOME}/.local/bin:${PATH}"
 
 step() {
@@ -62,6 +63,8 @@ install_telerik_license() {
 echo "========================================="
 echo " Ubuntu Forge Bootstrap"
 echo "========================================="
+
+install -d -m 700 "${FORGE_CONFIG_HOME}"
 
 step "1/19" "Updating package index..."
 sudo apt update
@@ -367,4 +370,4 @@ echo "Run 'claude' to authenticate and start Claude Code."
 echo "Run 'copilot' and enter '/login' to authenticate GitHub Copilot CLI."
 echo "Run 'exec zsh' to load the shared macOS-master Powerlevel10k profile."
 echo "Run 'sudo smbpasswd -a ${USER}' to set the Data share password."
-echo "Place forge-secrets.sh in /data/forge before using Forge SQL commands."
+echo "Place forge-secrets.sh in ${FORGE_CONFIG_HOME} before using Forge SQL commands."

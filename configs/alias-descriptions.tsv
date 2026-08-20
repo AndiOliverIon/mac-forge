@@ -176,10 +176,10 @@ alias	rth	SSH into Thanatos.
 alias	rthr	SSH into Thanatos over Tailscale.
 alias	rt	Shortcut for rth.
 alias	showeth	Show network hardware ports and their current IP addresses.
-alias	mcshutdown	Force shutdown MasterChief over SSH.
+alias	mcshutdown	Shut down Ubuntu on MasterChief over SSH.
 alias	thshutdown	Force shutdown Thanatos over SSH.
 alias	tsshutdown	Shortcut for thshutdown.
-alias	mcsleep	Put MasterChief into sleep/modern standby over SSH.
+alias	mcsleep	Suspend Ubuntu on MasterChief over SSH.
 alias	ms	Shortcut for mcsleep.
 alias	tssleep	Put Thanatos into sleep over SSH.
 alias	thsleep	Shortcut for tssleep.
@@ -274,7 +274,7 @@ script	hdd-clean	Find old large files by extension and delete them after confirm
 script	help	Open the forge command picker for aliases and scripts.
 script	info	Show a forge machine/system health snapshot.
 script	mcboot	Wake MasterChief with Wake-on-LAN.
-script	mcsleep	Put MasterChief into sleep/modern standby over SSH.
+script	mcsleep	Suspend Ubuntu on MasterChief over SSH.
 script	organizer	Organize configured folders by extension rules from work-state.
 script	patch	Apply, remove, or inspect intervention patches.
 script	perform-cache-reset	Clear Perform client cache artifacts.

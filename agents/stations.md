@@ -15,7 +15,7 @@ Each station record currently stores:
 
 Current examples in repo state:
 
-- `MasterChief` -> `192.168.68.115`, `C4:03:A8:37:38:81`, `Windows`
+- `MasterChief` -> `192.168.68.115`, `C4:03:A8:37:38:81`, `Ubuntu`
 - `Thanatos` -> `192.168.100.46`, `E8:9C:25:38:4C:63`, `Windows`
 
 Prefer reading this data from `configs/work-state.json` instead of hardcoding duplicates.

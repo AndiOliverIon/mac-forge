@@ -3,9 +3,13 @@ set -euo pipefail
 
 FORGE_LINUX_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 FORGE_LINUX_ROOT="$(cd -- "${FORGE_LINUX_SCRIPT_DIR}/.." && pwd)"
-FORGE_HOME_ROOT="${FORGE_HOME_ROOT:-/data/forge}"
+FORGE_HOME_ROOT="${FORGE_HOME_ROOT:-${XDG_CONFIG_HOME:-${HOME}/.config}/forge}"
 FORGE_RUNTIME_CONFIG_FILE="${FORGE_LINUX_ROOT}/config/runtime.json"
-FORGE_SECRETS_FILE="${FORGE_HOME_ROOT}/forge-secrets.sh"
+FORGE_SECRETS_FILE="${FORGE_SECRETS_FILE:-${FORGE_HOME_ROOT}/forge-secrets.sh}"
+
+if [[ ! -f "$FORGE_SECRETS_FILE" && -f /data/forge/forge-secrets.sh ]]; then
+  FORGE_SECRETS_FILE="/data/forge/forge-secrets.sh"
+fi
 
 if [[ -f "$FORGE_SECRETS_FILE" ]]; then
   # shellcheck disable=SC1090

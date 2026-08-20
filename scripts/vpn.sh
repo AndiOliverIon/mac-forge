@@ -13,7 +13,11 @@ fi
 
 # Linux keeps private Forge configuration outside the repository and iCloud.
 if [[ "$(uname -s)" == "Linux" ]]; then
-	FORGE_SECRETS_FILE="${FORGE_LINUX_SECRETS_FILE:-${FORGE_HOME_ROOT:-/data/forge}/forge-secrets.sh}"
+	FORGE_LINUX_CONFIG_HOME="${FORGE_HOME_ROOT:-${XDG_CONFIG_HOME:-${HOME}/.config}/forge}"
+	FORGE_SECRETS_FILE="${FORGE_LINUX_SECRETS_FILE:-${FORGE_LINUX_CONFIG_HOME}/forge-secrets.sh}"
+	if [[ ! -f "$FORGE_SECRETS_FILE" && -f /data/forge/forge-secrets.sh ]]; then
+		FORGE_SECRETS_FILE="/data/forge/forge-secrets.sh"
+	fi
 fi
 
 # Load secrets

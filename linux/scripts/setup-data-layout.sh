@@ -40,9 +40,6 @@ for path in \
     create_owned_dir 0755 "${path}"
 done
 
-create_owned_dir 0700 /data/forge
-chown "${DATA_USER}:${DATA_GROUP}" /data/forge
-chmod 0700 /data/forge
 install -d -o root -g root -m 0755 /data/docker
 
 for path in /data/sql/docker/data /data/sql/docker/snapshots; do
