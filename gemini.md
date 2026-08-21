@@ -11,3 +11,5 @@ Whenever `gemini.md` is read, `AGENTS.md` must also be read in the same context 
 Keep this file lean. Add content here only when it is useful specifically for Gemini and would not benefit other agents working in this repository.
 
 Whenever an AI determines that a new general repository rule should be added, store that rule in `AGENTS.md`, not in `gemini.md`.
+
+# Gemini is obsolete for me, not really using it anymore.
