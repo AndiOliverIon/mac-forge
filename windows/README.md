@@ -94,9 +94,8 @@ Do not commit `config-local`; it is ignored and may contain private values.
 
 ## Development tool parity
 
-The Windows bootstrap is intended to give Thanatos the same terminal flavor as
-the macOS and Linux stations for daily .NET, Angular, SQL, Docker, Git, AI CLI,
-and VPS1 work.
+The Windows bootstrap provides the same terminal flavor as the macOS and Linux
+stations for daily .NET, Angular, SQL, Docker, Git, AI CLI, and VPS1 work.
 
 Installed by bootstrap:
 
@@ -109,7 +108,7 @@ Installed by bootstrap:
 Manual station-local setup still required:
 
 - authenticate `gh`, `copilot`, `codex`, and `claude`;
-- make `ssh vps1`, `ssh oliver@masterchief`, and `ssh oliver@thanatos` work;
+- make `ssh vps1`, `ssh hades`, and `ssh oliver@masterchief` work;
 - configure user-level `.npmrc` or run `vsts-npm-auth` for private Azure
   Artifacts packages;
 - verify commercial UI licenses from the relevant Angular client, for example
@@ -155,7 +154,7 @@ hades-tunnel-down
 While the tunnel is up, Windows reaches the Hades services at
 `http://localhost:4200` and `http://localhost:8080`. Hades must have Remote
 Login enabled and key-based SSH access must work from Windows. The tunnel uses
-`oliver@10.211.55.2` and `~/.ssh/id_ed25519_hades_tunnel` by default; set
+`hades` and `~/.ssh/id_ed25519_hades_tunnel` by default; set
 `HADES_SSH_HOST` or `HADES_SSH_IDENTITY_FILE` to override them.
 
 ## Shared versus station-specific state

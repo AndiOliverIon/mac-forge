@@ -83,7 +83,7 @@ case "$(uname -s)" in
     security add-trusted-cert -d -r trustRoot -k "$HOME/Library/Keychains/login.keychain-db" "$certificate_path"
     ;;
   Linux)
-    certificate_target="/usr/local/share/ca-certificates/thanatos-local-llm.crt"
+    certificate_target="/usr/local/share/ca-certificates/codex-local-llm.crt"
     sudo install -Dm644 "$certificate_path" "$certificate_target"
     sudo update-ca-certificates
     ;;

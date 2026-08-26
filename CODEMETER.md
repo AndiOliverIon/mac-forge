@@ -25,12 +25,18 @@ vps1 (CodeMeter Lite, CmCloud credential and activated ARDIS licenses)
 Mac or Linux workstation
     |-- native/local client -> 127.0.0.1:22350
     |-- Docker client       -> host.docker.internal:22350
-    `-- Windows CERBER      -> 10.211.55.2:22350 (Parallels private bridge)
+    `-- Windows CERBER      -> <hades-parallels-address>:22350 (Parallels private bridge)
 ```
 
 There is no Tailscale dependency and no permanent CodeMeter Docker sidecar.
 CodeMeter is deliberately not exposed on the public network. The workstation
 opens the license tunnel only when a licensed application needs it.
+
+Network placeholders in this document refer to the ignored local station
+overlay: `stations.hades.network.parallels-host.address` and
+`stations.cerber.network.parallels-shared.address` in
+`config-local/stations.json`. Never replace them with literal addresses in this
+tracked file.
 
 ## Current validation state
 
@@ -40,17 +46,17 @@ Completed and verified on 2026-07-17:
 - `vps1` can connect to WIBU CmCloud and lists the expected container/content.
 - `vps1` publishes all seven ARDIS products as network licenses.
 - The on-demand tunnel reaches `vps1` from Mac loopback.
-- The tunnel's private Parallels listener is reachable at `10.211.55.2:22350`.
+- The tunnel's private Parallels listener is reachable at `<hades-parallels-address>:22350`.
 - Windows `CERBER` returned `TcpTestSucceeded: True` for that address.
 - CodeMeter Runtime 8.40a is installed and running inside Windows `CERBER`.
-- `10.211.55.2` is configured in CERBER's CodeMeter Server Search List.
+- `<hades-parallels-address>` is configured in CERBER's CodeMeter Server Search List.
 - CERBER's `cmu --list-network` enumerates Firm Code `6001576`, all seven
   products, and their correct free-seat counts through the SSH tunnel.
 - OPTIMIZER's active configuration was changed from local-only lookup
   (`KeyLocal=1`) to network lookup (`KeyLocal=0`).
 - The obsolete `MasterChief` and `255.255.255.255` search-list entries were
   removed. The only explicit registry server is now
-  `Server1 = 10.211.55.2`.
+  `Server1 = <hades-parallels-address>`.
 
 Still to be completed:
 
@@ -106,7 +112,7 @@ concurrency remains governed by the individual product entitlements above.
 ### `vps1`: the only license holder
 
 - Ubuntu 24.04.4 LTS, x86_64.
-- Reachable through SSH host alias `vps1` (`152.53.45.162` at the time this
+- Reachable through SSH host alias `vps1` (`vps1.tnisoft.ro` at the time this
   document was written).
 - Runs official WIBU CodeMeter Lite 9.00 Driver Only.
 - Debian package: `codemeter-lite`, version `9.0.8031.500`.
@@ -151,7 +157,7 @@ The tunnel listens on:
 
 - `127.0.0.1:22350` for native applications and Docker host forwarding.
 - The detected Parallels `bridge100` address, currently
-  `10.211.55.2:22350`, for the Windows VM.
+  `<hades-parallels-address>:22350`, for the Windows VM.
 
 The Parallels listener is bound only to its private bridge, not to Wi-Fi,
 Ethernet, or all interfaces.
@@ -161,8 +167,8 @@ Ethernet, or all interfaces.
 - Parallels VM name: `Windows 11`.
 - Guest hostname: `CERBER`.
 - Windows 11 Pro, ARM64.
-- Shared-network guest address: `10.211.55.3`.
-- macOS Parallels bridge address: `10.211.55.2`.
+- Shared-network guest address: `<cerber-shared-address>`.
+- macOS Parallels bridge address: `<hades-parallels-address>`.
 - Runs ARDIS OPTIMIZER 6.4.2 / COWIN.
 
 OPTIMIZER currently identifies:
@@ -189,7 +195,7 @@ After installing the runtime as administrator:
 
 1. Open CodeMeter WebAdmin at <http://localhost:22352>.
 2. Open **Configuration > Basic > Server Search List**.
-3. Add `10.211.55.2`.
+3. Add `<hades-parallels-address>`.
 4. Apply the setting and restart the Windows CodeMeter service.
 5. Keep only **WIBU CodeMeter** selected in OPTIMIZER's key dialog.
 6. Ensure the active OPTIMIZER profile has `[PREFERENCES] KeyLocal=0`.
@@ -277,9 +283,9 @@ As of 2026-07-17, the following has been proven:
 - The 32-bit client DLL used by this application is
   `C:\Windows\SysWOW64\WibuCm32.dll`, CodeMeter 8.40a build 7120.
 - CERBER's effective CodeMeter registry has only the explicit server
-  `10.211.55.2`. The registry still reports `UseBroadcast=1`, even though the
+  `<hades-parallels-address>`. The registry still reports `UseBroadcast=1`, even though the
   visible automatic-search entry was removed.
-- `cmu --list-network --server 10.211.55.2 --firmcode 6001576` succeeds from
+- `cmu --list-network --server <hades-parallels-address> --firmcode 6001576` succeeds from
   CERBER and lists COWIN Product Code `1`, six free seats, and key identity
   `15527_18864`.
 - OPTIMIZER still shows a red-crossed key and does not allocate a COWIN seat.
@@ -403,7 +409,7 @@ nc -zv 127.0.0.1 22350
 With the Mac tunnel up:
 
 ```powershell
-Test-NetConnection 10.211.55.2 -Port 22350
+Test-NetConnection <hades-parallels-address> -Port 22350
 
 $cmu = @(
   "$env:ProgramFiles\CodeMeter\Runtime\bin\cmu.exe",
@@ -411,7 +417,7 @@ $cmu = @(
 ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 
 & $cmu --list-server
-& $cmu --list-network --server 10.211.55.2 --firmcode 6001576
+& $cmu --list-network --server <hades-parallels-address> --firmcode 6001576
 ```
 
 `TcpTestSucceeded` must be `True`. The network listing must return serial
@@ -506,7 +512,7 @@ contact ARDIS/WIBU before performing a re-host.
 1. Run `v1-license-tunnel-status`.
 2. Test TCP from the actual client:
    - macOS/Linux: `127.0.0.1:22350`
-   - Windows CERBER: `10.211.55.2:22350`
+   - Windows CERBER: `<hades-parallels-address>:22350`
    - Docker: `host.docker.internal:22350`
 3. Check `codemeter.service` and the loopback listener on `vps1`.
 4. Run `cmu --verify-cloud-connection` and `cmu --list` on `vps1`.

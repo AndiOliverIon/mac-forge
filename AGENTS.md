@@ -11,13 +11,22 @@
 - Treat this repo as operational tooling; preserve existing workflows unless the user asks to redesign them.
 - Prefer targeted changes over broad refactors.
 - Keep shell scripts simple, explicit, and compatible with the existing Bash-oriented style.
-- Always check `configs/work-state.json` when investigating Docker paths, station metadata, or other active machine state.
+- Always check `configs/stations.json` when investigating station or attached-device metadata and
+  `configs/work-state.json` when investigating Docker paths or other active
+  machine state. Sensitive station network facts are stored only in the ignored
+  `config-local/stations.json` overlay.
 
 ## Safety rules
 
 - Never print or expose secret values from the forge secrets file.
+- Never commit values from `config-local/stations.json`; it holds sensitive
+  station identifiers and network addressing referenced by the public station
+  inventory.
 - Do not overwrite `configs/work-state.json` casually; it represents active machine state.
-- If state already exists in `configs/work-state.json`, prefer reading it from there instead of hardcoding duplicate values in scripts.
+- If operational state already exists in `configs/work-state.json`, prefer
+  reading it from there instead of hardcoding duplicate values in scripts. If
+  station metadata exists in `configs/stations.json`, treat that inventory as
+  canonical.
 - If a task would change active storage paths, station behavior, organizer behavior, or destructive cleanup flows, call that out clearly.
 - Do not introduce silent changes to active paths, station behavior, or destructive cleanup behavior; document them when behavior meaning changes.
 - Be cautious with scripts that delete files, clear SQL data, or modify mounted storage.

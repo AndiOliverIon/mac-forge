@@ -17,20 +17,6 @@
       "title": "MasterChief Acassis",
       "path": "/Volumes/acasis/sql",
       "snapshot-path": "/Volumes/acasis/sql/snapshots"
-    },
-    {
-      "title": "Thanatos storage",
-      "path": "/Volumes/thanatos/acasis/sql/docker",
-      "snapshot-path": "/Volumes/thanatos/acasis/sql/docker/snapshots"
-    }
-  ],
-  "vpn-connections": [
-    {
-      "title": "Ardis VPN",
-      "url": "sslvpn.ardis.eu:443",
-      "user": "andi",
-      "id": "ARDIS",
-      "servercert": "pin-sha256:QR3DjforpDS+RkdB570H7UX7ZYfGhQID7a0VfJzBzh0="
     }
   ],
   "ardis-migration-paths": [
@@ -127,20 +113,6 @@
     "~/Downloads",
     "~/Desktop",
     "~/work/stuff"
-  ],
-  "stations": [
-    {
-      "name": "MasterChief",
-      "ip": "192.168.68.115",
-      "mac": "C4:03:A8:37:38:81",
-      "os": "Ubuntu"
-    },
-    {
-      "name": "Thanatos",
-      "ip": "192.168.100.46",
-      "mac": "E8:9C:25:38:4C:63",
-      "os": "Windows"
-    }
   ],
   "station-destinations": [
     {

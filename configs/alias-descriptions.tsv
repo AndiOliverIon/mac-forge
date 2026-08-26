@@ -173,26 +173,13 @@ alias	perflogclean	Delete all files in Perform output logs; no prompt.
 alias	screenshotclean	Delete PNG screenshots from Desktop; no prompt.
 alias	rmc	SSH into MasterChief.
 alias	rmcr	SSH into MasterChief over Tailscale.
-alias	rth	SSH into Thanatos.
-alias	rthr	SSH into Thanatos over Tailscale.
-alias	rt	Shortcut for rth.
 alias	showeth	Show network hardware ports and their current IP addresses.
 alias	mcshutdown	Shut down Ubuntu on MasterChief over SSH.
-alias	thshutdown	Force shutdown Thanatos over SSH.
-alias	tsshutdown	Shortcut for thshutdown.
 alias	mcsleep	Suspend Ubuntu on MasterChief over SSH.
 alias	ms	Shortcut for mcsleep.
-alias	tssleep	Put Thanatos into sleep over SSH.
-alias	thsleep	Shortcut for tssleep.
-alias	ts	Shortcut for tssleep.
-alias	tshut	Shortcut for thshutdown.
-alias	thshut	Shortcut for thshutdown.
 alias	mcboot	Wake MasterChief with Wake-on-LAN.
 alias	mcbt	Shortcut for mcboot.
 alias	mb	Short shortcut for mcboot.
-alias	thboot	Wake Thanatos with Wake-on-LAN.
-alias	tboot	Shortcut for thboot.
-alias	thb	Shortcut for thboot.
 alias	rider	Open JetBrains Rider.
 alias	aliases	Print the alias file.
 alias	codex-local-register	Register the local LAN LLM bundle from the current directory as Codex profile local-lan; use --verify to test it.
@@ -211,7 +198,6 @@ alias	hades-tunnel-down	Close the SSH tunnel to Hades.
 alias	hades-tunnel-status	Show whether the Hades dev tunnel is up.
 alias	htu	Shortcut for hades-tunnel-up.
 alias	htd	Shortcut for hades-tunnel-down.
-alias	thbt	Shortcut for thboot.
 script	aliases	Open the alias finder and copy the selected shortcut.
 script	ardis-complete	Complete Ardis planning/activity data over a selected date range.
 script	ardis-migrate	Run Ardis migrations against a selected local SQL database.
@@ -288,8 +274,6 @@ script	sql-execute	Run selected .sql files against a chosen connection/database.
 script	script-run	Run selected .sql files from the current folder against a chosen SQL connection.
 script	station-io	Copy or move a selected local file/folder to a station destination, replacing same-name targets.
 script	switch-db	Switch the active appsettings connection string for a configured project.
-script	thboot	Wake Thanatos with Wake-on-LAN.
-script	thsleep	Put Thanatos into sleep over SSH.
 script	vpn	Start a configured VPN connection from forge state/secrets.
 script	web	Open a configured web entry in the preferred browser; use web change to switch browser.
 script	ftp	Pick an ftp-connection via fzf and open a dual-pane browser (remote left, local right); type to filter fzf-style, F5 download, F6 upload.

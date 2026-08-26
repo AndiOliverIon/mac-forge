@@ -9,7 +9,7 @@
 #
 # Hades must have Remote Login (sshd) enabled and key-based SSH access must work
 # from this station. The tunnel connects through the `hades` SSH host alias by
-# default; set HADES_SSH_HOST to override it (e.g. oliver@192.168.68.108).
+# default; set HADES_SSH_HOST to override it (e.g. hades).
 #
 # Usage:
 #   hades-tunnel.sh up       # open the tunnel (idempotent)

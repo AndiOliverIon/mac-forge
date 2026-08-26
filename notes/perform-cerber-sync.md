@@ -40,8 +40,8 @@ Captured on 2026-04-27 from macOS.
 - Windows guest OS: Windows 11 ARM (`win-11`, `efi-arm64`, CPU type `arm`).
 - Parallels Tools: installed, version `26.3.1-57396`.
 - Parallels networking mode: shared/NAT (`net0 type=shared`).
-- Windows IPv4 reported by Parallels: `10.211.55.3`.
-- macOS can ping `10.211.55.3` successfully.
+- Windows IPv4 reported by Parallels: `<cerber-shared-address>`.
+- macOS can ping `<cerber-shared-address>` successfully.
 - TCP port 22 did not respond promptly from macOS, so Windows OpenSSH Server is probably not listening yet or the firewall blocks it.
 - Existing macOS SSH config contains GitHub/GitLab/Bitbucket entries only; no Windows VM host alias yet.
 - Existing macOS SSH keys are present. We should decide whether to reuse `~/.ssh/id_ed25519.pub` or create a dedicated VM key.
@@ -57,9 +57,9 @@ Captured on 2026-04-27 from macOS.
   - `0.0.0.0:22`
   - `[::]:22`
 - Windows firewall rule `OpenSSH Server (sshd)` was created successfully using `netsh`.
-- Windows `ipconfig` confirmed IPv4 address `10.211.55.3`.
+- Windows `ipconfig` confirmed IPv4 address `<cerber-shared-address>`.
 - macOS SSH reached the Windows VM but key authentication failed:
-  - Command: `ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new oliver@10.211.55.3 hostname`
+  - Command: `ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new oliver@<cerber-shared-address> hostname`
   - Result: `Permission denied (publickey,password,keyboard-interactive).`
 - Next required fix: repair/confirm Windows `authorized_keys` permissions and also add the key to `C:\ProgramData\ssh\administrators_authorized_keys`, because Windows OpenSSH often uses that file for users in the local Administrators group.
 - Windows SSH key auth fix:
@@ -69,12 +69,12 @@ Captured on 2026-04-27 from macOS.
   - ACLs were repaired with `icacls.exe`.
   - `sshd` was restarted.
 - macOS SSH key auth now works:
-  - Command: `ssh -o BatchMode=yes -o ConnectTimeout=5 oliver@10.211.55.3 hostname`
+  - Command: `ssh -o BatchMode=yes -o ConnectTimeout=5 oliver@<cerber-shared-address> hostname`
   - Result: `Cerber`
 - macOS SSH config alias added:
   - File: `~/.ssh/config`
   - Host alias: `cerber-win`
-  - HostName: `10.211.55.3`
+  - HostName: `<cerber-shared-address>`
   - User: `oliver`
   - IdentityFile: `~/.ssh/id_ed25519`
 - SSH alias validation works:
@@ -117,7 +117,7 @@ Captured on 2026-04-27 from macOS.
   - Config file: `/Users/oliver/.config/rclone/rclone.conf`.
   - Remote name: `cerber`.
   - Remote type: `sftp`.
-  - Remote host: `10.211.55.3`.
+  - Remote host: `<cerber-shared-address>`.
   - Remote user: `oliver`.
   - Remote key file: `/Users/oliver/.ssh/id_ed25519`.
   - Remote shell type: `powershell`.

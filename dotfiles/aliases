@@ -227,33 +227,18 @@ alias screenshotclean="desk && rm -f *.png"
 # ------------------------------------------------------------------------------
 alias rmc="ssh -t oliver@masterchief"
 alias rmcr="ssh -t oliver@masterchief-ts"
-alias rth="ssh -t oliver@thanatos"
-alias rthr="ssh -t oliver@thanatos-ts"
-alias rt=rth
 alias disp="~/mac-forge/scripts/disp.sh"
 alias showeth='networksetup -listallhardwareports | awk "/Hardware Port|Device/"; echo; for i in $(networksetup -listallhardwareports | awk "/Device/ {print \$2}"); do ip=$(ipconfig getifaddr $i 2>/dev/null); echo "$i : ${ip:-no-ip}"; done'
 alias mcshutdown='ssh -t oliver@masterchief "sudo systemctl poweroff"'
-alias thshutdown='ssh -t oliver@thanatos "powershell -Command \"Stop-Computer -Force\""'
-alias tsshutdown=thshutdown
 alias mcsleep='~/mac-forge/scripts/mcsleep.sh'
 alias ms=mcsleep
-alias tssleep='~/mac-forge/scripts/thsleep.sh'
-alias thsleep=tssleep
-alias ts=tssleep
-alias tshut=thshutdown
-alias thshut=thshutdown
 
 alias mcboot='~/mac-forge/scripts/mcboot.sh'
 alias mcbt=mcboot
 alias mb=mcboot
-alias thboot='~/mac-forge/scripts/thboot.sh'
-alias tboot=thboot
-alias thb=thboot
 
 # ------------------------------------------------------------------------------
 # Apps & Utilities
 # ------------------------------------------------------------------------------
 alias rider="open -a 'Rider.app'"
 alias aliases="cat ~/mac-forge/dotfiles/aliases"
-
-alias codex-thanatos="codex --profile lmstudio"

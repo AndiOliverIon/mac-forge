@@ -10,7 +10,7 @@ $forwards = @(
   @{ LocalPort = 4200; Remote = "localhost:4200"; Label = "Angular" }
   @{ LocalPort = 8080; Remote = "localhost:8080"; Label = "Perform API" }
 )
-$sshHost = if ($env:HADES_SSH_HOST) { $env:HADES_SSH_HOST } else { "oliver@10.211.55.2" }
+$sshHost = if ($env:HADES_SSH_HOST) { $env:HADES_SSH_HOST } else { "hades" }
 $sshIdentity = if ($env:HADES_SSH_IDENTITY_FILE) {
   $env:HADES_SSH_IDENTITY_FILE
 } else {

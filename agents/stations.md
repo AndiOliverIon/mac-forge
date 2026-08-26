@@ -4,34 +4,54 @@ Read this file when working on station metadata, SSH aliases, station sleep/shut
 
 ## Station metadata
 
-`configs/work-state.json` contains a top-level `stations` array used as the machine inventory for remote stations.
+`configs/stations.json` is the canonical non-secret inventory. Its `stations`
+collection covers physical stations, virtual machines, and servers; its
+`devices` collection covers docks, portable storage, and other attached
+hardware. It stores identity, OS, hardware, network endpoints, access aliases,
+availability expectations, attachment relationships, and verification sources.
 
-Each station record currently stores:
+`configs/station-topology.md` is the tracked visual projection of those
+relationships. Keep it synchronized with topology changes, but treat
+`configs/stations.json` as the source of truth.
 
-- `name`
-- `ip`
-- `mac`
-- `os`
+`config-local/stations.json` is the ignored local overlay for IP addresses,
+subnets, gateways, MAC addresses, VM UUIDs, and other sensitive or unique
+identifiers. Public endpoint records use `localFactsKey` to point to the
+corresponding local values. Never copy those values into the tracked inventory.
 
-Current examples in repo state:
+Do not put passwords, private keys, tokens, or other credentials in the
+inventory. SSH configuration, `/etc/hosts`, DNS, Tailscale, Parallels, and
+credential stores remain operational authorities. The inventory records their
+non-secret aliases and resolved facts so station context is available in one
+place.
 
-- `MasterChief` -> `192.168.68.115`, `C4:03:A8:37:38:81`, `Ubuntu`
-- `Thanatos` -> `192.168.100.46`, `E8:9C:25:38:4C:63`, `Windows`
+Do not add station facts to `configs/work-state.json`; its legacy station array
+has been removed.
 
-Prefer reading this data from `configs/work-state.json` instead of hardcoding duplicates.
+When a value changes frequently, distinguish durable capability from an
+observation. Record when a fact was verified instead of presenting an old
+reachability or DHCP observation as permanent truth.
+
+Each station's `network.permittedConnectionTypes` declares its supported
+physical connection modes. Public endpoints record connection type, interface,
+route role, and friendly aliases. Their IP address, subnet, gateway, and other
+sensitive facts belong only in `config-local/stations.json`. Keep overlay and
+virtual endpoints separate from physical connection capability.
 
 ## Network topology
 
 Current layout assumptions:
 
-- `Hades` and `MasterChief` sit behind the personal Wi-Fi router on the `192.168.68.x` network.
-- `Thanatos` sits on a different LAN exposed directly from the ISP router on `192.168.100.x`.
-- The ISP router uplinks the personal Wi-Fi router and separately connects `Thanatos`.
+- `Hades` and `MasterChief` sit behind the personal Wi-Fi router.
+- `Hades` reaches the ISP LAN through the UTP port on the UGREEN MasterDock 17.
+- `Hades` permits both Wi-Fi and UTP; `MasterChief` currently permits Wi-Fi only.
+- The ISP router uplinks the personal Wi-Fi router.
+- `Cerber` receives Internet access through its Hades host using Parallels
+  shared networking.
 
 Operational consequence:
 
 - `MasterChief` wake attempts originate from the same local network as `Hades`.
-- `Thanatos` wake attempts originate across routers and subnets, so broadcast-based Wake-on-LAN is less reliable unless relayed from within the `192.168.100.x` network.
 
 Before changing Wake-on-LAN or remote-station behavior, account for whether the target is on the same subnet or behind a different router/LAN.
 

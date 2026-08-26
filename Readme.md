@@ -7,6 +7,50 @@ Personal notes for setting up a new Mac and restoring my usual environment.
 
 ---
 
+## Station and device inventory lookup
+
+When answering a question about a station, use these sources in order:
+
+1. Read `configs/stations.json` first. Its `stations` collection is the
+   canonical tracked inventory for compute stations; its `devices` collection
+   holds docks, portable storage, and other attached hardware. It records names,
+   roles, OS details, hardware specifications, connection types, aliases,
+   availability, attachment relationships, and fact provenance.
+   Use `configs/station-topology.md` for the corresponding tracked physical,
+   display, and network diagrams.
+2. Read `config-local/stations.json` when local network addressing or unique
+   identifiers are required. It is ignored by Git and stores IP addresses,
+   subnets, gateways, MAC addresses, VM UUIDs, and similar machine-local facts.
+   Do not copy its values into tracked files or expose them unless the request
+   specifically requires them.
+3. Use operational configuration only to verify how a connection actually
+   works:
+   - `/etc/hosts` for friendly hostname resolution;
+   - `~/.ssh/config` for SSH aliases and connection behavior, without exposing
+     identity files or credentials;
+   - Tailscale for overlay availability;
+   - Parallels configuration for VM allocation and state.
+4. Query the station read-only when current facts matter:
+   - Hades: local `system_profiler`, `networksetup`, `ifconfig`, and `diskutil`;
+   - MasterChief and vps1: `ssh <primaryAlias>` and native Linux inventory
+     commands;
+   - Cerber: `prlctl` while suspended or running, and SSH when available;
+   - Charon: macOS CoreDevice via `xcrun devicectl` while paired over USB.
+   - Hades-attached docks, storage, and displays: `diskutil`,
+     `system_profiler`, and I/O topology, without collecting serial numbers or
+     volume UUIDs.
+5. Treat live reachability, DHCP addresses, mounted devices, and VM power state
+   as observations rather than permanent capabilities. Record when facts were
+   verified, and update the canonical inventory plus its ignored local overlay
+   when a live result proves stored data is stale.
+
+`configs/work-state.json` remains operational state for Forge workflows and
+storage destinations; it is not a station inventory. Passwords, tokens,
+private keys, certificates, and sensitive addressing must remain in ignored
+local configuration or the existing secrets store.
+
+---
+
 ## 0. Baseline Software (Current Machine)
 
 ### 0.1 Homebrew Formulae (installed and required)

@@ -318,7 +318,7 @@ While the tunnel is up, the station reaches the Hades services at
 `http://localhost:4200` (Angular) and `http://localhost:8080` (Perform API).
 Hades must have Remote Login enabled and key-based SSH access must work. The
 tunnel connects through the `hades` SSH host alias by default; set
-`HADES_SSH_HOST` (e.g. `oliver@192.168.68.108`) or `HADES_TUNNEL_PORTS` to
+`HADES_SSH_HOST` (e.g. `hades`) or `HADES_TUNNEL_PORTS` to
 override the defaults.
 
 

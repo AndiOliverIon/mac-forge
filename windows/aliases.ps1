@@ -117,7 +117,6 @@ function global:cdp { (Get-Location).Path | Set-Clipboard }
 function global:fixdock { Stop-Process -Name explorer -Force }
 function global:rider { Start-Process "rider64.exe" -ArgumentList $args }
 function global:copilot { gh copilot @args }
-function global:codex-thanatos { codex --profile lmstudio @args }
 function global:ftp {
   & (Join-Path $script:ForgeWindowsRoot "scripts\ftp.ps1") @args
 }
@@ -171,11 +170,8 @@ function global:dcu { docker compose up @args }
 function global:dcd { docker compose down @args }
 function global:rmc { ssh -t oliver@masterchief @args }
 function global:rmcr { ssh -t oliver@masterchief-ts @args }
-function global:rth { ssh -t oliver@thanatos @args }
-function global:rthr { ssh -t oliver@thanatos-ts @args }
-function global:mcshutdown { ssh -t oliver@masterchief 'powershell -Command "Stop-Computer -Force"' }
-function global:thshutdown { ssh -t oliver@thanatos 'powershell -Command "Stop-Computer -Force"' }
-function global:meerkat-enroll { ssh -t vps1 "sudo meerkat-agent enroll --addr 152.53.45.162:8765" }
+function global:mcshutdown { ssh -t oliver@masterchief "sudo systemctl poweroff" }
+function global:meerkat-enroll { ssh -t vps1 "sudo meerkat-agent enroll --addr vps1.tnisoft.ro:8765" }
 function global:pr { patch -R @args }
 function global:ttbs {
   Invoke-ForgeBash "C:\work\ardis.timetrack\buildsolution.sh" @args
@@ -300,9 +296,7 @@ $sharedCommands = @{
   "dwkdata" = "scripts/deploy-wonderkitchen.sh"
   "aiusage" = "scripts/agents/usage.sh"
   "mcsleep" = "scripts/mcsleep.sh"
-  "tssleep" = "scripts/thsleep.sh"
   "mcboot" = "scripts/mcboot.sh"
-  "thboot" = "scripts/thboot.sh"
   "vps1-status" = "scripts/vps1-status"
   "v1sn" = "scripts/vps1/vps1-db-snapshot.sh"
   "v1r" = "scripts/vps1/vps1-db-restore.sh"
@@ -363,10 +357,7 @@ $aliases = @{
   "tt" = "timetrack"; "inv" = "invoice"; "ti" = "invoice"
   "lcsql" = "locsql"; "lcsnaphots" = "locsnapshots"
   "lcsnap" = "locsnapshots"; "lcs" = "locsnapshots"; "snap" = "snapshots"
-  "rt" = "rth"; "tsshutdown" = "thshutdown"; "tshut" = "thshutdown"
-  "thshut" = "thshutdown"; "ms" = "mcsleep"; "thsleep" = "tssleep"
-  "ts" = "tssleep"; "mcbt" = "mcboot"; "mb" = "mcboot"
-  "tboot" = "thboot"; "thb" = "thboot"
+  "ms" = "mcsleep"; "mcbt" = "mcboot"; "mb" = "mcboot"
   "vps1-snapshot" = "v1sn"; "vps1-restore" = "v1r"
   "vps1-db-index" = "v1dbindex"; "vps1-download" = "v1down"
   "vps1-upload" = "v1up"; "vps1-relay-download" = "rdown-to-v1"

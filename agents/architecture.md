@@ -5,7 +5,9 @@ Read this file when working on Forge runtime, `configs/work-state.json`, SQL/Doc
 ## High-level layout
 
 - `scripts/`: executable workflows and utilities.
-- `configs/work-state.json`: active machine state for Docker SQL paths, organizer rules, station metadata, and destination lists.
+- `configs/work-state.json`: active machine state for Docker SQL paths, organizer rules, and destination lists.
+- `configs/stations.json`: canonical non-secret station, VM, server, and attached-device inventory.
+- `config-local/stations.json`: ignored local overlay for sensitive station identifiers and network addressing.
 - `dotfiles/aliases`: shell command surface that exposes most repo functionality.
 - `profiles/`: optional shell/profile presets.
 - `config-local/`: local-only machine-specific state if present.
@@ -17,12 +19,12 @@ in a neutral location so a single file is the source of truth. Each station
 symlinks its local config path to the repo file rather than keeping a divergent copy.
 
 - `dotfiles/ghostty.ghostty`: shared Ghostty terminal config, currently used by
-  **macOS and Linux**. Symlinked to `~/.config/ghostty/config.ghostty` on each
-  station (Linux wires this in `linux/scripts/bootstrap.sh` step 15; macOS is
-  symlinked manually). Windows is not covered yet — Ghostty is not in use there
-  and its availability on Windows is unconfirmed. The shared file uses the login
-  shell by default (no hardcoded `command` path) so it stays OS-agnostic;
-  `macos-titlebar-style` is kept and harmlessly ignored on Linux.
+  **Linux only**. Symlinked to `~/.config/ghostty/config.ghostty` on each Linux
+  station (wired in `linux/scripts/bootstrap.sh` step 15). macOS no longer uses
+  Ghostty — the preferred terminal there is iTerm2. Windows is not covered yet.
+  The shared file uses the login shell by default (no hardcoded `command` path)
+  so it stays OS-agnostic; `macos-titlebar-style` is kept and harmlessly ignored
+  on Linux.
 
 ## Forge runtime
 
@@ -47,7 +49,6 @@ It currently controls:
 - clean target presets;
 - organizer folder categories;
 - folders to organize;
-- station metadata such as IP, MAC, and OS;
 - station destination presets.
 
 This file is operational state, not just documentation.

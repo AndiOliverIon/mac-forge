@@ -23,13 +23,15 @@ fi
 # Load secrets
 if [[ -n "${FORGE_SECRETS_FILE:-}" && -f "$FORGE_SECRETS_FILE" ]]; then source "$FORGE_SECRETS_FILE"; fi
 
+FORGE_VPN_CONFIG_FILE="${FORGE_VPN_CONFIG_FILE:-${FORGE_ROOT:-$HOME/mac-forge}/config-local/vpn-connections.json}"
+
 #######################################
 # Helper: choose VPN from state json
 #######################################
 choose_vpn() {
 	local selected
-	if [[ -f "${FORGE_WORK_STATE_FILE:-}" ]]; then
-		selected="$(python3 - "$FORGE_WORK_STATE_FILE" <<'PY' | fzf --prompt='Select VPN: ' --with-nth=1,2 --delimiter=$'\t' --height=10 --border
+	if [[ -f "$FORGE_VPN_CONFIG_FILE" ]]; then
+		selected="$(python3 - "$FORGE_VPN_CONFIG_FILE" <<'PY' | fzf --prompt='Select VPN: ' --with-nth=1,2 --delimiter=$'\t' --height=10 --border
 import json, sys
 with open(sys.argv[1], "r") as fp:
     state = json.load(fp)
@@ -60,7 +62,7 @@ main() {
 
 	selection="$(choose_vpn)" || exit 1
 	[[ -n "$selection" ]] || {
-		echo "ERROR: No VPN connection is configured in $FORGE_WORK_STATE_FILE." >&2
+		echo "ERROR: No VPN connection is configured in $FORGE_VPN_CONFIG_FILE." >&2
 		exit 1
 	}
 	IFS=$'\t' read -r title url user vpn_id cert <<< "$selection"

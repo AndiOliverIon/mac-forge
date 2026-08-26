@@ -137,13 +137,11 @@ interactive_database() {
 			DB_SERVER="host.docker.internal,2022"
 			DB_NAME="ArdisDemo"
 			DB_USER="sa"
-			DB_PASSWORD="Open1147"
 			;;
 		masterchief)
 			DB_SERVER="masterchief,2022"
 			DB_NAME="ArdisDemo"
 			DB_USER="sa"
-			DB_PASSWORD="Open1147"
 			;;
 		*)
 			return 1

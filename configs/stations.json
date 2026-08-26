@@ -1,0 +1,803 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-08-26",
+  "description": "Canonical non-secret inventory of physical machines, virtual machines, and servers used by mac-forge.",
+  "stations": [
+    {
+      "id": "hades",
+      "name": "Hades",
+      "kind": "physical-workstation",
+      "roles": [
+        "primary-workstation",
+        "macos-development-host",
+        "parallels-host"
+      ],
+      "identifiers": {
+        "hostnames": [
+          "hades"
+        ],
+        "modelIdentifier": "Mac16,6",
+        "modelNumber": "Z1FG0022CRO/A"
+      },
+      "os": {
+        "family": "macos",
+        "name": "macOS",
+        "version": "26.6.2",
+        "build": "25G83",
+        "architecture": "arm64",
+        "kernel": "Darwin 25.6.0",
+        "verifiedAt": "2026-08-26"
+      },
+      "hardware": {
+        "status": "verified",
+        "manufacturer": "Apple",
+        "model": "MacBook Pro",
+        "cpu": {
+          "model": "Apple M4 Max",
+          "cores": 16,
+          "performanceCores": 12,
+          "efficiencyCores": 4
+        },
+        "memory": {
+          "bytes": 137438953472,
+          "display": "128 GB"
+        },
+        "graphics": [
+          {
+            "model": "Apple M4 Max",
+            "cores": 40
+          }
+        ],
+        "storage": [
+          {
+            "kind": "internal-ssd",
+            "bytes": 994662584320,
+            "display": "1 TB"
+          }
+        ],
+        "verifiedAt": "2026-08-26"
+      },
+      "network": {
+        "permittedConnectionTypes": [
+          "wifi",
+          "utp"
+        ],
+        "segments": [
+          "personal-lan",
+          "isp-lan",
+          "parallels-shared"
+        ],
+        "endpoints": [
+          {
+            "name": "wifi",
+            "connectionType": "wifi",
+            "scope": "lan",
+            "interface": "en0",
+            "localFactsKey": "stations.hades.network.wifi",
+            "addressing": "dhcp",
+            "status": "active",
+            "defaultRoute": false,
+            "hostAliases": [
+              "hadeswifi"
+            ],
+            "aliasAuthority": "/etc/hosts",
+            "observedAt": "2026-08-26"
+          },
+          {
+            "name": "utp",
+          "connectionType": "utp",
+          "hardwarePort": "USB 10/100/1G/2.5G LAN",
+          "viaDevice": "ugreen-masterdock-17",
+          "transportToHost": "USB4 v2",
+          "scope": "lan",
+            "interface": "en10",
+            "localFactsKey": "stations.hades.network.utp",
+            "addressing": "dhcp",
+            "status": "active",
+            "defaultRoute": true,
+            "hostAliases": [
+              "hadesutp"
+            ],
+            "aliasAuthority": "/etc/hosts",
+            "observedAt": "2026-08-26"
+          },
+          {
+            "name": "parallels-host",
+            "connectionType": "virtual-bridge",
+            "scope": "private-virtual",
+            "interface": "bridge100",
+            "localFactsKey": "stations.hades.network.parallels-host",
+            "addressing": "parallels-managed"
+          }
+        ]
+      },
+      "access": {
+        "ssh": {
+          "primaryAlias": "hades",
+          "aliases": [
+            "hades"
+          ],
+          "operationalAuthority": "SSH configuration and system host resolution"
+        }
+      },
+      "availability": {
+        "mode": "local-primary",
+        "power": "operator-controlled",
+        "remoteAccess": "available when Hades is running and Remote Login is enabled"
+      },
+      "relationships": {
+        "hosts": [
+          "cerber"
+        ],
+        "attachedDevices": [
+          "charon",
+          "ugreen-masterdock-17"
+        ]
+      },
+      "sources": [
+        "local system_profiler",
+        "local diskutil",
+        "local ifconfig",
+        "/etc/hosts",
+        "agents/preferences.md",
+        "notes/perform-cerber-sync.md",
+        "user-confirmed UTP path through UGREEN MasterDock 17"
+      ]
+    },
+    {
+      "id": "masterchief",
+      "name": "MasterChief",
+      "kind": "physical-workstation",
+      "roles": [
+        "linux-development-host",
+        "network-storage-host"
+      ],
+      "identifiers": {
+        "hostnames": [
+          "masterchief"
+        ]
+      },
+      "os": {
+        "family": "linux",
+        "name": "Ubuntu",
+        "version": "26.04 LTS",
+        "architecture": "x86_64",
+        "kernel": "7.0.0-30-generic",
+        "verifiedAt": "2026-08-26"
+      },
+      "hardware": {
+        "status": "verified",
+        "manufacturer": "Dell Inc.",
+        "model": "Precision 5570",
+        "cpu": {
+          "model": "12th Gen Intel Core i7-12700H",
+          "physicalCores": 14,
+          "logicalCores": 20
+        },
+        "memory": {
+          "bytes": 33302487040,
+          "display": "32 GB"
+        },
+        "graphics": [
+          {
+            "model": "Intel Iris Xe Graphics"
+          },
+          {
+            "model": "NVIDIA RTX A1000 Laptop GPU"
+          }
+        ],
+        "storage": [
+          {
+            "kind": "internal-nvme",
+            "model": "Samsung PM9A1 NVMe 1024GB",
+            "bytes": 1024209543168,
+            "display": "1 TB"
+          }
+        ],
+        "verifiedAt": "2026-08-26"
+      },
+      "network": {
+        "permittedConnectionTypes": [
+          "wifi"
+        ],
+        "segments": [
+          "personal-lan",
+          "tailscale"
+        ],
+        "endpoints": [
+          {
+            "name": "wifi",
+            "connectionType": "wifi",
+            "scope": "lan",
+            "interface": "wlp0s20f3",
+            "localFactsKey": "stations.masterchief.network.wifi",
+            "addressing": "dhcp",
+            "status": "active",
+            "defaultRoute": true,
+            "hostAliases": [
+              "masterchief"
+            ],
+            "aliasAuthority": "/etc/hosts",
+            "observedAt": "2026-08-26"
+          },
+          {
+            "name": "tailscale",
+            "connectionType": "overlay",
+            "usesConnection": "wifi",
+            "scope": "overlay",
+            "localFactsKey": "stations.masterchief.network.tailscale",
+            "hostAliases": [
+              "masterchief-ts",
+              "masterchief-tailscale"
+            ],
+            "aliasAuthority": "/etc/hosts and Tailscale"
+          }
+        ]
+      },
+      "access": {
+        "ssh": {
+          "primaryAlias": "masterchief",
+          "aliases": [
+            "masterchief",
+            "masterchief-ts"
+          ],
+          "commandShortcuts": [
+            "rmc",
+            "rmcr"
+          ],
+          "operationalAuthority": "SSH configuration and system host resolution"
+        },
+        "wake": {
+          "method": "wake-on-wireless-lan",
+          "command": "mcboot",
+          "limitations": "Works from sleep, not from a full shutdown"
+        },
+        "powerCommands": [
+          "mcsleep",
+          "mcshutdown"
+        ]
+      },
+      "availability": {
+        "mode": "on-demand",
+        "power": "sleep-capable",
+        "lanReachability": "same subnet as Hades Wi-Fi"
+      },
+      "relationships": {
+        "onDemandDisplays": [
+          {
+            "device": "dell-u3223qe",
+            "connection": "USB-C",
+            "usage": "alternate monitor input selected when needed"
+          }
+        ]
+      },
+      "sources": [
+        "configs/work-state.json",
+        "/etc/hosts",
+        "agents/stations.md",
+        "remote system inventory over SSH",
+        "user-confirmed display connection path"
+      ]
+    },
+    {
+      "id": "charon",
+      "name": "Charon",
+      "kind": "tablet",
+      "roles": [
+        "mobile-tablet",
+        "ipad-development-device"
+      ],
+      "identifiers": {
+        "deviceName": "Charon",
+        "hostnames": [
+          "Charon.coredevice.local"
+        ],
+        "modelIdentifier": "iPad17,3",
+        "hardwareModel": "J820AP"
+      },
+      "os": {
+        "family": "ipados",
+        "name": "iPadOS",
+        "version": "26.6.1",
+        "build": "23G83",
+        "architecture": "arm64e",
+        "verifiedAt": "2026-08-26"
+      },
+      "hardware": {
+        "status": "model-and-configuration-derived",
+        "manufacturer": "Apple",
+        "model": "iPad Pro 13-inch (M5)",
+        "derivation": {
+          "modelIdentifier": "iPad17,3",
+          "storageTier": "1 TB",
+          "method": "Device-reported model combined with Apple's fixed storage-tier specification"
+        },
+        "cpu": {
+          "model": "Apple M5",
+          "architecture": "arm64e",
+          "cores": 10,
+          "performanceCores": 4,
+          "efficiencyCores": 6,
+          "verification": "derived-from-model-and-storage-tier"
+        },
+        "memory": {
+          "bytes": 17179869184,
+          "display": "16 GB unified memory",
+          "bandwidth": "153 GB/s",
+          "verification": "derived-from-model-and-storage-tier"
+        },
+        "graphics": [
+          {
+            "model": "Apple M5 integrated GPU",
+            "cores": 10,
+            "verification": "derived-from-model-and-storage-tier"
+          }
+        ],
+        "neuralEngine": {
+          "cores": 16,
+          "verification": "derived-from-model-and-storage-tier"
+        },
+        "storage": [
+          {
+            "kind": "internal-flash",
+            "bytes": 1000000000000,
+            "display": "1 TB",
+            "verification": "user-confirmed-configuration-tier"
+          }
+        ],
+        "specificationSource": "https://support.apple.com/en-gb/125407",
+        "verifiedAt": "2026-08-26"
+      },
+      "network": {
+        "permittedConnectionTypes": [
+          "wifi"
+        ],
+        "segments": [
+          "personal-lan"
+        ],
+        "endpoints": [
+          {
+            "name": "wifi",
+            "connectionType": "wifi",
+            "scope": "lan",
+            "status": "address-not-yet-collected",
+            "localFactsKey": "stations.charon.network.wifi",
+            "hostAliases": [],
+            "aliasAuthority": "/etc/hosts",
+            "note": "No friendly /etc/hosts alias is configured yet"
+          }
+        ]
+      },
+      "deviceConnections": [
+        {
+          "name": "ugreen-masterdock-17",
+          "connectionType": "usb",
+          "transport": "wired",
+          "status": "connected",
+          "via": "UGREEN MasterDock 17 attached to Hades",
+          "operationalAuthority": "macOS CoreDevice",
+          "observedAt": "2026-08-26"
+        }
+      ],
+      "access": {
+        "coreDevice": {
+          "deviceName": "Charon",
+          "hostname": "Charon.coredevice.local",
+          "state": "connected-no-ddi",
+          "operationalAuthority": "macOS CoreDevice"
+        }
+      },
+      "availability": {
+        "mode": "on-demand-mobile",
+        "power": "battery-powered",
+        "wifiAccess": "network address and service availability not yet collected",
+        "usbAccess": "available while trusted and attached through the Hades dock"
+      },
+      "relationships": {
+        "dockedTo": "hades",
+        "connectedThrough": "ugreen-masterdock-17"
+      },
+      "sources": [
+        "local macOS CoreDevice query",
+        "user-confirmed purchase specification"
+      ]
+    },
+    {
+      "id": "cerber",
+      "name": "Cerber",
+      "kind": "virtual-machine",
+      "roles": [
+        "windows-development-guest",
+        "ardis-optimizer-host"
+      ],
+      "identifiers": {
+        "hostnames": [
+          "CERBER"
+        ],
+        "vmName": "Windows 11"
+      },
+      "os": {
+        "family": "windows",
+        "name": "Windows 11 Pro",
+        "architecture": "arm64",
+        "verifiedAt": "2026-04-27"
+      },
+      "hardware": {
+        "status": "vm-allocation-verified",
+        "virtualization": "Parallels Desktop",
+        "cpu": {
+          "architecture": "arm",
+          "virtualCpus": 4
+        },
+        "memory": {
+          "bytes": 17179869184,
+          "display": "16 GB"
+        },
+        "graphics": [
+          {
+            "model": "Parallels virtual video adapter",
+            "memory": "automatic"
+          }
+        ],
+        "storage": [
+          {
+            "kind": "expanded-virtual-disk",
+            "bytes": 274877906944,
+            "display": "256 GiB"
+          }
+        ],
+        "verifiedAt": "2026-08-26"
+      },
+      "network": {
+        "segments": [
+          "parallels-shared"
+        ],
+        "endpoints": [
+          {
+          "name": "parallels-shared",
+          "connectionType": "virtual",
+          "scope": "private-virtual",
+          "upstreamHost": "hades",
+          "internetAccess": "through upstream host",
+          "localFactsKey": "stations.cerber.network.parallels-shared",
+            "hostAliases": [
+              "cerber",
+              "cerber-win"
+            ],
+            "authority": "Parallels DHCP, /etc/hosts, and SSH configuration"
+          }
+        ]
+      },
+      "access": {
+        "ssh": {
+          "primaryAlias": "cerber-win",
+          "aliases": [
+            "cerber-win"
+          ],
+          "operationalAuthority": "SSH configuration"
+        },
+        "virtualMachine": {
+          "manager": "prlctl",
+          "name": "Windows 11"
+        }
+      },
+      "availability": {
+        "mode": "on-demand-virtual-machine",
+        "power": "suspended when idle",
+        "dependsOn": [
+          "hades"
+        ]
+      },
+      "relationships": {
+        "hostedOn": "hades",
+        "internetVia": "hades"
+      },
+      "sources": [
+        "local prlctl configuration",
+        "/etc/hosts",
+        "~/.ssh/config",
+        "CODEMETER.md",
+        "notes/perform-cerber-sync.md",
+        "user-confirmed Internet path through Hades"
+      ]
+    },
+    {
+      "id": "vps1",
+      "name": "vps1",
+      "kind": "virtual-private-server",
+      "roles": [
+        "always-on-server",
+        "sql-server-host",
+        "codemeter-license-host",
+        "application-host"
+      ],
+      "identifiers": {
+        "hostnames": [
+          "vps1",
+          "vps1.tnisoft.ro",
+          "wonderkitchen.tnisoft.ro"
+        ]
+      },
+      "os": {
+        "family": "linux",
+        "name": "Ubuntu",
+        "version": "24.04.4 LTS",
+        "architecture": "x86_64",
+        "kernel": "6.8.0-138-generic",
+        "verifiedAt": "2026-08-26"
+      },
+      "hardware": {
+        "status": "virtual-allocation-verified",
+        "provider": "netcup",
+        "virtualization": "KVM",
+        "cpu": {
+          "model": "AMD EPYC-Genoa Processor",
+          "virtualCpus": 4
+        },
+        "memory": {
+          "bytes": 8321175552,
+          "display": "8 GB"
+        },
+        "storage": [
+          {
+            "kind": "virtual-disk",
+            "bytes": 274877906944,
+            "display": "256 GiB"
+          }
+        ],
+        "verifiedAt": "2026-08-26"
+      },
+      "network": {
+        "segments": [
+          "public-internet"
+        ],
+        "endpoints": [
+          {
+            "name": "public",
+            "scope": "public",
+            "localFactsKey": "stations.vps1.network.public",
+            "hostAliases": [
+              "vps1",
+              "vps1.tnisoft.ro",
+              "wonderkitchen.tnisoft.ro"
+            ],
+            "authority": "/etc/hosts and DNS"
+          }
+        ]
+      },
+      "access": {
+        "ssh": {
+          "primaryAlias": "vps1",
+          "aliases": [
+            "vps1"
+          ],
+          "operationalAuthority": "SSH configuration and system host resolution"
+        }
+      },
+      "availability": {
+        "mode": "always-on",
+        "power": "provider-managed",
+        "lanReachability": "public Internet"
+      },
+      "sources": [
+        "/etc/hosts",
+        "CODEMETER.md",
+        "remote system inventory over SSH"
+      ]
+    }
+  ],
+  "devices": [
+    {
+      "id": "ugreen-masterdock-17",
+      "name": "UGREEN MasterDock 17",
+      "kind": "docking-station",
+      "roles": [
+        "hades-connectivity-hub",
+        "fixed-nvme-storage-host",
+        "hades-wired-network-adapter"
+      ],
+      "manufacturer": "UGREEN",
+      "identifiers": {
+        "deviceReportedName": "TBT5 Docking Station 17-in-1"
+      },
+      "hostConnection": {
+        "host": "hades",
+        "mode": "USB4 v2",
+        "observedLinkSpeed": "80 Gb/s",
+        "status": "connected"
+      },
+      "network": {
+        "ethernetUplink": {
+          "connectionType": "utp",
+          "host": "hades",
+          "hostInterfaceRole": "default route"
+        }
+      },
+      "availability": {
+        "mode": "always-attached",
+        "attachedTo": "hades"
+      },
+      "integratedStorage": {
+        "kind": "nvme-ssd",
+        "manufacturer": "Samsung",
+        "model": "Samsung SSD 990 PRO 2TB",
+        "bytes": 2000398934016,
+        "display": "2 TB",
+        "protocol": "PCI-Express",
+        "solidState": true,
+        "smartStatus": "verified",
+        "filesystem": "APFS",
+        "volumeName": "dock-ssd",
+        "mountPathOnHades": "/Volumes/dock-ssd"
+      },
+      "relationships": {
+        "attachedTo": "hades",
+        "usuallyHosts": [
+          "acasis-2tb"
+        ],
+        "displayOutputs": [
+          {
+            "device": "msi-mpg321ux-oled",
+            "connection": "USB-C"
+          },
+          {
+            "device": "dell-u3223qe",
+            "connection": "DisplayPort"
+          }
+        ],
+        "attachedDevices": [
+          "charon"
+        ]
+      },
+      "verifiedAt": "2026-08-26",
+      "sources": [
+        "user-confirmed device role",
+        "local diskutil inventory",
+        "user-confirmed UTP path to Hades"
+      ]
+    },
+    {
+      "id": "acasis-2tb",
+      "name": "Acasis 2 TB",
+      "kind": "portable-external-storage",
+      "roles": [
+        "shared-portable-storage"
+      ],
+      "manufacturer": "Acasis",
+      "identifiers": {
+        "deviceReportedName": "TBU405MAX"
+      },
+      "hostConnection": {
+        "mode": "Thunderbolt 3",
+        "observedLinkSpeed": "40 Gb/s",
+        "status": "connected"
+      },
+      "storage": {
+        "kind": "nvme-ssd",
+        "deviceReportedModel": "KINGSTON SFYRD2000G",
+        "bytes": 2000398934016,
+        "display": "2 TB",
+        "protocolObservedOnHades": "PCI-Express",
+        "solidState": true,
+        "smartStatus": "verified",
+        "filesystem": "APFS",
+        "volumeName": "shared",
+        "mountPathOnHades": "/Volumes/shared"
+      },
+      "availability": {
+        "mode": "portable",
+        "usualAttachment": "ugreen-masterdock-17",
+        "currentAttachment": "ugreen-masterdock-17",
+        "observedAt": "2026-08-26"
+      },
+      "relationships": {
+        "usualAttachment": "ugreen-masterdock-17",
+        "permittedHosts": [
+          "hades",
+          "charon",
+          "masterchief"
+        ]
+      },
+      "verifiedAt": "2026-08-26",
+      "sources": [
+        "user-confirmed portability and attachment behavior",
+        "local diskutil inventory",
+        "local Thunderbolt topology"
+      ]
+    },
+    {
+      "id": "msi-mpg321ux-oled",
+      "name": "MSI MPG321UX OLED",
+      "kind": "monitor",
+      "roles": [
+        "primary-gaming-display"
+      ],
+      "manufacturer": "MSI",
+      "display": {
+        "panelClass": "OLED gaming",
+        "resolutionClass": "4K UHD",
+        "nativeResolution": "3840 x 2160",
+        "observedMode": {
+          "signalResolution": "6720 x 3780",
+          "uiLooksLike": "3360 x 1890",
+          "refreshRateHz": 180
+        },
+        "mainDisplay": true
+      },
+      "availability": {
+        "mode": "desk-fixed",
+        "status": "online",
+        "currentAttachment": "ugreen-masterdock-17",
+        "observedAt": "2026-08-26"
+      },
+      "relationships": {
+        "attachedTo": "ugreen-masterdock-17",
+        "displayFor": "hades"
+      },
+      "inputConnections": [
+        {
+          "source": "ugreen-masterdock-17",
+          "connection": "USB-C",
+          "status": "active"
+        }
+      ],
+      "verifiedAt": "2026-08-26",
+      "sources": [
+        "user-confirmed display class",
+        "local system_profiler display inventory",
+        "user-confirmed display connection path"
+      ]
+    },
+    {
+      "id": "dell-u3223qe",
+      "name": "Dell U3223QE",
+      "kind": "monitor",
+      "roles": [
+        "secondary-work-display"
+      ],
+      "manufacturer": "Dell",
+      "display": {
+        "panelClass": "standard productivity display",
+        "resolutionClass": "4K UHD",
+        "nativeResolution": "3840 x 2160",
+        "observedMode": {
+          "signalResolution": "6720 x 3780",
+          "uiLooksLike": "3360 x 1890",
+          "refreshRateHz": 60
+        },
+        "mainDisplay": false
+      },
+      "availability": {
+        "mode": "desk-fixed",
+        "status": "online",
+        "currentAttachment": "ugreen-masterdock-17",
+        "observedAt": "2026-08-26"
+      },
+      "relationships": {
+        "attachedTo": "ugreen-masterdock-17",
+        "usualDisplayFor": "hades",
+        "onDemandDisplayFor": "masterchief",
+        "switching": "manual monitor input selection"
+      },
+      "inputConnections": [
+        {
+          "source": "ugreen-masterdock-17",
+          "host": "hades",
+          "connection": "DisplayPort",
+          "status": "usual"
+        },
+        {
+          "source": "masterchief",
+          "connection": "USB-C",
+          "status": "on-demand"
+        }
+      ],
+      "verifiedAt": "2026-08-26",
+      "sources": [
+        "user-confirmed display class",
+        "local system_profiler display inventory",
+        "user-confirmed display connection and switching paths"
+      ]
+    }
+  ]
+}

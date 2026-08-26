@@ -9,9 +9,15 @@ fi
 
 SHARE_USER="${SUDO_USER:-oliver}"
 SHARE_PATH="/data"
-LAN_SUBNET="192.168.68.0/24"
+LAN_INTERFACE="${LAN_INTERFACE:-$(ip route show default | awk 'NR == 1 { print $5 }')}"
+LAN_SUBNET="${LAN_SUBNET:-$(ip -o -4 route show dev "${LAN_INTERFACE}" proto kernel scope link | awk 'NR == 1 { print $1 }')}"
 SMB_CONFIG="/etc/samba/smb.conf"
 STATION_NAME="masterchief"
+
+[[ -n "${LAN_INTERFACE}" && -n "${LAN_SUBNET}" ]] || {
+    echo "ERROR: Could not derive the LAN subnet; set LAN_INTERFACE or LAN_SUBNET explicitly." >&2
+    exit 1
+}
 
 findmnt -rn "${SHARE_PATH}" > /dev/null || {
     echo "ERROR: ${SHARE_PATH} is not mounted." >&2
