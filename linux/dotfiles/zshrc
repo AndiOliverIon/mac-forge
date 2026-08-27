@@ -45,4 +45,4 @@ if ! pgrep -u "$USER" ssh-agent > /dev/null; then
 fi
 
 # Add keys if not already added
-ssh-add -l >/dev/null 2>&1 || ssh-add ~/.ssh/id_ed25519_ardis ~/.ssh/id_ed25519_github
+ssh-add -l >/dev/null 2>&1 || ssh-add ~/.ssh/ardis-ed25519 ~/.ssh/id_ed25519_personal_gmail
