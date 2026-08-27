@@ -98,6 +98,9 @@ alias perf-to-cerber="~/mac-forge/scripts/perform-cerber-sync.sh up perf"
 alias perf-from-cerber="~/mac-forge/scripts/perform-cerber-sync.sh down perf"
 alias perf-to-cerber-preview="~/mac-forge/scripts/perform-cerber-sync.sh preview-up perf"
 alias perf-from-cerber-preview="~/mac-forge/scripts/perform-cerber-sync.sh preview-down perf"
+alias cerber-tunnel-up="~/mac-forge/scripts/cerber-hades-tunnel.sh up"
+alias cerber-tunnel-status="~/mac-forge/scripts/cerber-hades-tunnel.sh status"
+alias cerber-tunnel-down="~/mac-forge/scripts/cerber-hades-tunnel.sh down"
 
 # ------------------------------------------------------------------------------
 # Git Shortcuts

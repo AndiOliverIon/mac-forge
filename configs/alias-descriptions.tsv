@@ -198,6 +198,9 @@ alias	hades-tunnel-down	Close the SSH tunnel to Hades.
 alias	hades-tunnel-status	Show whether the Hades dev tunnel is up.
 alias	htu	Shortcut for hades-tunnel-up.
 alias	htd	Shortcut for hades-tunnel-down.
+alias	cerber-tunnel-up	Open Cerber's tunnel to the Hades Angular/Perform dev servers from macOS.
+alias	cerber-tunnel-status	Show and verify Cerber's tunnel to Hades from macOS.
+alias	cerber-tunnel-down	Close Cerber's tunnel to Hades from macOS.
 script	aliases	Open the alias finder and copy the selected shortcut.
 script	ardis-complete	Complete Ardis planning/activity data over a selected date range.
 script	ardis-migrate	Run Ardis migrations against a selected local SQL database.
@@ -266,6 +269,7 @@ script	organizer	Organize configured folders by extension rules from work-state.
 script	patch	Apply, remove, or inspect intervention patches.
 script	perform-cache-reset	Clear Perform client cache artifacts.
 script	perform-cerber-sync	Sync configured work profiles between Hades and Cerber.
+script	cerber-hades-tunnel	Control and verify Cerber's Hades development tunnel through Parallels.
 script	perform-prep	Prepare Perform build output dependencies.
 script	perform-test	Run all Ardis Perform unit tests, or filter them with an optional test-name keyword.
 script	port-release	Port a commit onto a release branch by creating a local cherry-pick branch.
