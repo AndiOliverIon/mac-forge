@@ -118,12 +118,39 @@
             "hades"
           ],
           "operationalAuthority": "SSH configuration and system host resolution"
+        },
+        "remoteDesktop": {
+          "method": "rustdesk",
+          "serviceMode": "always-on",
+          "serverMode": "self-hosted-oss",
+          "serverStation": "vps1",
+          "controllers": [
+            "charon"
+          ],
+          "savedPeers": [
+            "masterchief"
+          ],
+          "identifierAuthority": "RustDesk local configuration",
+          "credentialAuthority": "local macOS Keychain",
+          "authenticationMode": "permanent-password-only",
+          "approvalMode": "password",
+          "security": {
+            "temporaryPasswords": false,
+            "loginScreenPassword": false,
+            "trustedDeviceBypass": false,
+            "lanDiscovery": false,
+            "directIpAccess": false,
+            "remoteConfiguration": false
+          },
+          "serverConfigurationAuthority": "RustDesk local configuration",
+          "status": "configured-and-registered",
+          "verifiedAt": "2026-08-26"
         }
       },
       "availability": {
         "mode": "local-primary",
         "power": "operator-controlled",
-        "remoteAccess": "available when Hades is running and Remote Login is enabled"
+        "remoteAccess": "SSH is available when Hades is running and Remote Login is enabled; RustDesk starts automatically at boot and login"
       },
       "relationships": {
         "hosts": [
@@ -139,6 +166,7 @@
         "local diskutil",
         "local ifconfig",
         "/etc/hosts",
+        "local RustDesk launchd configuration",
         "agents/preferences.md",
         "notes/perform-cerber-sync.md",
         "user-confirmed UTP path through UGREEN MasterDock 17"
@@ -509,7 +537,8 @@
         "always-on-server",
         "sql-server-host",
         "codemeter-license-host",
-        "application-host"
+        "application-host",
+        "rustdesk-rendezvous-and-relay-host"
       ],
       "identifiers": {
         "hostnames": [
@@ -582,7 +611,8 @@
       "sources": [
         "/etc/hosts",
         "CODEMETER.md",
-        "remote system inventory over SSH"
+        "remote system inventory over SSH",
+        "remote RustDesk service verification"
       ]
     }
   ],
