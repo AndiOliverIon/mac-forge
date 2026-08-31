@@ -187,11 +187,14 @@ alias	ms	Shortcut for mcsleep.
 alias	mcboot	Wake MasterChief with Wake-on-LAN.
 alias	mcbt	Shortcut for mcboot.
 alias	mb	Short shortcut for mcboot.
+alias	wake	Pick any station via fzf (or pass a name) and send it a Wake-on-LAN magic packet using its configured MAC; errors clearly when the MAC is not set.
 alias	rider	Open JetBrains Rider.
 alias	aliases	Print the alias file.
 alias	codex-local-register	Register the local LAN LLM bundle from the current directory as Codex profile local-lan; use --verify to test it.
 alias	link-dotfiles	Link Linux dotfiles into place.
 alias	ldf	Shortcut for link-dotfiles.
+alias	verify-workstation	Run the read-only MasterChief workstation and agent-universe report locally or remotely from Hades.
+alias	vw	Shortcut for verify-workstation.
 alias	workspace-primary	Load the primary Linux workspace layout.
 alias	wp	Shortcut for workspace-primary.
 alias	display	Set Linux display scaling.
@@ -274,6 +277,7 @@ script	hdd-clean	Find old large files by extension and delete them after confirm
 script	help	Open the forge command picker for aliases and scripts.
 script	info	Show a forge machine/system health snapshot.
 script	mcboot	Wake MasterChief with Wake-on-LAN.
+script	wake	Pick any station via fzf (or pass a name) and send it a Wake-on-LAN magic packet using its configured MAC; errors clearly when the MAC is not set.
 script	mcsleep	Suspend Ubuntu on MasterChief over SSH.
 script	masterchief-agent-session	Attach to or create Raynor's or Zeratul's isolated persistent tmux session.
 script	organizer	Organize configured folders by extension rules from work-state.

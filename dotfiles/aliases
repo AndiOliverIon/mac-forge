@@ -33,6 +33,8 @@ alias info="~/mac-forge/scripts/info.sh"
 alias inf="clear && info"
 alias help="~/mac-forge/scripts/help.sh"
 alias codex-local-register="bash ~/mac-forge/scripts/codex-local-register.sh"
+alias verify-workstation="~/mac-forge/linux/scripts/verify-workstation.sh"
+alias vw=verify-workstation
 alias port-release="~/mac-forge/scripts/port-release.sh"
 alias prl=port-release
 alias web="~/mac-forge/scripts/web.sh"
@@ -245,6 +247,8 @@ alias ms=mcsleep
 alias mcboot='~/mac-forge/scripts/mcboot.sh'
 alias mcbt=mcboot
 alias mb=mcboot
+
+alias wake='~/mac-forge/scripts/wake.sh'
 
 # ------------------------------------------------------------------------------
 # Apps & Utilities

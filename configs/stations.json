@@ -239,9 +239,11 @@
             "scope": "lan",
             "interface": "wlp0s20f3",
             "localFactsKey": "stations.masterchief.network.wifi",
+            "macAddressLocalFactsKey": "stations.masterchief.identifiers.macAddresses",
             "addressing": "dhcp",
             "status": "active",
             "defaultRoute": true,
+            "wakeOnLan": true,
             "hostAliases": [
               "masterchief"
             ],
@@ -278,6 +280,7 @@
         "wake": {
           "method": "wake-on-wireless-lan",
           "command": "mcboot",
+          "macAddressLocalFactsKey": "stations.masterchief.identifiers.macAddresses",
           "limitations": "Works from sleep, not from a full shutdown"
         },
         "powerCommands": [
