@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-26",
+  "updatedAt": "2026-08-31",
   "description": "Canonical non-secret inventory of physical machines, virtual machines, and servers used by mac-forge.",
   "stations": [
     {
@@ -290,6 +290,34 @@
         "power": "sleep-capable",
         "lanReachability": "same subnet as Hades Wi-Fi"
       },
+      "agentRuntime": {
+        "maxConcurrentAgents": 2,
+        "directoryOwner": "oliver",
+        "isolation": "agent-enforced-universe-boundary",
+        "identities": [
+          {
+            "id": "raynor",
+            "name": "Raynor",
+            "universeRoot": "/home/oliver/raynor",
+            "forbiddenUniverseRoot": "/home/oliver/zeratul",
+            "workRoot": "/home/oliver/raynor",
+            "tmuxSocket": "raynor",
+            "tmuxSession": "raynor",
+            "attachCommand": "raynor"
+          },
+          {
+            "id": "zeratul",
+            "name": "Zeratul",
+            "universeRoot": "/home/oliver/zeratul",
+            "forbiddenUniverseRoot": "/home/oliver/raynor",
+            "workRoot": "/home/oliver/zeratul",
+            "tmuxSocket": "zeratul",
+            "tmuxSession": "zeratul",
+            "attachCommand": "zeratul"
+          }
+        ],
+        "verifiedAt": "2026-08-31"
+      },
       "relationships": {
         "onDemandDisplays": [
           {
@@ -304,6 +332,8 @@
         "/etc/hosts",
         "agents/stations.md",
         "remote system inventory over SSH",
+        "remote agent-universe directory inventory over SSH",
+        "user-confirmed agent identities, universe boundaries, and two-agent concurrency limit",
         "user-confirmed display connection path"
       ]
     },

@@ -50,6 +50,75 @@ The Ghostty config is shared with macOS from the neutral repo file
 `dotfiles/ghostty.ghostty`; bootstrap symlinks it to
 `~/.config/ghostty/config.ghostty`. Edit the shared file, not a local copy.
 
+## MasterChief agent workspaces
+
+Raynor and Zeratul each use a separate tmux server and persistent session. From
+Hades or MasterChief, enter the corresponding universe with:
+
+```bash
+raynor
+zeratul
+```
+
+Each command creates its session when absent and otherwise reattaches to it.
+Raynor starts at `/home/oliver/raynor`; Zeratul starts at
+`/home/oliver/zeratul`. Detach with `Ctrl+B`, then `d`. The shell and any agent
+running inside it remain active after detaching or losing the SSH connection.
+
+Inside an agent session, the existing work aliases automatically resolve under
+that identity's universe. For example, `perf` enters
+`/home/oliver/raynor/ardis-perform` for Raynor and
+`/home/oliver/zeratul/ardis-perform` for Zeratul. In a normal MasterChief shell,
+the same alias remains `/home/oliver/work/ardis-perform`. This applies to all
+Linux aliases based on the work root, including `work`, `perf230`, `timetrack`,
+`gpt`, and `localconnector`.
+
+Agent shells reject accidental directory changes outside their universe. The
+session-specific `codex` function starts Codex in the current directory with
+`workspace-write` and approval-on-request, and rejects command-line options
+that could replace or broaden that boundary. MasterChief's bootstrap installs
+the Linux `bubblewrap` prerequisite used for reliable Codex sandboxing.
+
+MasterChief also hosts two isolated worker identities:
+
+- Raynor uses `/home/oliver/raynor`.
+- Zeratul uses `/home/oliver/zeratul`.
+
+At most two agents may run on MasterChief: one Raynor and one Zeratul. These
+universe roots are directories owned by the `oliver` Linux account, not
+separate user homes or accounts. Raynor must work only inside its own root and
+must never inspect or modify Zeratul's root; Zeratul has the inverse boundary.
+Launch each agent with only its own universe configured as writable, and never
+start a third agent on this station.
+
+Committed feature branches move directly between Hades and MasterChief over
+SSH without touching `origin`. Repositories must have the same path relative
+to the user's home directory on both stations, such as
+`~/work/ardis-perform`.
+
+On Hades, fetch Artanis's new branch from MasterChief:
+
+```bash
+mc2h
+```
+
+After review commits are made on Hades, run this from the same repository and
+branch on MasterChief:
+
+```bash
+h2mc
+```
+
+Both commands open an fzf picker containing the peer's transferable feature
+branches, with the current local branch first when it is also available on the
+peer. Pass a branch name directly to skip the picker, for example
+`mc2h aoi/per-1234-feature-dev`.
+
+The first import creates the local branch without assigning the peer as its
+upstream. Later transfers require a clean worktree and advance only by
+fast-forward. Diverged histories and protected base branches are refused. The
+workflow transfers committed Git history only; uncommitted files never move.
+
 ## Private Forge configuration
 
 Linux reads its private configuration from:

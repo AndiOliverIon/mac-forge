@@ -84,6 +84,9 @@ alias	gp	Pull from the configured git remote.
 alias	gfo	Fetch updates from origin.
 alias	gpu	Push the current branch to its configured remote.
 alias	gpo	Publish the current local branch to origin with upstream; fails if the remote branch already exists.
+alias	peer-fetch	Choose and fetch a committed feature branch from Hades or MasterChief, updating only by fast-forward.
+alias	mc2h	Choose and fetch a committed feature branch from MasterChief into the current Hades repository.
+alias	h2mc	Choose and fetch a committed feature branch from Hades into the current MasterChief repository.
 alias	gb	List or manage git branches.
 alias	switch	Interactively switch git branches.
 alias	sw	Shortcut for switch.
@@ -198,6 +201,8 @@ alias	hades-tunnel-down	Close the SSH tunnel to Hades.
 alias	hades-tunnel-status	Show whether the Hades dev tunnel is up.
 alias	htu	Shortcut for hades-tunnel-up.
 alias	htd	Shortcut for hades-tunnel-down.
+alias	raynor	SSH to and attach to Raynor's persistent isolated tmux session on MasterChief.
+alias	zeratul	SSH to and attach to Zeratul's persistent isolated tmux session on MasterChief.
 alias	cerber-tunnel-up	Open Cerber's tunnel to the Hades Angular/Perform dev servers from macOS.
 alias	cerber-tunnel-status	Show and verify Cerber's tunnel to Hades from macOS.
 alias	cerber-tunnel-down	Close Cerber's tunnel to Hades from macOS.
@@ -259,12 +264,14 @@ script	gen-open-api	Regenerate the Perform OpenAPI JSON and TypeScript client.
 script	gen-open-api-timetrack	Regenerate the TimeTrack OpenAPI JSON and TypeScript client.
 script	git-del	Delete local git branches containing a keyword.
 script	git-switch	Interactively switch git branches.
+script	git-peer-fetch	Choose and fetch a committed feature branch from Hades or MasterChief with fast-forward-only safety.
 script	hades-tunnel	Open/close/status the SSH tunnel from Windows or Linux to Hades dev servers.
 script	hdd-clean	Find old large files by extension and delete them after confirmation.
 script	help	Open the forge command picker for aliases and scripts.
 script	info	Show a forge machine/system health snapshot.
 script	mcboot	Wake MasterChief with Wake-on-LAN.
 script	mcsleep	Suspend Ubuntu on MasterChief over SSH.
+script	masterchief-agent-session	Attach to or create Raynor's or Zeratul's isolated persistent tmux session.
 script	organizer	Organize configured folders by extension rules from work-state.
 script	patch	Apply, remove, or inspect intervention patches.
 script	perform-cache-reset	Clear Perform client cache artifacts.

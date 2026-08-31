@@ -4,6 +4,21 @@
 
 `mac-forge` is a personal macOS operations toolbox for Andi Ion Oliver. It manages local SQL Server Docker workflows, station automation, aliases, and machine-maintenance scripts.
 
+## Agent identities
+
+- **Artanis** is the primary Codex coworker and implementation partner.
+- **Raynor** is a MasterChief worker agent with an isolated universe at
+  `/home/oliver/raynor`.
+- **Zeratul** is a MasterChief worker agent with an isolated universe at
+  `/home/oliver/zeratul`.
+- MasterChief has a hard concurrency limit of two agents total: Raynor and
+  Zeratul may work in parallel, but a third agent must never be started there.
+- These universes are ordinary directories owned by the `oliver` Linux account,
+  not separate Linux user homes or accounts.
+- Raynor must keep all agent work inside `/home/oliver/raynor` and must never
+  inspect or modify `/home/oliver/zeratul`. Zeratul has the inverse boundary.
+  An agent must use only the identity assigned to its current universe.
+
 ## Always-read rules
 
 - Lead with the direct answer or outcome. Keep responses short, precise, and free of filler, recap, praise, or conversational padding. Add detail only when it materially improves correctness, clarity, or safety.

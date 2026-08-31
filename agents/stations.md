@@ -53,6 +53,36 @@ Operational consequence:
 
 - `MasterChief` wake attempts originate from the same local network as `Hades`.
 
+## MasterChief agent runtime
+
+MasterChief supports exactly two concurrent agents and no more, one per
+identity:
+
+- `Raynor`, with its isolated universe at `/home/oliver/raynor`.
+- `Zeratul`, with its isolated universe at `/home/oliver/zeratul`.
+
+Both universe roots are ordinary directories owned by the `oliver` Linux
+account, not separate Linux user homes or accounts. Their isolation is an agent
+boundary: Raynor must work only inside `/home/oliver/raynor`, Zeratul must work
+only inside `/home/oliver/zeratul`, and neither may inspect or modify the other
+universe. Launch each agent with only its own universe configured as writable.
+The identities, directory ownership, and paths were verified over SSH on
+2026-08-31.
+
+Each identity also uses a separate tmux server and same-named persistent
+session. Run `raynor` or `zeratul` from Hades or MasterChief to create or attach
+to that identity's session. The initial pane starts at its universe root. Detach
+with `Ctrl+B`, then `d`; the shell and agent process continue running.
+
+The session exports `FORGE_AGENT_IDENTITY`, `FORGE_UNIVERSE_ROOT`, and
+`FORGE_WORK_ROOT`. Linux work aliases resolve against `FORGE_WORK_ROOT`, so
+`perf` enters the active identity's `ardis-perform` clone while the same alias
+in a normal MasterChief shell still uses `/home/oliver/work/ardis-perform`.
+Agent shells guard against changing outside their universe. Their `codex`
+function starts Codex in the current in-universe directory with the
+`workspace-write` sandbox and approval-on-request, and rejects options that
+would broaden or replace that boundary.
+
 Before changing Wake-on-LAN or remote-station behavior, account for whether the target is on the same subnet or behind a different router/LAN.
 
 ## Power-command rules

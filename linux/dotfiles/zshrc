@@ -19,6 +19,8 @@ fi
 [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
 [[ -f "$HOME/mac-forge/linux/aliases.zsh" ]] && source "$HOME/mac-forge/linux/aliases.zsh"
 [[ -f "$HOME/mac-forge/dotfiles/aliases-vps1" ]] && source "$HOME/mac-forge/dotfiles/aliases-vps1"
+[[ -f "$HOME/mac-forge/linux/dotfiles/agent-universe.zsh" ]] \
+  && source "$HOME/mac-forge/linux/dotfiles/agent-universe.zsh"
 
 if (( $+commands[ng] )); then
   source <(ng completion script)

@@ -111,6 +111,8 @@ alias gp="git pull"
 alias gfo="git fetch origin"
 alias gpu="git push"
 alias gpo="~/mac-forge/scripts/git-publish-origin.sh"
+alias peer-fetch="~/mac-forge/scripts/git-peer-fetch.sh"
+alias mc2h="~/mac-forge/scripts/git-peer-fetch.sh masterchief"
 alias gb="git branch"
 alias switch="~/mac-forge/scripts/git-switch.sh"
 alias sw=switch
@@ -230,6 +232,8 @@ alias screenshotclean="desk && rm -f *.png"
 # ------------------------------------------------------------------------------
 alias rmc="ssh -t oliver@masterchief"
 alias rmcr="ssh -t oliver@masterchief-ts"
+alias raynor="~/mac-forge/scripts/masterchief-agent-session.sh raynor"
+alias zeratul="~/mac-forge/scripts/masterchief-agent-session.sh zeratul"
 alias disp="~/mac-forge/scripts/disp.sh"
 alias showeth='networksetup -listallhardwareports | awk "/Hardware Port|Device/"; echo; for i in $(networksetup -listallhardwareports | awk "/Device/ {print \$2}"); do ip=$(ipconfig getifaddr $i 2>/dev/null); echo "$i : ${ip:-no-ip}"; done'
 alias mcshutdown='ssh -t oliver@masterchief "sudo systemctl poweroff"'

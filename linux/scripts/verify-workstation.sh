@@ -86,13 +86,15 @@ for package_name in \
     sddm \
     sddm-theme-breeze \
     xdg-desktop-portal-kde \
+    bubblewrap \
     dolphin \
-    plasma-discover; do
+    plasma-discover \
+    tmux; do
     check_package "$package_name"
 done
 
 for command_name in \
-    git dotnet node npm yarn ng code rider docker sqlcmd openconnect ssh \
+    git dotnet node npm yarn ng code rider docker sqlcmd openconnect ssh tmux bwrap \
     codex claude copilot; do
     check_command "$command_name"
 done
