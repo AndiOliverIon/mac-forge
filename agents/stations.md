@@ -44,7 +44,8 @@ Current layout assumptions:
 
 - `Hades` and `MasterChief` sit behind the personal Wi-Fi router.
 - `Hades` reaches the ISP LAN through the UTP port on the UGREEN MasterDock 17.
-- `Hades` permits both Wi-Fi and UTP; `MasterChief` currently permits Wi-Fi only.
+- `MasterChief` also reaches the ISP LAN through a Realtek USB UTP interface.
+- `Hades` and `MasterChief` both permit Wi-Fi and UTP.
 - The ISP router uplinks the personal Wi-Fi router.
 - `Cerber` receives Internet access through its Hades host using Parallels
   shared networking.

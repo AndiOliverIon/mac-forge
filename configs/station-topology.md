@@ -39,8 +39,9 @@ flowchart TB
 
 ## Internet paths
 
-Hades receives its wired connection through the UGREEN dock. Cerber uses
-Hades as its upstream host.
+Hades receives its wired connection through the UGREEN dock. MasterChief also
+has a direct UTP connection to the ISP wired LAN. Cerber uses Hades as its
+upstream host.
 
 ```mermaid
 flowchart TB
@@ -49,6 +50,7 @@ flowchart TB
     WiFi["Personal Wi-Fi LAN"]
     Dock["UGREEN MasterDock 17"]
     Hades["Hades"]
+    MasterChief["MasterChief"]
     Cerber["Cerber"]
     VPS1["vps1"]
 
@@ -56,6 +58,7 @@ flowchart TB
     Internet --> VPS1
     ISP --> WiFi
     ISP -->|"UTP"| Dock
+    ISP -->|"UTP"| MasterChief
     Dock -->|"Ethernet over USB4"| Hades
     Hades -->|"Parallels shared networking"| Cerber
 ```
