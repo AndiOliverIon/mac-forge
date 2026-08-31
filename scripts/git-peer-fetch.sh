@@ -12,16 +12,19 @@ usage() {
 Fetch one committed branch from a peer station and fast-forward the local branch.
 
 Usage:
-  git-peer-fetch.sh <hades|masterchief> [branch]
+  git-peer-fetch.sh <hades|masterchief> [work|raynor|zeratul] [branch]
 
 Without a branch argument, an fzf picker lists the peer's available feature
 branches. A missing local branch is created without an upstream. Existing
 branches are advanced only by fast-forward.
 
+The workspace selects the MasterChief side of the transfer. It defaults to
+work for backward compatibility.
+
 Examples:
-  git-peer-fetch.sh masterchief
-  git-peer-fetch.sh masterchief aoi/per-1234-feature-dev
-  git-peer-fetch.sh hades
+  git-peer-fetch.sh masterchief work
+  git-peer-fetch.sh masterchief raynor aoi/per-1234-feature-dev
+  git-peer-fetch.sh hades zeratul
 EOF
 }
 
@@ -31,17 +34,29 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
 fi
 
 peer="${1:-}"
-requested_branch="${2:-}"
+workspace="work"
+requested_branch=""
 
 [[ -n "$peer" ]] || {
 	usage >&2
 	exit 2
 }
-[[ -z "${3:-}" ]] || die "Too many arguments."
+[[ -z "${4:-}" ]] || die "Too many arguments."
 
 case "$peer" in
 	hades | masterchief) ;;
 	*) die "Peer must be 'hades' or 'masterchief'." ;;
+esac
+
+case "${2:-}" in
+	work | raynor | zeratul)
+		workspace="$2"
+		requested_branch="${3:-}"
+		;;
+	*)
+		[[ -z "${3:-}" ]] || die "Too many arguments."
+		requested_branch="${2:-}"
+		;;
 esac
 
 command -v git >/dev/null 2>&1 || die "Git is required."
@@ -50,11 +65,70 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 \
 
 repo_root="$(git rev-parse --show-toplevel)"
 case "$repo_root" in
-	"$HOME"/*) repo_relative="${repo_root#"$HOME"/}" ;;
+	"$HOME"/*) home_relative="${repo_root#"$HOME"/}" ;;
 	*) die "Repository must be below your home directory so its peer path can be resolved." ;;
 esac
 
-case "$repo_relative" in
+case "$peer" in
+	masterchief)
+		case "$repo_root" in
+			"$HOME/work"/*)
+				project_relative="${repo_root#"$HOME/work"/}"
+				case "$workspace" in
+					work) peer_relative="work/$project_relative" ;;
+					raynor) peer_relative="raynor/$project_relative" ;;
+					zeratul) peer_relative="zeratul/$project_relative" ;;
+				esac
+				;;
+			*)
+				[[ "$workspace" == "work" ]] \
+					|| die "$workspace transfers require the Hades repository to be below $HOME/work."
+				peer_relative="$home_relative"
+				;;
+		esac
+		case "$workspace" in
+			work)
+				source_name="MasterChief"
+				peer_namespace="masterchief"
+				;;
+			raynor)
+				source_name="Raynor"
+				peer_namespace="raynor"
+				;;
+			zeratul)
+				source_name="Zeratul"
+				peer_namespace="zeratul"
+				;;
+		esac
+		;;
+	hades)
+		source_name="Hades"
+		peer_namespace="hades"
+		case "$workspace" in
+			work)
+				case "$repo_root" in
+					"$HOME/work"/*)
+						project_relative="${repo_root#"$HOME/work"/}"
+						peer_relative="work/$project_relative"
+						;;
+					*) peer_relative="$home_relative" ;;
+				esac
+				;;
+			raynor | zeratul)
+				workspace_root="$HOME/$workspace"
+				case "$repo_root" in
+					"$workspace_root"/*)
+						project_relative="${repo_root#"$workspace_root"/}"
+						peer_relative="work/$project_relative"
+						;;
+					*) die "h2${workspace:0:1} must run inside $workspace_root." ;;
+				esac
+				;;
+		esac
+		;;
+esac
+
+case "$peer_relative" in
 	*[[:space:]]* | *:*)
 		die "Peer fetch does not support whitespace or ':' in the home-relative repository path."
 		;;
@@ -67,7 +141,7 @@ fi
 current_branch="$(git symbolic-ref --quiet --short HEAD || true)"
 peer_user="${FORGE_GIT_PEER_USER:-$(id -un)}"
 peer_target="${peer_user}@${peer}"
-peer_url="ssh://${peer_target}/~/${repo_relative}"
+peer_url="ssh://${peer_target}/~/${peer_relative}"
 
 branch="$requested_branch"
 if [[ -z "$branch" ]]; then
@@ -85,11 +159,11 @@ if [[ -z "$branch" ]]; then
 			print (branch == current ? 0 : 1) "\t" branch
 	}' | sort -t $'\t' -k1,1n -k2,2 | cut -f2-)"
 
-	[[ -n "$branch_list" ]] || die "No transferable feature branches found on $peer."
+	[[ -n "$branch_list" ]] || die "No transferable feature branches found on $source_name."
 
 	set +e
 	branch="$(printf '%s\n' "$branch_list" \
-		| fzf --prompt="Branch from ${peer} > " --height=60% --layout=reverse --border)"
+		| fzf --prompt="Branch from ${source_name} > " --height=60% --layout=reverse --border)"
 	fzf_status=$?
 	set -e
 
@@ -112,9 +186,9 @@ case "$branch" in
 		;;
 esac
 
-peer_ref="refs/remotes/${peer}/${branch}"
+peer_ref="refs/remotes/${peer_namespace}/${branch}"
 
-echo "Fetching '$branch' from ${peer}:${repo_relative}..."
+echo "Fetching '$branch' from ${source_name}:${peer_relative}..."
 git fetch --no-tags "$peer_url" \
 	"+refs/heads/${branch}:${peer_ref}" \
 	|| die "Fetch failed. Verify SSH access and that the peer repository and branch exist."
@@ -145,7 +219,7 @@ if git merge-base --is-ancestor "$local_commit" "$peer_commit"; then
 fi
 
 if git merge-base --is-ancestor "$peer_commit" "$local_commit"; then
-	die "Local '$branch' is ahead of $peer. Fetch this branch in the opposite direction instead."
+	die "Local '$branch' is ahead of $source_name. Fetch this branch in the opposite direction instead."
 fi
 
-die "Local '$branch' and $peer have diverged. Resolve the histories manually; nothing was merged."
+die "Local '$branch' and $source_name have diverged. Resolve the histories manually; nothing was merged."

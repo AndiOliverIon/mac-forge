@@ -77,6 +77,11 @@ Use the optional `start`, `attach`, `status`, `logs`, and confirmed `stop`
 actions when explicit lifecycle control is needed. Plain `raynor` and `zeratul`
 retain their existing attach-or-create behavior.
 
+Direct Git transfer commands identify the MasterChief workspace explicitly:
+`mc2h` and `h2mc` use personal work, `r2h` and `h2r` use Raynor, and `z2h`
+and `h2z` use Zeratul. Commands ending in `2h` run on Hades; commands beginning
+with `h2` run inside the matching destination repository on MasterChief.
+
 The session exports `FORGE_AGENT_IDENTITY`, `FORGE_UNIVERSE_ROOT`, and
 `FORGE_WORK_ROOT`. Linux work aliases resolve against `FORGE_WORK_ROOT`, so
 `perf` enters the active identity's `ardis-perform` clone while the same alias

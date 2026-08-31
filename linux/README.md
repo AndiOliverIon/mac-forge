@@ -108,27 +108,30 @@ Launch each agent with only its own universe configured as writable, and never
 start a third agent on this station.
 
 Committed feature branches move directly between Hades and MasterChief over
-SSH without touching `origin`. Repositories must have the same path relative
-to the user's home directory on both stations, such as
-`~/work/ardis-perform`.
+SSH without touching `origin`. Hades work repositories live below `~/work`.
+Their MasterChief counterpart is selected explicitly:
 
-On Hades, fetch Artanis's new branch from MasterChief:
-
-```bash
-mc2h
+```text
+mc2h  / h2mc   MasterChief personal work
+r2h   / h2r    Raynor
+z2h   / h2z    Zeratul
 ```
 
-After review commits are made on Hades, run this from the same repository and
-branch on MasterChief:
+Run commands ending in `2h` from the Hades repository. Run commands beginning
+with `h2` from the intended destination repository on MasterChief. For example:
 
 ```bash
-h2mc
+r2h   # Raynor to the current Hades repository.
+h2r   # Hades to the current Raynor repository.
 ```
 
-Both commands open an fzf picker containing the peer's transferable feature
-branches, with the current local branch first when it is also available on the
-peer. Pass a branch name directly to skip the picker, for example
-`mc2h aoi/per-1234-feature-dev`.
+Each command opens an fzf picker containing that source's transferable feature
+branches, with the current local branch first when it is also available. Pass a
+branch name directly to skip the picker, for example
+`r2h aoi/per-1234-feature-dev`. The destination commands validate that `h2r`
+runs below `/home/oliver/raynor` and `h2z` runs below
+`/home/oliver/zeratul`; a mismatch is refused. Standard home-relative
+repositories such as `~/mac-forge` remain supported by `mc2h` and `h2mc`.
 
 The first import creates the local branch without assigning the peer as its
 upstream. Later transfers require a clean worktree and advance only by

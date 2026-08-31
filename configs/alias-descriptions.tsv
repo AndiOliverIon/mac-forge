@@ -85,8 +85,12 @@ alias	gfo	Fetch updates from origin.
 alias	gpu	Push the current branch to its configured remote.
 alias	gpo	Publish the current local branch to origin with upstream; fails if the remote branch already exists.
 alias	peer-fetch	Choose and fetch a committed feature branch from Hades or MasterChief, updating only by fast-forward.
-alias	mc2h	Choose and fetch a committed feature branch from MasterChief into the current Hades repository.
-alias	h2mc	Choose and fetch a committed feature branch from Hades into the current MasterChief repository.
+alias	mc2h	Fetch a feature branch from MasterChief personal work into the current Hades repository.
+alias	r2h	Fetch a feature branch from Raynor into the current Hades repository.
+alias	z2h	Fetch a feature branch from Zeratul into the current Hades repository.
+alias	h2mc	Fetch a feature branch from Hades into the current MasterChief personal repository.
+alias	h2r	Fetch a feature branch from Hades into the current Raynor repository.
+alias	h2z	Fetch a feature branch from Hades into the current Zeratul repository.
 alias	gb	List or manage git branches.
 alias	switch	Interactively switch git branches.
 alias	sw	Shortcut for switch.
