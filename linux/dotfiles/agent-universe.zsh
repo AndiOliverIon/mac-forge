@@ -28,9 +28,13 @@ if [[ -n "${FORGE_AGENT_IDENTITY:-}" ]]; then
 		esac
 	}
 
+	case "$PWD" in
+		"$FORGE_UNIVERSE_ROOT" | "$FORGE_UNIVERSE_ROOT"/*) ;;
+		*) builtin cd -- "$FORGE_UNIVERSE_ROOT" ;;
+	esac
+
 	autoload -Uz add-zsh-hook
 	add-zsh-hook chpwd _forge_agent_universe_guard
-	_forge_agent_universe_guard
 
 	codex() {
 		local arg
