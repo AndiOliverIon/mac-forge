@@ -74,6 +74,9 @@ Each identity also uses a separate tmux server and same-named persistent
 session. Run `raynor` or `zeratul` from Hades or MasterChief to create or attach
 to that identity's session. The initial pane starts at its universe root. Detach
 with `Ctrl+B`, then `d`; the shell and agent process continue running.
+From Hades, these commands prefer the `masterchief-utp` SSH endpoint and fall
+back to the existing `masterchief` Wi-Fi endpoint when the UTP SSH probe fails.
+`FORGE_MASTERCHIEF_SSH_HOST` continues to override automatic endpoint selection.
 Use `Ctrl+B`, then `c` for another window inside the persistent session. The
 optional `shell` action opens an independent, nonpersistent terminal in the
 identity's universe without touching that session. The `start`, `attach`,

@@ -67,17 +67,43 @@ case "$action" in
 esac
 
 station_name="$(hostname -s 2>/dev/null | tr '[:upper:]' '[:lower:]')"
-remote_host="${FORGE_MASTERCHIEF_SSH_HOST:-oliver@masterchief}"
+remote_host=""
+remote_ssh_options=()
+
+select_remote_host() {
+	if [[ -n "${FORGE_MASTERCHIEF_SSH_HOST:-}" ]]; then
+		remote_host="$FORGE_MASTERCHIEF_SSH_HOST"
+		return
+	fi
+
+	remote_host="masterchief"
+	remote_ssh_options=(-o BatchMode=yes -o ConnectTimeout=2)
+	if ssh "${remote_ssh_options[@]}" \
+		-o HostName=masterchief-utp \
+		-o HostKeyAlias=masterchief \
+		"$remote_host" true </dev/null >/dev/null 2>&1; then
+		remote_ssh_options+=(-o HostName=masterchief-utp -o HostKeyAlias=masterchief)
+		return
+	fi
+
+	if ssh "${remote_ssh_options[@]}" \
+		"$remote_host" true </dev/null >/dev/null 2>&1; then
+		return
+	fi
+
+	die "Cannot connect to MasterChief over UTP or Wi-Fi."
+}
 
 if [[ "$station_name" != "masterchief" ]]; then
 	command -v ssh >/dev/null 2>&1 || die "ssh is required."
+	select_remote_host
 	remote_script="/home/oliver/mac-forge/scripts/masterchief-agent-session.sh"
 	remote_arguments=("$remote_script" "$identity" "$action")
 	[[ "$action" != "logs" ]] || remote_arguments+=("$log_lines")
 
 	case "$action" in
-		open | attach | shell | stop) exec ssh -t "$remote_host" "${remote_arguments[@]}" ;;
-		*) exec ssh "$remote_host" "${remote_arguments[@]}" ;;
+		open | attach | shell | stop) exec ssh "${remote_ssh_options[@]}" -t "$remote_host" "${remote_arguments[@]}" ;;
+		*) exec ssh "${remote_ssh_options[@]}" "$remote_host" "${remote_arguments[@]}" ;;
 	esac
 fi
 

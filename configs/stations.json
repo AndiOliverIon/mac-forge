@@ -264,6 +264,10 @@
             "addressing": "dhcp",
             "status": "active",
             "defaultRoute": true,
+            "hostAliases": [
+              "masterchief-utp"
+            ],
+            "aliasAuthority": "/etc/hosts",
             "observedAt": "2026-08-31"
           },
           {
@@ -285,6 +289,7 @@
           "primaryAlias": "masterchief",
           "aliases": [
             "masterchief",
+            "masterchief-utp",
             "masterchief-ts"
           ],
           "commandShortcuts": [

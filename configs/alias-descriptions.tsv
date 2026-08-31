@@ -279,7 +279,7 @@ script	info	Show a forge machine/system health snapshot.
 script	mcboot	Wake MasterChief with Wake-on-LAN.
 script	wake	Pick any station via fzf (or pass a name) and send it a Wake-on-LAN magic packet using its configured MAC; errors clearly when the MAC is not set.
 script	mcsleep	Suspend Ubuntu on MasterChief over SSH.
-script	masterchief-agent-session	Attach to or create Raynor's or Zeratul's isolated persistent tmux session.
+script	masterchief-agent-session	Attach to or create Raynor's or Zeratul's isolated persistent tmux session, preferring MasterChief UTP with Wi-Fi fallback.
 script	organizer	Organize configured folders by extension rules from work-state.
 script	patch	Apply, remove, or inspect intervention patches.
 script	perform-cache-reset	Clear Perform client cache artifacts.
