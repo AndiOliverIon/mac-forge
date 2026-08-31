@@ -50,8 +50,12 @@
 
 - Git commands are allowed when they do not affect the online repository.
 - Safe-by-default examples include `git status`, `git diff`, `git log`, `git show`, and `git branch`.
-- Do not run remote-affecting commands unless the user explicitly instructs it.
-- Never assume permission for commits, rebases, resets, stashes, or other history-changing operations.
+- Work directly on `main` and commit and push completed scoped changes by
+  default unless the user explicitly requests a separate branch or asks not to
+  push.
+- Do not create feature branches by default in this personal repository.
+- Never assume permission for rebases, resets, stashes, or destructive history
+  changes.
 
 ## Task-based reading map
 
