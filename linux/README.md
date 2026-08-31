@@ -348,15 +348,23 @@ and back in after bootstrap if it adds the user to the `input` group.
 ## Utilities
 
 Run the non-destructive workstation drift report after setup or desktop/package
-changes:
+changes. The same aliases work from Hades and MasterChief:
 
 ```bash
-./linux/scripts/verify-workstation.sh
+verify-workstation
+# Short form:
+vw
 ```
 
 It checks Plasma/SDDM, `/data`, core packages and commands, services, portals,
-Docker configuration, SSH agent state, displays, and failed units. It does not
-start services, connect the VPN, access secrets, or change machine state.
+Docker configuration, SSH agent state, displays, failed units, and the static
+configuration of both MasterChief agent universes. When Raynor or Zeratul is
+running, it also verifies that session's identity variables and pane boundary;
+a stopped agent session is reported as a valid state. The report does not start
+services or sessions, connect the VPN, access secrets, or change machine state.
+From Hades, the command connects to MasterChief over SSH and marks graphical
+session and connected-display checks as skipped because those facts cannot be
+measured accurately through the remote shell.
 
 ### Cleanup
 

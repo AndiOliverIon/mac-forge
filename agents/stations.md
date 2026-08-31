@@ -82,6 +82,13 @@ Direct Git transfer commands identify the MasterChief workspace explicitly:
 and `h2z` use Zeratul. Commands ending in `2h` run on Hades; commands beginning
 with `h2` run inside the matching destination repository on MasterChief.
 
+Run `verify-workstation` or its short alias `vw` on MasterChief for a read-only
+workstation report that includes both universe directories, inventory records,
+agent aliases, and any running identity session. A stopped session is valid and
+is not reported as a failure.
+The same aliases on Hades run the report remotely over SSH; checks that require
+MasterChief's graphical session are explicitly skipped in that mode.
+
 The session exports `FORGE_AGENT_IDENTITY`, `FORGE_UNIVERSE_ROOT`, and
 `FORGE_WORK_ROOT`. Linux work aliases resolve against `FORGE_WORK_ROOT`, so
 `perf` enters the active identity's `ardis-perform` clone while the same alias
