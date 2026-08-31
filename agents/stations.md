@@ -73,6 +73,9 @@ Each identity also uses a separate tmux server and same-named persistent
 session. Run `raynor` or `zeratul` from Hades or MasterChief to create or attach
 to that identity's session. The initial pane starts at its universe root. Detach
 with `Ctrl+B`, then `d`; the shell and agent process continue running.
+Use the optional `start`, `attach`, `status`, `logs`, and confirmed `stop`
+actions when explicit lifecycle control is needed. Plain `raynor` and `zeratul`
+retain their existing attach-or-create behavior.
 
 The session exports `FORGE_AGENT_IDENTITY`, `FORGE_UNIVERSE_ROOT`, and
 `FORGE_WORK_ROOT`. Linux work aliases resolve against `FORGE_WORK_ROOT`, so

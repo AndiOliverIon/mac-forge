@@ -65,6 +65,22 @@ Raynor starts at `/home/oliver/raynor`; Zeratul starts at
 `/home/oliver/zeratul`. Detach with `Ctrl+B`, then `d`. The shell and any agent
 running inside it remain active after detaching or losing the SSH connection.
 
+Plain `raynor` and `zeratul` remain the smart defaults. Optional lifecycle
+actions provide more deliberate control when needed:
+
+```bash
+raynor start        # Create it in the background when absent.
+raynor attach       # Attach only if it already exists.
+raynor status       # Show state, command, directory, and start time.
+raynor logs         # Show the last 100 lines without attaching.
+raynor logs 250     # Show a chosen number of recent lines.
+raynor stop         # Confirm before terminating the session.
+```
+
+The same actions work with `zeratul`. `attach` reports an error instead of
+creating a missing session, while the plain command continues to create one
+when necessary.
+
 Inside an agent session, the existing work aliases automatically resolve under
 that identity's universe. For example, `perf` enters
 `/home/oliver/raynor/ardis-perform` for Raynor and

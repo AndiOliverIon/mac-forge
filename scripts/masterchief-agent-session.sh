@@ -9,14 +9,19 @@ die() {
 
 usage() {
 	cat <<'EOF'
-Attach to or create a persistent MasterChief agent session.
+Manage a persistent MasterChief agent session.
 
 Usage:
-  masterchief-agent-session.sh <raynor|zeratul> [attach|ensure]
+  masterchief-agent-session.sh <raynor|zeratul> [action] [argument]
 
 Actions:
-  attach  Attach interactively, creating the session when absent. Default.
-  ensure  Create the detached session when absent and leave it running.
+  open          Attach interactively, creating the session when absent. Default.
+  start         Create the detached session when absent and leave it running.
+  attach        Attach only when the session already exists.
+  status        Show whether the session is running and what its pane is doing.
+  logs [lines]  Show recent pane output without attaching. Default: 100 lines.
+  stop          Confirm, then terminate the session and everything running in it.
+  ensure        Legacy alias for start.
 EOF
 }
 
@@ -26,61 +31,144 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
 fi
 
 identity="${1:-}"
-action="${2:-attach}"
-[[ -z "${3:-}" ]] || die "Too many arguments."
+action="${2:-open}"
+argument="${3:-}"
+[[ -z "${4:-}" ]] || die "Too many arguments."
 
 case "$identity" in
-	raynor) universe_root="/home/oliver/raynor" ;;
-	zeratul) universe_root="/home/oliver/zeratul" ;;
+	raynor)
+		display_name="Raynor"
+		universe_root="/home/oliver/raynor"
+		;;
+	zeratul)
+		display_name="Zeratul"
+		universe_root="/home/oliver/zeratul"
+		;;
 	*) die "Identity must be 'raynor' or 'zeratul'." ;;
 esac
 
+if [[ "$action" == "-h" || "$action" == "--help" ]]; then
+	usage
+	exit 0
+fi
+
+[[ "$action" != "ensure" ]] || action="start"
+
 case "$action" in
-	attach | ensure) ;;
-	*) die "Action must be 'attach' or 'ensure'." ;;
+	open | start | attach | status | stop)
+		[[ -z "$argument" ]] || die "Action '$action' does not accept an argument."
+		;;
+	logs)
+		log_lines="${argument:-100}"
+		[[ "$log_lines" =~ ^[1-9][0-9]*$ ]] || die "Log line count must be a positive integer."
+		;;
+	*) die "Action must be 'open', 'start', 'attach', 'status', 'logs', or 'stop'." ;;
 esac
 
 station_name="$(hostname -s 2>/dev/null | tr '[:upper:]' '[:lower:]')"
 remote_host="${FORGE_MASTERCHIEF_SSH_HOST:-oliver@masterchief}"
 
-if [[ "$station_name" == "masterchief" ]]; then
-	command -v tmux >/dev/null 2>&1 || die "tmux is required."
-	[[ -d "$universe_root" ]] || die "Universe root not found: $universe_root"
+if [[ "$station_name" != "masterchief" ]]; then
+	command -v ssh >/dev/null 2>&1 || die "ssh is required."
+	remote_script="/home/oliver/mac-forge/scripts/masterchief-agent-session.sh"
+	remote_arguments=("$remote_script" "$identity" "$action")
+	[[ "$action" != "logs" ]] || remote_arguments+=("$log_lines")
 
-	if tmux -L "$identity" has-session -t "$identity" 2>/dev/null; then
-		created=0
-	else
-		tmux -L "$identity" new-session -d \
-			-e "FORGE_AGENT_IDENTITY=$identity" \
-			-e "FORGE_UNIVERSE_ROOT=$universe_root" \
-			-e "FORGE_WORK_ROOT=$universe_root" \
-			-s "$identity"
-		tmux -L "$identity" send-keys -l -t "$identity:0.0" "cd -- $universe_root"
-		tmux -L "$identity" send-keys -t "$identity:0.0" C-m
-		created=1
-	fi
-	tmux -L "$identity" set-environment -t "$identity" FORGE_AGENT_IDENTITY "$identity"
-	tmux -L "$identity" set-environment -t "$identity" FORGE_UNIVERSE_ROOT "$universe_root"
-	tmux -L "$identity" set-environment -t "$identity" FORGE_WORK_ROOT "$universe_root"
+	case "$action" in
+		open | attach | stop) exec ssh -t "$remote_host" "${remote_arguments[@]}" ;;
+		*) exec ssh "$remote_host" "${remote_arguments[@]}" ;;
+	esac
+fi
 
-	if [[ "$action" == "ensure" ]]; then
-		if [[ "$created" -eq 1 ]]; then
-			echo "Started session '$identity' at $universe_root."
+command -v tmux >/dev/null 2>&1 || die "tmux is required."
+[[ -d "$universe_root" ]] || die "Universe root not found: $universe_root"
+
+tmux_command=(tmux -L "$identity")
+
+session_exists() {
+	"${tmux_command[@]}" has-session -t "$identity" 2>/dev/null
+}
+
+set_session_environment() {
+	"${tmux_command[@]}" set-environment -t "$identity" FORGE_AGENT_IDENTITY "$identity"
+	"${tmux_command[@]}" set-environment -t "$identity" FORGE_UNIVERSE_ROOT "$universe_root"
+	"${tmux_command[@]}" set-environment -t "$identity" FORGE_WORK_ROOT "$universe_root"
+}
+
+start_session() {
+	"${tmux_command[@]}" new-session -d \
+		-c "$universe_root" \
+		-e "FORGE_AGENT_IDENTITY=$identity" \
+		-e "FORGE_UNIVERSE_ROOT=$universe_root" \
+		-e "FORGE_WORK_ROOT=$universe_root" \
+		-s "$identity"
+	set_session_environment
+}
+
+case "$action" in
+	open)
+		if session_exists; then
+			set_session_environment
 		else
-			echo "Session '$identity' is already running."
+			start_session
 		fi
-		exit 0
-	fi
-
-	exec tmux -L "$identity" attach-session -t "$identity"
-fi
-
-command -v ssh >/dev/null 2>&1 || die "ssh is required."
-
-if [[ "$action" == "ensure" ]]; then
-	exec ssh "$remote_host" \
-		"test -d '$universe_root' && { /usr/bin/tmux -L '$identity' has-session -t '$identity' 2>/dev/null || { /usr/bin/tmux -L '$identity' new-session -d -e 'FORGE_AGENT_IDENTITY=$identity' -e 'FORGE_UNIVERSE_ROOT=$universe_root' -e 'FORGE_WORK_ROOT=$universe_root' -s '$identity'; /usr/bin/tmux -L '$identity' send-keys -l -t '$identity:0.0' 'cd -- $universe_root'; /usr/bin/tmux -L '$identity' send-keys -t '$identity:0.0' C-m; }; /usr/bin/tmux -L '$identity' set-environment -t '$identity' FORGE_AGENT_IDENTITY '$identity'; /usr/bin/tmux -L '$identity' set-environment -t '$identity' FORGE_UNIVERSE_ROOT '$universe_root'; /usr/bin/tmux -L '$identity' set-environment -t '$identity' FORGE_WORK_ROOT '$universe_root'; }"
-fi
-
-exec ssh -t "$remote_host" \
-	"test -d '$universe_root' && { /usr/bin/tmux -L '$identity' has-session -t '$identity' 2>/dev/null || { /usr/bin/tmux -L '$identity' new-session -d -e 'FORGE_AGENT_IDENTITY=$identity' -e 'FORGE_UNIVERSE_ROOT=$universe_root' -e 'FORGE_WORK_ROOT=$universe_root' -s '$identity'; /usr/bin/tmux -L '$identity' send-keys -l -t '$identity:0.0' 'cd -- $universe_root'; /usr/bin/tmux -L '$identity' send-keys -t '$identity:0.0' C-m; }; /usr/bin/tmux -L '$identity' set-environment -t '$identity' FORGE_AGENT_IDENTITY '$identity'; /usr/bin/tmux -L '$identity' set-environment -t '$identity' FORGE_UNIVERSE_ROOT '$universe_root'; /usr/bin/tmux -L '$identity' set-environment -t '$identity' FORGE_WORK_ROOT '$universe_root'; } && exec /usr/bin/tmux -L '$identity' attach-session -t '$identity'"
+		exec "${tmux_command[@]}" attach-session -t "$identity"
+		;;
+	start)
+		if session_exists; then
+			set_session_environment
+			echo "$display_name session is already running."
+		else
+			start_session
+			echo "Started $display_name session at $universe_root."
+		fi
+		;;
+	attach)
+		session_exists \
+			|| die "$display_name session is not running. Start it with: $identity start"
+		set_session_environment
+		exec "${tmux_command[@]}" attach-session -t "$identity"
+		;;
+	status)
+		if ! session_exists; then
+			echo "$display_name session: not running."
+			exit 1
+		fi
+		attached="$("${tmux_command[@]}" display-message -p -t "$identity" '#{session_attached}')"
+		current_command="$("${tmux_command[@]}" display-message -p -t "$identity:0.0" '#{pane_current_command}')"
+		current_path="$("${tmux_command[@]}" display-message -p -t "$identity:0.0" '#{pane_current_path}')"
+		created="$("${tmux_command[@]}" display-message -p -t "$identity" '#{session_created}')"
+		started="$(date -d "@$created" '+%Y-%m-%d %H:%M:%S')"
+		if (( attached > 0 )); then
+			connection_state="attached"
+		else
+			connection_state="detached"
+		fi
+		printf '%s session: running, %s\n' "$display_name" "$connection_state"
+		printf 'Current command: %s\n' "$current_command"
+		printf 'Directory: %s\n' "$current_path"
+		printf 'Started: %s\n' "$started"
+		;;
+	logs)
+		session_exists \
+			|| die "$display_name session is not running. Start it with: $identity start"
+		"${tmux_command[@]}" capture-pane -p -t "$identity:0.0" -S "-$log_lines"
+		;;
+	stop)
+		session_exists || {
+			echo "$display_name session is not running."
+			exit 0
+		}
+		[[ -t 0 ]] || die "Stopping a session requires an interactive terminal."
+		read -r -p "Stop $display_name and terminate everything running in its session? [y/N] " reply
+		case "$reply" in
+			y | Y | yes | YES | Yes) ;;
+			*)
+				echo "Stop cancelled."
+				exit 0
+				;;
+		esac
+		"${tmux_command[@]}" kill-session -t "$identity"
+		echo "Stopped $display_name session."
+		;;
+esac

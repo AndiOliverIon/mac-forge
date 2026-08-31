@@ -201,8 +201,8 @@ alias	hades-tunnel-down	Close the SSH tunnel to Hades.
 alias	hades-tunnel-status	Show whether the Hades dev tunnel is up.
 alias	htu	Shortcut for hades-tunnel-up.
 alias	htd	Shortcut for hades-tunnel-down.
-alias	raynor	SSH to and attach to Raynor's persistent isolated tmux session on MasterChief.
-alias	zeratul	SSH to and attach to Zeratul's persistent isolated tmux session on MasterChief.
+alias	raynor	Open Raynor's persistent MasterChief session, with optional start, attach, status, logs, and stop actions.
+alias	zeratul	Open Zeratul's persistent MasterChief session, with optional start, attach, status, logs, and stop actions.
 alias	cerber-tunnel-up	Open Cerber's tunnel to the Hades Angular/Perform dev servers from macOS.
 alias	cerber-tunnel-status	Show and verify Cerber's tunnel to Hades from macOS.
 alias	cerber-tunnel-down	Close Cerber's tunnel to Hades from macOS.
