@@ -390,15 +390,30 @@ tunnel connects through the `hades` SSH host alias by default; set
 `HADES_SSH_HOST` (e.g. `hades`) or `HADES_TUNNEL_PORTS` to
 override the defaults.
 
+### SSH agent
 
-- **SSH Agent**: Automatically start the agent and add keys in `~/.zshrc`:
-  ```bash
-  # Make sure the ssh keys are in
-  # Start ssh-agent if not running
-  if ! pgrep -u "$USER" ssh-agent > /dev/null; then
-    eval "$(ssh-agent -s)" > /dev/null
-  fi
+The tracked Linux Zsh configuration establishes a usable SSH agent for normal
+shells and persistent Raynor and Zeratul sessions. It preserves an existing
+working `SSH_AUTH_SOCK`; otherwise it looks for the desktop GCR, OpenSSH, or
+GnuPG agent socket under `XDG_RUNTIME_DIR`. If none is usable, it starts a
+fallback agent on a stable runtime socket.
 
-  # Add keys if not already added
-  ssh-add -l >/dev/null 2>&1 || ssh-add ~/.ssh/id_ed25519_ardis ~/.ssh/id_ed25519_github
-  ```
+When the selected agent has no identities, the shell silently loads the
+existing `~/.ssh/ardis-ed25519` and
+`~/.ssh/id_ed25519_personal_gmail` keys. Missing key files are skipped. A
+running `ssh-agent` process alone is not considered sufficient because the
+current shell must also have its usable socket in `SSH_AUTH_SOCK`.
+
+After pulling a Zsh configuration update into MasterChief, start a fresh shell
+inside an existing tmux session:
+
+```bash
+exec zsh
+```
+
+Check the active socket and loaded identities with:
+
+```bash
+print -r -- "$SSH_AUTH_SOCK"
+ssh-add -l
+```
