@@ -73,9 +73,12 @@ Each identity also uses a separate tmux server and same-named persistent
 session. Run `raynor` or `zeratul` from Hades or MasterChief to create or attach
 to that identity's session. The initial pane starts at its universe root. Detach
 with `Ctrl+B`, then `d`; the shell and agent process continue running.
-Use the optional `start`, `attach`, `status`, `logs`, and confirmed `stop`
-actions when explicit lifecycle control is needed. Plain `raynor` and `zeratul`
-retain their existing attach-or-create behavior.
+Use `Ctrl+B`, then `c` for another window inside the persistent session. The
+optional `shell` action opens an independent, nonpersistent terminal in the
+identity's universe without touching that session. The `start`, `attach`,
+`status`, `logs`, and confirmed `stop` actions provide explicit lifecycle
+control, while plain `raynor` and `zeratul` retain their attach-or-create
+behavior.
 
 Direct Git transfer commands identify the MasterChief workspace explicitly:
 `mc2h` and `h2mc` use personal work, `r2h` and `h2r` use Raynor, and `z2h`

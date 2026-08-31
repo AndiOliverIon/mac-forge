@@ -71,6 +71,7 @@ actions provide more deliberate control when needed:
 ```bash
 raynor start        # Create it in the background when absent.
 raynor attach       # Attach only if it already exists.
+raynor shell        # Open an independent terminal in Raynor's universe.
 raynor status       # Show state, command, directory, and start time.
 raynor logs         # Show the last 100 lines without attaching.
 raynor logs 250     # Show a chosen number of recent lines.
@@ -79,7 +80,14 @@ raynor stop         # Confirm before terminating the session.
 
 The same actions work with `zeratul`. `attach` reports an error instead of
 creating a missing session, while the plain command continues to create one
-when necessary.
+when necessary. `shell` uses the current terminal or iTerm2 pane and ends when
+you type `exit`; it never creates, attaches to, or stops the persistent tmux
+session.
+
+The base tmux workflow remains available inside the persistent session. Press
+`Ctrl+B`, then `c` to create another tmux window, and use `Ctrl+B`, then `0`,
+`1`, or `w` to select a window. In a separate iTerm2 pane, use `raynor shell`
+or `zeratul shell` when both terminals need to remain visible simultaneously.
 
 Inside an agent session, the existing work aliases automatically resolve under
 that identity's universe. For example, `perf` enters

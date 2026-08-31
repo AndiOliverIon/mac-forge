@@ -18,6 +18,7 @@ Actions:
   open          Attach interactively, creating the session when absent. Default.
   start         Create the detached session when absent and leave it running.
   attach        Attach only when the session already exists.
+  shell         Open an independent, nonpersistent shell in the universe.
   status        Show whether the session is running and what its pane is doing.
   logs [lines]  Show recent pane output without attaching. Default: 100 lines.
   stop          Confirm, then terminate the session and everything running in it.
@@ -55,14 +56,14 @@ fi
 [[ "$action" != "ensure" ]] || action="start"
 
 case "$action" in
-	open | start | attach | status | stop)
+	open | start | attach | shell | status | stop)
 		[[ -z "$argument" ]] || die "Action '$action' does not accept an argument."
 		;;
 	logs)
 		log_lines="${argument:-100}"
 		[[ "$log_lines" =~ ^[1-9][0-9]*$ ]] || die "Log line count must be a positive integer."
 		;;
-	*) die "Action must be 'open', 'start', 'attach', 'status', 'logs', or 'stop'." ;;
+	*) die "Action must be 'open', 'start', 'attach', 'shell', 'status', 'logs', or 'stop'." ;;
 esac
 
 station_name="$(hostname -s 2>/dev/null | tr '[:upper:]' '[:lower:]')"
@@ -75,14 +76,23 @@ if [[ "$station_name" != "masterchief" ]]; then
 	[[ "$action" != "logs" ]] || remote_arguments+=("$log_lines")
 
 	case "$action" in
-		open | attach | stop) exec ssh -t "$remote_host" "${remote_arguments[@]}" ;;
+		open | attach | shell | stop) exec ssh -t "$remote_host" "${remote_arguments[@]}" ;;
 		*) exec ssh "$remote_host" "${remote_arguments[@]}" ;;
 	esac
 fi
 
-command -v tmux >/dev/null 2>&1 || die "tmux is required."
 [[ -d "$universe_root" ]] || die "Universe root not found: $universe_root"
 
+if [[ "$action" == "shell" ]]; then
+	command -v zsh >/dev/null 2>&1 || die "zsh is required."
+	cd -- "$universe_root"
+	export FORGE_AGENT_IDENTITY="$identity"
+	export FORGE_UNIVERSE_ROOT="$universe_root"
+	export FORGE_WORK_ROOT="$universe_root"
+	exec zsh -l
+fi
+
+command -v tmux >/dev/null 2>&1 || die "tmux is required."
 tmux_command=(tmux -L "$identity")
 
 session_exists() {
