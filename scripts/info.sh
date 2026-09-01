@@ -6,6 +6,8 @@ if [[ -f "$SCRIPT_DIR/forge.sh" ]]; then
   # shellcheck disable=SC1091
   source "$SCRIPT_DIR/forge.sh"
 fi
+FORGE_ROOT="${FORGE_ROOT:-$(cd -- "$SCRIPT_DIR/.." && pwd)}"
+STATIONS_CONFIG="${FORGE_STATIONS_CONFIG:-$FORGE_ROOT/configs/stations.json}"
 
 format_size() {
   awk -v kib="$1" '
@@ -187,10 +189,149 @@ record_history_sample() {
     return
   fi
 
-  printf '%s\t%s\n' "$(date '+%Y-%m-%dT%H:%M:%S%z')" "$sample" >> "$history_file"
+  HISTORY_TIMESTAMP="$(date '+%Y-%m-%dT%H:%M:%S%z')"
+  printf '%s\t%s\n' "$HISTORY_TIMESTAMP" "$sample" >> "$history_file"
   HISTORY_LAST_EPOCH="$now"
   HISTORY_LAST_SAMPLE="$sample"
   HISTORY_STATUS="recorded"
+}
+
+discover_station_agents() {
+  local station_id
+
+  command -v jq >/dev/null 2>&1 || return
+  [[ -r "$STATIONS_CONFIG" ]] || return
+  station_id="$(hostname -s 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+  jq -r --arg station_id "$station_id" '
+    ([
+      .stations[]
+      | select(
+          (([.id, .name] + (.identifiers.hostnames // []))
+          | map(select(type == "string") | ascii_downcase)
+          | index($station_id)) != null
+        )
+    ][0].agentRuntime.identities // [])[]
+    | select((.id | type) == "string")
+    | [
+        .id,
+        (.universeRoot // ""),
+        (.tmuxSocket // .id),
+        (.tmuxSession // .id)
+      ]
+    | @tsv
+  ' "$STATIONS_CONFIG" 2>/dev/null || true
+}
+
+create_agent_history_log() {
+  local system_history_file="$1"
+  local history_dir="${system_history_file%/*}"
+  local history_name="${system_history_file##*/}"
+  local agent_history_file
+
+  history_name="${history_name/inf-history-/inf-agents-}"
+  agent_history_file="$history_dir/$history_name"
+  if ! (
+    set -o noclobber
+    printf 'timestamp\tidentity\tstate\tcpu_core_percent\tcpu_system_percent\tmemory_rss_kib\tprocess_count\n' \
+      > "$agent_history_file"
+  ) 2>/dev/null; then
+    printf 'Unable to create agent history log: %s\n' "$agent_history_file" >&2
+    return 1
+  fi
+  printf '%s' "$agent_history_file"
+}
+
+logical_cpu_count() {
+  sysctl -n hw.logicalcpu 2>/dev/null || printf '1'
+}
+
+history_monitor_pids() {
+  printf '%s' "$HISTORY_MONITOR_PID"
+  LC_ALL=C ps -axo pid=,command= 2>/dev/null | awk -v current="$HISTORY_MONITOR_PID" '
+    $1 != current && ($0 ~ /\/inf\.sh[[:space:]]+--cycle/ || $0 ~ /\/info\.sh[[:space:]]+--cycle/) {
+      printf ",%s", $1
+    }'
+}
+
+agent_process_metrics() {
+  local tmux_socket="$1"
+  local tmux_session="$2"
+  local pane_pids
+  local root_pids
+  local monitor_pids
+
+  if ! command -v tmux >/dev/null 2>&1 \
+    || ! tmux -L "$tmux_socket" has-session -t "$tmux_session" 2>/dev/null; then
+    printf 'inactive\t0.0\t0.0\t0\t0'
+    return
+  fi
+
+  pane_pids="$(tmux -L "$tmux_socket" list-panes -s -t "$tmux_session" -F '#{pane_pid}' 2>/dev/null || true)"
+  root_pids="${pane_pids//$'\n'/,}"
+  monitor_pids="$(history_monitor_pids)"
+  if [[ -z "$root_pids" ]]; then
+    printf 'idle\t0.0\t0.0\t0\t0'
+    return
+  fi
+
+  LC_ALL=C ps -axo pid=,ppid=,%cpu=,rss= 2>/dev/null | awk \
+    -v roots="$root_pids" \
+    -v exclude_roots="$monitor_pids" \
+    -v logical_cpus="$HISTORY_LOGICAL_CPU_COUNT" '
+    {
+      process_count++
+      pid[process_count] = $1
+      parent[process_count] = $2
+      cpu[process_count] = $3
+      memory[process_count] = $4
+    }
+    END {
+      root_count = split(roots, root, ",")
+      for (i = 1; i <= root_count; i++) {
+        if (root[i] != "") owned[root[i]] = 1
+      }
+      excluded_count = split(exclude_roots, excluded_root, ",")
+      for (i = 1; i <= excluded_count; i++) {
+        if (excluded_root[i] != "") excluded[excluded_root[i]] = 1
+      }
+      do {
+        found = 0
+        for (i = 1; i <= process_count; i++) {
+          if (!owned[pid[i]] && owned[parent[i]]) {
+            owned[pid[i]] = 1
+            found = 1
+          }
+          if (!excluded[pid[i]] && excluded[parent[i]]) {
+            excluded[pid[i]] = 1
+            found = 1
+          }
+        }
+      } while (found)
+
+      for (i = 1; i <= process_count; i++) {
+        if (owned[pid[i]] && !excluded[pid[i]]) {
+          agent_processes++
+          agent_cpu += cpu[i]
+          agent_memory += memory[i]
+        }
+      }
+      system_cpu = (logical_cpus > 0) ? agent_cpu / logical_cpus : 0
+      state = (agent_cpu >= 1) ? "busy" : "idle"
+      printf "%s\t%.1f\t%.1f\t%.0f\t%d", state, agent_cpu, system_cpu, agent_memory, agent_processes
+    }'
+}
+
+record_agent_history_samples() {
+  local agent_history_file="$1"
+  local timestamp="$2"
+  local identities="$3"
+  local identity_id universe_root tmux_socket tmux_session metrics
+
+  while IFS=$'\t' read -r identity_id universe_root tmux_socket tmux_session; do
+    [[ -n "$identity_id" ]] || continue
+    metrics="$(agent_process_metrics "$tmux_socket" "$tmux_session")"
+    printf '%s\t%s\t%s\n' "$timestamp" "$identity_id" "$metrics" >> "$agent_history_file"
+  done <<< "$identities"
 }
 
 friendly_uptime() {
@@ -587,6 +728,10 @@ HISTORY_STORAGE_DELTA_KIB=102400
 HISTORY_LAST_EPOCH=0
 HISTORY_LAST_SAMPLE=""
 HISTORY_STATUS=""
+HISTORY_TIMESTAMP=""
+HISTORY_LOGICAL_CPU_COUNT=1
+HISTORY_MONITOR_PID="$$"
+AGENT_IDENTITIES=""
 
 cycle_interval=""
 if [[ "${1:-}" == "--cycle" ]]; then
@@ -605,14 +750,25 @@ elif (( $# > 0 )); then
 fi
 
 if [[ -n "$cycle_interval" ]]; then
+  HISTORY_LOGICAL_CPU_COUNT="$(logical_cpu_count)"
+  AGENT_IDENTITIES="$(discover_station_agents)"
   history_file="$(create_history_log)"
+  agent_history_file=""
+  if [[ -n "$AGENT_IDENTITIES" ]]; then
+    agent_history_file="$(create_agent_history_log "$history_file")"
+  fi
   trap 'printf "\033[?25h"' EXIT
   printf '\033[?25l'
   while true; do
     sample="$(history_sample)"
     record_history_sample "$history_file" "$sample"
+    if [[ "$HISTORY_STATUS" == "recorded" && -n "$agent_history_file" ]]; then
+      record_agent_history_samples "$agent_history_file" "$HISTORY_TIMESTAMP" "$AGENT_IDENTITIES"
+    fi
     snapshot="$(print_info)"
-    printf '\033[H%s\n\nHistory  %s (%s)\n\033[J' "$snapshot" "$history_file" "$HISTORY_STATUS"
+    printf '\033[H%s\n\nHistory  %s (%s)\n' "$snapshot" "$history_file" "$HISTORY_STATUS"
+    [[ -z "$agent_history_file" ]] || printf 'Agents   %s\n' "$agent_history_file"
+    printf '\033[J'
     sleep "$cycle_interval"
   done
 else
