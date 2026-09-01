@@ -91,6 +91,7 @@ brew install bash displayplacer fzf gh git jq mas mono-libgdiplus ncdu nvm pyenv
 - dotnet-sdk9
 - dotnet-sdk9-0-300
 - font-jetbrains-mono
+- ghostty
 - google-chrome
 - google-drive
 - iterm2
@@ -105,7 +106,7 @@ brew install bash displayplacer fzf gh git jq mas mono-libgdiplus ncdu nvm pyenv
 Install all casks at once:
 
 ```bash
-brew install --cask arc bitwarden codex docker-desktop dotnet-sdk dotnet-sdk8 dotnet-sdk8-0-400 dotnet-sdk9 dotnet-sdk9-0-300 font-jetbrains-mono google-chrome google-drive iterm2 jetbrains-toolbox microsoft-teams raycast rectangle rustdesk visual-studio-code zed
+brew install --cask arc bitwarden codex docker-desktop dotnet-sdk dotnet-sdk8 dotnet-sdk8-0-400 dotnet-sdk9 dotnet-sdk9-0-300 font-jetbrains-mono ghostty google-chrome google-drive iterm2 jetbrains-toolbox microsoft-teams raycast rectangle rustdesk visual-studio-code zed
 ```
 
 ### 0.3 Other Software (not from Homebrew)
