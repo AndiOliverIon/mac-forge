@@ -124,6 +124,30 @@ Install these separately from vendor sources:
 - Parallels Desktop: needed when using Windows-side tools and shortcut cleanup workflow.
 - Oh My Zsh: install from official GitHub project for shell profile baseline.
 
+### 0.4 Ghostty shell initialization
+
+iTerm2 uses the normal interactive zsh, with `~/.zshrc` symlinked to
+`dotfiles/zshrc`. That file loads Powerlevel10k, the Forge macOS aliases,
+VPS aliases, local environment variables, and the shared command-line tools.
+
+Configure Ghostty to use the same shell initialization and the tracked Ghostty
+settings:
+
+```bash
+./scripts/configure-ghostty.sh
+```
+
+The configurator creates these links:
+
+- `~/.zshrc` -> `dotfiles/zshrc`
+- `~/.p10k.zsh` -> `profiles/p10k.zsh`
+- `~/Library/Application Support/com.mitchellh.ghostty/config.ghostty` ->
+  `dotfiles/ghostty.ghostty`
+
+Ghostty uses the normal interactive shell; the shared terminal config does not
+hardcode a shell command. Existing files at those destinations are moved to a
+timestamped backup before the links are created.
+
 ---
 
 ## 1. Dock Behavior
