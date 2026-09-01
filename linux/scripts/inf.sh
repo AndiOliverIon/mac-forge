@@ -33,27 +33,61 @@ cpu_model_line() {
   }' /proc/cpuinfo 2>/dev/null
 }
 
-cpu_temp_line() {
+thermal_zone_temp() {
+  local zone="$1"
   local temp_raw
 
-  if [[ -r /sys/class/thermal/thermal_zone0/temp ]]; then
-    temp_raw="$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null || true)"
-    if [[ "$temp_raw" =~ ^[0-9]+$ ]]; then
-      awk -v value="$temp_raw" 'BEGIN { printf "%.1f C", value / 1000 }'
-      return 0
-    fi
+  temp_raw="$(cat "$zone/temp" 2>/dev/null || true)"
+  if [[ "$temp_raw" =~ ^-?[0-9]+$ ]] && (( temp_raw >= -50000 && temp_raw <= 150000 )); then
+    awk -v value="$temp_raw" 'BEGIN { printf "%.1f C", value / 1000 }'
+    return 0
   fi
+  return 1
+}
+
+cpu_temp_line() {
+  local preferred_type
+  local sensor_temp
+  local zone
+  local zone_type
+
+  for preferred_type in x86_pkg_temp cpu-thermal cpu_thermal TCPU soc_thermal; do
+    for zone in /sys/class/thermal/thermal_zone*; do
+      [[ -r "$zone/type" ]] || continue
+      zone_type="$(cat "$zone/type" 2>/dev/null || true)"
+      [[ "$zone_type" == "$preferred_type" ]] || continue
+      thermal_zone_temp "$zone" && return 0
+    done
+  done
+
+  for zone in /sys/class/thermal/thermal_zone*; do
+    [[ -r "$zone/type" ]] || continue
+    zone_type="$(cat "$zone/type" 2>/dev/null || true)"
+    case "$zone_type" in
+      *[Cc][Pp][Uu]*|*[Pp]ackage*) thermal_zone_temp "$zone" && return 0 ;;
+    esac
+  done
 
   if command -v sensors >/dev/null 2>&1; then
-    sensors 2>/dev/null | awk '
-      /\+([0-9]+(\.[0-9]+)?)°C/ {
-        match($0, /\+([0-9]+(\.[0-9]+)?)°C/, parts)
-        if (parts[1] != "") {
-          printf "%s C", parts[1]
-          exit
-        }
-      }'
-    return 0
+    sensor_temp="$(sensors 2>/dev/null | awk '
+      function temperature(line, value) {
+        value = line
+        sub(/^[^+]*\+/, "", value)
+        sub(/[^0-9.].*$/, "", value)
+        return value
+      }
+      /^[[:space:]]*Package id [0-9]+:/ && package == "" { package = temperature($0) }
+      /^[[:space:]]*Tdie:/ && tdie == "" { tdie = temperature($0) }
+      /^[[:space:]]*Tctl:/ && tctl == "" { tctl = temperature($0) }
+      /^[[:space:]]*CPU:/ && cpu == "" { cpu = temperature($0) }
+      END {
+        value = (package != "") ? package : ((tdie != "") ? tdie : ((tctl != "") ? tctl : cpu))
+        if (value != "") printf "%.1f C", value
+      }')"
+    if [[ -n "$sensor_temp" ]]; then
+      printf '%s' "$sensor_temp"
+      return 0
+    fi
   fi
 
   printf 'Unavailable'
