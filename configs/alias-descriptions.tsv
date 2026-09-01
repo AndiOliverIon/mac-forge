@@ -13,6 +13,9 @@ alias	kp	Kill processes listening on a TCP port, for example kp 8080.
 alias	info	Show system health; --cycle records meaningful changes and configured agent usage once per minute.
 alias	inf	Shortcut for info; --cycle records meaningful system and configured agent usage.
 alias	help	Open the forge command picker for aliases and scripts.
+alias	ai-config	Verify, install, or fast-forward-sync shared AI instructions and tool bootstrap files.
+alias	ai-verify	Run read-only shared AI configuration verification.
+alias	ai-install	Install shared AI configuration with recoverable backups for conflicting local files.
 alias	docker-on	Start the Linux Docker Engine on demand and wait until it is ready.
 alias	don	Shortcut for docker-on.
 alias	port-release	Port a commit onto a release branch by creating a local cherry-pick branch.
@@ -214,6 +217,7 @@ alias	cerber-tunnel-up	Open Cerber's tunnel to the Hades Angular/Perform dev ser
 alias	cerber-tunnel-status	Show and verify Cerber's tunnel to Hades from macOS.
 alias	cerber-tunnel-down	Close Cerber's tunnel to Hades from macOS.
 script	aliases	Open the alias finder and copy the selected shortcut.
+script	ai-config	Verify, install, or fast-forward-sync shared AI instructions and tool bootstrap files.
 script	ardis-complete	Complete Ardis planning/activity data over a selected date range.
 script	ardis-migrate	Run Ardis migrations against a selected local SQL database.
 script	bin-clear	Remove bin and debug directories from the current tree.

@@ -32,6 +32,8 @@ symlinks its local config path to the repo file rather than keeping a divergent 
   stations expose it at `~/.config/ai` through a symlink to the tracked Forge
   directory. Keep tool-owned directories such as `~/.codex` and `~/.claude`
   physical; only their instruction bootstrap files point into this shared tree.
+  Use `scripts/ai-config.sh` to verify, install, or fast-forward-sync this
+  configuration consistently on Hades and MasterChief.
 
 ## Forge runtime
 
@@ -90,6 +92,8 @@ Default SQL container identity:
 - `scripts/organizer.sh`: organizes files from configured folders by extension rules.
 - `scripts/help.sh`: interactive launcher over aliases and scripts.
 - `scripts/info.sh`: machine health snapshot.
+- `scripts/ai-config.sh`: verifies, installs, and synchronizes shared AI
+  instructions and their tool-specific bootstrap files.
 - `scripts/clean.sh`: interactive cleaner for configured target directories.
 - `scripts/perform-prep.sh`, `scripts/perform-test.sh`, `scripts/ardis-migrate.sh`, `scripts/gen-open-api.sh`: work-specific Ardis/Perform helpers.
 
