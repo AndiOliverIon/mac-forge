@@ -131,6 +131,19 @@ set_session_environment() {
 	"${tmux_command[@]}" set-environment -t "$identity" FORGE_WORK_ROOT "$universe_root"
 }
 
+configure_session() {
+	set_session_environment
+	"${tmux_command[@]}" set-option -t "$identity" mouse on
+	"${tmux_command[@]}" bind-key -T copy-mode WheelUpPane \
+		'select-pane; send-keys -X -N 1 scroll-up'
+	"${tmux_command[@]}" bind-key -T copy-mode WheelDownPane \
+		'select-pane; send-keys -X -N 1 scroll-down'
+	"${tmux_command[@]}" bind-key -T copy-mode-vi WheelUpPane \
+		'select-pane; send-keys -X -N 1 scroll-up'
+	"${tmux_command[@]}" bind-key -T copy-mode-vi WheelDownPane \
+		'select-pane; send-keys -X -N 1 scroll-down'
+}
+
 start_session() {
 	"${tmux_command[@]}" new-session -d \
 		-c "$universe_root" \
@@ -138,13 +151,13 @@ start_session() {
 		-e "FORGE_UNIVERSE_ROOT=$universe_root" \
 		-e "FORGE_WORK_ROOT=$universe_root" \
 		-s "$identity"
-	set_session_environment
+	configure_session
 }
 
 case "$action" in
 	open)
 		if session_exists; then
-			set_session_environment
+			configure_session
 		else
 			start_session
 		fi
@@ -162,7 +175,7 @@ case "$action" in
 	attach)
 		session_exists \
 			|| die "$display_name session is not running. Start it with: $identity start"
-		set_session_environment
+		configure_session
 		exec "${tmux_command[@]}" attach-session -t "$identity"
 		;;
 	status)
