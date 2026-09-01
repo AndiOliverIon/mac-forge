@@ -133,21 +133,64 @@ history_sample() {
     'Unavailable'
 }
 
+meaningful_history_change() {
+  local previous_sample="$1"
+  local current_sample="$2"
+
+  awk \
+    -v previous="$previous_sample" \
+    -v current="$current_sample" \
+    -v cpu_delta="$HISTORY_CPU_DELTA_PERCENT" \
+    -v memory_delta="$HISTORY_MEMORY_DELTA_PERCENT" \
+    -v temperature_delta="$HISTORY_TEMPERATURE_DELTA_C" \
+    -v storage_delta="$HISTORY_STORAGE_DELTA_KIB" '
+    function numeric(value) {
+      return value ~ /^-?[0-9]+([.][0-9]+)?$/
+    }
+    function changed_by(field_number, threshold, difference) {
+      if (!numeric(before[field_number]) || !numeric(after[field_number])) {
+        return before[field_number] != after[field_number]
+      }
+      difference = after[field_number] - before[field_number]
+      if (difference < 0) difference = -difference
+      return difference >= threshold
+    }
+    BEGIN {
+      split(previous, before, "\t")
+      split(current, after, "\t")
+
+      if (changed_by(1, cpu_delta) || changed_by(2, cpu_delta)) exit 0
+      if (numeric(before[1]) && numeric(before[2]) && numeric(after[1]) && numeric(after[2])) {
+        difference = (after[1] + after[2]) - (before[1] + before[2])
+        if (difference < 0) difference = -difference
+        if (difference >= cpu_delta) exit 0
+      }
+      if (changed_by(5, memory_delta) || changed_by(6, temperature_delta)) exit 0
+      if (changed_by(7, storage_delta) || changed_by(10, storage_delta)) exit 0
+      if (before[4] != after[4] || before[8] != after[8] || before[11] != after[11]) exit 0
+      exit 1
+    }'
+}
+
 record_history_sample() {
   local history_file="$1"
   local sample="$2"
-  local last_line
-  local last_sample
+  local now
 
-  last_line="$(tail -n 1 "$history_file")"
-  last_sample="${last_line#*$'\t'}"
-  if [[ "$sample" == "$last_sample" ]]; then
-    printf 'unchanged'
+  now="$(date '+%s')"
+  if (( HISTORY_LAST_EPOCH > 0 && now - HISTORY_LAST_EPOCH < HISTORY_MIN_INTERVAL_SECONDS )); then
+    HISTORY_STATUS="waiting"
+    return
+  fi
+  if [[ -n "$HISTORY_LAST_SAMPLE" ]] && ! meaningful_history_change "$HISTORY_LAST_SAMPLE" "$sample"; then
+    HISTORY_STATUS="unchanged"
     return
   fi
 
   printf '%s\t%s\n' "$(date '+%Y-%m-%dT%H:%M:%S%z')" "$sample" >> "$history_file"
-  printf 'recorded'
+  HISTORY_LAST_EPOCH="$now"
+  HISTORY_LAST_SAMPLE="$sample"
+  HISTORY_STATUS="recorded"
 }
 
 friendly_uptime() {
@@ -536,6 +579,15 @@ if [[ -t 1 && -z "${NO_COLOR+x}" ]]; then
   RESET=$'\033[0m'
 fi
 
+HISTORY_MIN_INTERVAL_SECONDS=60
+HISTORY_CPU_DELTA_PERCENT=5
+HISTORY_MEMORY_DELTA_PERCENT=1
+HISTORY_TEMPERATURE_DELTA_C=1
+HISTORY_STORAGE_DELTA_KIB=102400
+HISTORY_LAST_EPOCH=0
+HISTORY_LAST_SAMPLE=""
+HISTORY_STATUS=""
+
 cycle_interval=""
 if [[ "${1:-}" == "--cycle" ]]; then
   cycle_interval="${2:-5}"
@@ -558,9 +610,9 @@ if [[ -n "$cycle_interval" ]]; then
   printf '\033[?25l'
   while true; do
     sample="$(history_sample)"
-    history_status="$(record_history_sample "$history_file" "$sample")"
+    record_history_sample "$history_file" "$sample"
     snapshot="$(print_info)"
-    printf '\033[H%s\n\nHistory  %s (%s)\n\033[J' "$snapshot" "$history_file" "$history_status"
+    printf '\033[H%s\n\nHistory  %s (%s)\n\033[J' "$snapshot" "$history_file" "$HISTORY_STATUS"
     sleep "$cycle_interval"
   done
 else

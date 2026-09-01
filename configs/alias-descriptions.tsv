@@ -10,8 +10,8 @@ alias	cdp	Copy the current directory path to the clipboard.
 alias	reloadterm	Reload the current zsh config in this terminal.
 alias	fixdock	Restart the macOS Dock process.
 alias	kp	Kill processes listening on a TCP port, for example kp 8080.
-alias	info	Show a forge machine/system health snapshot; --cycle records changing metrics.
-alias	inf	Shortcut for info; --cycle records changing metrics.
+alias	info	Show a forge machine/system health snapshot; --cycle records meaningful changes once per minute.
+alias	inf	Shortcut for info; --cycle records meaningful changes once per minute.
 alias	help	Open the forge command picker for aliases and scripts.
 alias	docker-on	Start the Linux Docker Engine on demand and wait until it is ready.
 alias	don	Shortcut for docker-on.
