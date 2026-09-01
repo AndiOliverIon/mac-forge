@@ -26,6 +26,10 @@ symlinks its local config path to the repo file rather than keeping a divergent 
   The shared file uses the login shell by default (no hardcoded `command` path)
   so it stays OS-agnostic; `macos-titlebar-style` is kept and harmlessly ignored
   on Linux.
+- `.config/ai`: shared Artanis, Argus, and Aegis instruction source. Unix
+  stations expose it at `~/.config/ai` through a symlink to the tracked Forge
+  directory. Keep tool-owned directories such as `~/.codex` and `~/.claude`
+  physical; only their instruction bootstrap files point into this shared tree.
 
 ## Forge runtime
 
