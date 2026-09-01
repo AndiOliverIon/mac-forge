@@ -93,6 +93,13 @@ Run `verify-workstation` or its short alias `vw` on MasterChief for a read-only
 workstation report that includes both universe directories, inventory records,
 agent aliases, and any running identity session. A stopped session is valid and
 is not reported as a failure.
+
+`inf --cycle` discovers worker identities from the current station's
+`agentRuntime.identities` inventory. When identities are configured, it writes a
+normalized companion TSV beside the system history with each identity's state,
+CPU usage, resident memory, and process count. Stations without configured
+identities keep the generic system-only history behavior.
+
 The same aliases on Hades run the report remotely over SSH; checks that require
 MasterChief's graphical session are explicitly skipped in that mode.
 
