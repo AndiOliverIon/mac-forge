@@ -50,6 +50,106 @@ memory_stats() {
     }'
 }
 
+create_history_log() {
+  local downloads_dir="$HOME/Downloads"
+  local today
+  local iteration=1
+  local existing_file
+  local existing_iteration
+  local history_file
+
+  if ! mkdir -p "$downloads_dir"; then
+    printf 'Unable to create Downloads directory: %s\n' "$downloads_dir" >&2
+    return 1
+  fi
+  today="$(date '+%Y-%m-%d')"
+  for existing_file in "$downloads_dir"/inf-history-"$today"-*.tsv; do
+    [[ -e "$existing_file" ]] || continue
+    existing_iteration="${existing_file%.tsv}"
+    existing_iteration="${existing_iteration##*-}"
+    if [[ "$existing_iteration" =~ ^[0-9]+$ ]] && (( 10#$existing_iteration >= iteration )); then
+      iteration=$((10#$existing_iteration + 1))
+    fi
+  done
+
+  while true; do
+    history_file="$(printf '%s/inf-history-%s-%02d.tsv' "$downloads_dir" "$today" "$iteration")"
+    if (
+      set -o noclobber
+      printf 'timestamp\tcpu_user_percent\tcpu_system_percent\tmemory_used_kib\tmemory_total_kib\tmemory_used_percent\ttemperature_c\troot_used_kib\troot_total_kib\troot_used_percent\tdata_used_kib\tdata_total_kib\tdata_used_percent\n' \
+        > "$history_file"
+    ) 2>/dev/null; then
+      printf '%s' "$history_file"
+      return
+    fi
+    if [[ -e "$history_file" ]]; then
+      iteration=$((iteration + 1))
+    else
+      printf 'Unable to create info history log: %s\n' "$history_file" >&2
+      return 1
+    fi
+  done
+}
+
+cpu_history_values() {
+  top -l 1 -n 0 2>/dev/null | awk -F': ' '/CPU usage/ {
+    split($2, values, ", *")
+    user=values[1]
+    sys=values[2]
+    gsub(/[^0-9.]/, "", user)
+    gsub(/[^0-9.]/, "", sys)
+    if (user != "" && sys != "") {
+      printf "%s %s", user, sys
+      exit
+    }
+  }'
+}
+
+history_sample() {
+  local cpu_user cpu_system
+  local memory_used memory_cached memory_free memory_available memory_used_percent
+  local memory_total
+  local root_total root_used root_used_percent
+
+  read -r cpu_user cpu_system < <(cpu_history_values || true)
+  memory_total="$(( $(sysctl -n hw.memsize) / 1024 ))"
+  read -r memory_used memory_cached memory_free memory_available memory_used_percent < <(memory_stats)
+  read -r root_total root_used root_used_percent < <(
+    df -k / 2>/dev/null | awk 'NR==2 {percent=$5; sub(/%$/, "", percent); print $2, $3, percent}'
+  )
+
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' \
+    "${cpu_user:-Unavailable}" \
+    "${cpu_system:-Unavailable}" \
+    "${memory_used:-Unavailable}" \
+    "${memory_total:-Unavailable}" \
+    "${memory_used_percent:-Unavailable}" \
+    'Unavailable' \
+    "${root_used:-Unavailable}" \
+    "${root_total:-Unavailable}" \
+    "${root_used_percent:-Unavailable}" \
+    'Unavailable' \
+    'Unavailable' \
+    'Unavailable'
+}
+
+record_history_sample() {
+  local history_file="$1"
+  local sample="$2"
+  local last_line
+  local last_sample
+
+  last_line="$(tail -n 1 "$history_file")"
+  last_sample="${last_line#*$'\t'}"
+  if [[ "$sample" == "$last_sample" ]]; then
+    printf 'unchanged'
+    return
+  fi
+
+  printf '%s\t%s\n' "$(date '+%Y-%m-%dT%H:%M:%S%z')" "$sample" >> "$history_file"
+  printf 'recorded'
+}
+
 friendly_uptime() {
   local value
   local prefix=""
@@ -453,11 +553,14 @@ elif (( $# > 0 )); then
 fi
 
 if [[ -n "$cycle_interval" ]]; then
+  history_file="$(create_history_log)"
   trap 'printf "\033[?25h"' EXIT
   printf '\033[?25l'
   while true; do
+    sample="$(history_sample)"
+    history_status="$(record_history_sample "$history_file" "$sample")"
     snapshot="$(print_info)"
-    printf '\033[H%s\n\033[J' "$snapshot"
+    printf '\033[H%s\n\nHistory  %s (%s)\n\033[J' "$snapshot" "$history_file" "$history_status"
     sleep "$cycle_interval"
   done
 else

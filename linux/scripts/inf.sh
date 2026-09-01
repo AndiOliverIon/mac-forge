@@ -70,6 +70,122 @@ memory_percent() {
   free -k 2>/dev/null | awk '/^Mem:/ { if ($2 > 0) printf "%.0f", $3 / $2 * 100; else printf "0" }'
 }
 
+create_history_log() {
+  local downloads_dir="$HOME/Downloads"
+  local today
+  local iteration=1
+  local existing_file
+  local existing_iteration
+  local history_file
+
+  if ! mkdir -p "$downloads_dir"; then
+    printf 'Unable to create Downloads directory: %s\n' "$downloads_dir" >&2
+    return 1
+  fi
+  today="$(date '+%Y-%m-%d')"
+  for existing_file in "$downloads_dir"/inf-history-"$today"-*.tsv; do
+    [[ -e "$existing_file" ]] || continue
+    existing_iteration="${existing_file%.tsv}"
+    existing_iteration="${existing_iteration##*-}"
+    if [[ "$existing_iteration" =~ ^[0-9]+$ ]] && (( 10#$existing_iteration >= iteration )); then
+      iteration=$((10#$existing_iteration + 1))
+    fi
+  done
+
+  while true; do
+    history_file="$(printf '%s/inf-history-%s-%02d.tsv' "$downloads_dir" "$today" "$iteration")"
+    if (
+      set -o noclobber
+      printf 'timestamp\tcpu_user_percent\tcpu_system_percent\tmemory_used_kib\tmemory_total_kib\tmemory_used_percent\ttemperature_c\troot_used_kib\troot_total_kib\troot_used_percent\tdata_used_kib\tdata_total_kib\tdata_used_percent\n' \
+        > "$history_file"
+    ) 2>/dev/null; then
+      printf '%s' "$history_file"
+      return
+    fi
+    if [[ -e "$history_file" ]]; then
+      iteration=$((iteration + 1))
+    else
+      printf 'Unable to create info history log: %s\n' "$history_file" >&2
+      return 1
+    fi
+  done
+}
+
+cpu_history_values() {
+  top -bn1 2>/dev/null | awk -F ', *' '/^%Cpu/ {
+    user=$1
+    sys=$2
+    gsub(/^[^0-9.]*/, "", user)
+    gsub(/[^0-9.].*$/, "", user)
+    gsub(/^[^0-9.]*/, "", sys)
+    gsub(/[^0-9.].*$/, "", sys)
+    if (user != "" && sys != "") {
+      printf "%s %s", user, sys
+      exit
+    }
+  }'
+}
+
+history_sample() {
+  local cpu_user cpu_system
+  local memory_total memory_used memory_used_percent
+  local temperature
+  local root_total root_used root_used_percent
+  local data_total="Unavailable"
+  local data_used="Unavailable"
+  local data_used_percent="Unavailable"
+
+  read -r cpu_user cpu_system < <(cpu_history_values || true)
+  read -r memory_total memory_used memory_used_percent < <(
+    free -k 2>/dev/null | awk '/^Mem:/ {
+      percent = ($2 > 0) ? $3 / $2 * 100 : 0
+      printf "%s %s %.1f", $2, $3, percent
+    }'
+  )
+  temperature="$(cpu_temp_line || true)"
+  temperature="${temperature% C}"
+  read -r root_total root_used root_used_percent < <(
+    df -Pk / 2>/dev/null | awk 'NR==2 {percent=$5; sub(/%$/, "", percent); print $2, $3, percent}'
+  )
+
+  if mountpoint -q /data; then
+    read -r data_total data_used data_used_percent < <(
+      df -Pk /data 2>/dev/null | awk 'NR==2 {percent=$5; sub(/%$/, "", percent); print $2, $3, percent}'
+    )
+  fi
+
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' \
+    "${cpu_user:-Unavailable}" \
+    "${cpu_system:-Unavailable}" \
+    "${memory_used:-Unavailable}" \
+    "${memory_total:-Unavailable}" \
+    "${memory_used_percent:-Unavailable}" \
+    "${temperature:-Unavailable}" \
+    "${root_used:-Unavailable}" \
+    "${root_total:-Unavailable}" \
+    "${root_used_percent:-Unavailable}" \
+    "$data_used" \
+    "$data_total" \
+    "$data_used_percent"
+}
+
+record_history_sample() {
+  local history_file="$1"
+  local sample="$2"
+  local last_line
+  local last_sample
+
+  last_line="$(tail -n 1 "$history_file")"
+  last_sample="${last_line#*$'\t'}"
+  if [[ "$sample" == "$last_sample" ]]; then
+    printf 'unchanged'
+    return
+  fi
+
+  printf '%s\t%s\n' "$(date '+%Y-%m-%dT%H:%M:%S%z')" "$sample" >> "$history_file"
+  printf 'recorded'
+}
+
 battery_lines() {
   local battery
   local full_capacity
@@ -377,11 +493,14 @@ elif (( $# > 0 )); then
 fi
 
 if [[ -n "$cycle_interval" ]]; then
+  history_file="$(create_history_log)"
   trap 'printf "\033[?25h"' EXIT
   printf '\033[?25l'
   while true; do
+    sample="$(history_sample)"
+    history_status="$(record_history_sample "$history_file" "$sample")"
     snapshot="$(print_info)"
-    printf '\033[H%s\n\033[J' "$snapshot"
+    printf '\033[H%s\n\nHistory  %s (%s)\n\033[J' "$snapshot" "$history_file" "$history_status"
     sleep "$cycle_interval"
   done
 else
