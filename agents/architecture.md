@@ -18,10 +18,11 @@ Some configuration is intentionally shared across station architectures and live
 in a neutral location so a single file is the source of truth. Each station
 symlinks its local config path to the repo file rather than keeping a divergent copy.
 
-- `dotfiles/ghostty.ghostty`: shared Ghostty terminal config, currently used by
-  **Linux only**. Symlinked to `~/.config/ghostty/config.ghostty` on each Linux
-  station (wired in `linux/scripts/bootstrap.sh` step 15). macOS no longer uses
-  Ghostty — the preferred terminal there is iTerm2. Windows is not covered yet.
+- `dotfiles/ghostty.ghostty`: shared Ghostty terminal config used by macOS and
+  Linux. Linux stations symlink it to `~/.config/ghostty/config.ghostty` (wired
+  in `linux/scripts/bootstrap.sh` step 15). Hades symlinks it to Ghostty's native
+  macOS config path under `~/Library/Application Support/com.mitchellh.ghostty/`;
+  both Ghostty and iTerm2 are used there. Windows is not covered yet.
   The shared file uses the login shell by default (no hardcoded `command` path)
   so it stays OS-agnostic; `macos-titlebar-style` is kept and harmlessly ignored
   on Linux.
