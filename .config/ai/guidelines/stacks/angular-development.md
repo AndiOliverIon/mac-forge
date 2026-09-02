@@ -186,6 +186,8 @@ Rule intent in this development file must remain synchronized with the detailed 
 - Use `templateUrl` and `styleUrl`; omit `styleUrl` if no custom styles are needed.
 - Allow `template: ''` only for abstract, non-rendering base components.
 - Never use non-empty inline component templates, inline component styles, or `style="..."`.
+- Before adding a root wrapper solely for layout, use component `:host` when it can express the
+  layout and direct-child sizing.
 - Use BEM naming for custom CSS classes.
 - Prefer Kendo UI CSS utilities over custom CSS.
 - Use Kendo theme variables for colors, spacing, borders, shadows, typography, and design tokens.
@@ -223,7 +225,8 @@ Rule intent in this development file must remain synchronized with the detailed 
 ## 18. Local Project Conventions
 
 - For non-route component inputs that receive numeric attribute text, prefer Angular's `numberAttribute` transform instead of accepting a `string` and casting manually.
-- Ardis magic-grid providers `ArdisDataProvider`, `ArdisConfigurationProvider`, and `ArdisExpressionConfigurationProvider` should always be wrapped in `computed()`.
-- Prefer the `translate` pipe directly in templates for simple labels, button text, and other template-rendered translations.
-- Keep component-side translation for non-template consumers such as page titles, notifications, or imperative strings.
-- Do not use `ChangeDetectionStrategy.OnPush` in `ardis.perform.client` for now.
+- In the `@ardis/ngx-kendo-ui` library and projects that consume it, always wrap `ArdisDataProvider`,
+  `ArdisConfigurationProvider`, and `ArdisExpressionConfigurationProvider` in `computed()`.
+- In Ardis Angular projects, prefer the `translate` pipe for simple template-rendered text; keep
+  component-side translation for non-template consumers such as page titles or notifications.
+- In Ardis Angular projects, do not use `ChangeDetectionStrategy.OnPush` for now.

@@ -12,6 +12,10 @@ when selected; apply it together with the core rules.
 - Only abstract, non-rendering base components may use `template: ''`.
 - Never use non-empty inline component templates, `styles: [...]`, or template `style="..."`
   attributes.
+- Before adding a root wrapper solely for layout, use component `:host` when it can express the
+  layout and direct-child sizing.
+- Do not use `@switch (true)` for boolean branching; use `@if`, `@else if`, and `@else`. Reserve
+  `@switch` for matching one concrete value against alternatives.
 - Use BEM for custom CSS classes. When SCSS contains a block with elements or modifiers, prefer
   nesting through `&__...` and `&--...`.
 - Prefer Kendo CSS utility classes over custom CSS. Add custom styling only when the design system

@@ -55,6 +55,8 @@ Selection rules:
 - Use `@if`, `@else if`, `@else`, `@for`, and `@switch` instead of legacy structural directives.
 - Always provide `track` in `@for` loops.
 - Use `input()` and `output()` instead of `@Input()` and `@Output()`.
+- For non-route component inputs receiving numeric attribute text, prefer Angular's
+  `numberAttribute` transform over accepting a string and casting manually.
 - Prefer lazy-loaded feature routes with `loadComponent`.
 - Use `inject()` instead of constructor injection unless a base-class constructor requires the
   dependency. For `DialogContentBase`, accept `DialogRef` and pass it to `super(dialog)`.
@@ -87,6 +89,7 @@ Selection rules:
 - Do not manipulate the DOM directly unless integrating non-Angular code; use Angular abstractions.
 - Keep constructors limited to dependency injection and trivial setup. Put loading, subscriptions,
   and initialization side effects in lifecycle hooks or reactive fields.
+- In Ardis Angular projects, do not use `ChangeDetectionStrategy.OnPush` for now.
 - Do not add trivial one-line wrappers when the template can call the expression or service directly.
 - Do not extract tiny single-use helpers unless they improve reuse, isolate substantial complexity,
   or give an important concept a clearer name.
@@ -137,6 +140,8 @@ Selection rules:
 
 ## 14. Shared Helpers
 
+- In Ardis Angular projects, prefer the `translate` pipe for simple template-rendered text; keep
+  component-side translation for non-template consumers such as page titles or notifications.
 - Move reusable translation, formatting, and label-resolution logic to a shared service, utility, or
   pipe.
 - Use pure pipes for stateless template transformations.

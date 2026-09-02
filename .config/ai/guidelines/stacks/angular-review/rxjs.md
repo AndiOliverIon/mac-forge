@@ -17,6 +17,16 @@ when selected; apply it together with the core rules.
 - Never nest `.subscribe()` calls. Flatten dependent work with the appropriate higher-order operator.
 - Do not nest `.pipe()` calls inside operator callbacks. Keep the flow in the root pipeline or move
   the inner operation into a named private method.
+- Do not expose `Observable<void>` from public command-style service methods. If no meaningful value
+  is returned, the owning service should subscribe and return `void`; avoid execution-only
+  `Observable<void>` in private helpers as well.
+- Do not pass success or error callbacks into services merely to react after a command, or force a
+  component to subscribe only to trigger execution.
+- Keep service-owned orchestration—such as confirmation, API execution, and notifications—inside
+  the service. If the UI needs follow-up information, expose meaningful state as a value stream or
+  signal.
+- Do not use `tap` for primary outcome handling such as notifications, refreshes, or navigation;
+  handle final reactions in the owning subscription or receiving consumer.
 - Select concurrency by intent; do not default to `switchMap`.
 
 | Operator | Required behavior |
