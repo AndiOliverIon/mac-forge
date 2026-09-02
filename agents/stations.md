@@ -56,30 +56,31 @@ Operational consequence:
 
 ## MasterChief agent runtime
 
-MasterChief supports exactly two concurrent agents and no more, one per
-identity:
+MasterChief supports exactly two concurrent agents and no more, one per execution
+universe:
 
 - `Raynor`, with its isolated universe at `/home/oliver/raynor`.
 - `Zeratul`, with its isolated universe at `/home/oliver/zeratul`.
 
-Both universe roots are ordinary directories owned by the `oliver` Linux
-account, not separate Linux user homes or accounts. Their isolation is an agent
-boundary: Raynor must work only inside `/home/oliver/raynor`, Zeratul must work
-only inside `/home/oliver/zeratul`, and neither may inspect or modify the other
-universe. Launch each agent with only its own universe configured as writable.
-The identities, directory ownership, and paths were verified over SSH on
-2026-08-31.
+Raynor and Zeratul name execution universes, not AI identities; an agent remains
+Artanis, Argus, or Aegis within either universe. Both roots are ordinary
+directories owned by the `oliver` Linux account, not separate user homes or
+accounts. Their isolation is an agent boundary: Raynor permits work only inside
+`/home/oliver/raynor`, Zeratul only inside `/home/oliver/zeratul`, and neither
+may be inspected or modified from the other. Launch each agent with only its
+assigned universe configured as writable. The universes, directory ownership,
+and paths were verified over SSH on 2026-08-31.
 
-Each identity also uses a separate tmux server and same-named persistent
+Each universe also uses a separate tmux server and same-named persistent
 session. Run `raynor` or `zeratul` from Hades or MasterChief to create or attach
-to that identity's session. The initial pane starts at its universe root. Detach
+to that universe's session. The initial pane starts at its root. Detach
 with `Ctrl+B`, then `d`; the shell and agent process continue running.
 From Hades, these commands prefer the `masterchief-utp` SSH endpoint and fall
 back to the existing `masterchief` Wi-Fi endpoint when the UTP SSH probe fails.
 `FORGE_MASTERCHIEF_SSH_HOST` continues to override automatic endpoint selection.
 Use `Ctrl+B`, then `c` for another window inside the persistent session. The
 optional `shell` action opens an independent, nonpersistent terminal in the
-identity's universe without touching that session. The `start`, `attach`,
+selected universe without touching that session. The `start`, `attach`,
 `status`, `logs`, and confirmed `stop` actions provide explicit lifecycle
 control, while plain `raynor` and `zeratul` retain their attach-or-create
 behavior.
@@ -91,21 +92,22 @@ with `h2` run inside the matching destination repository on MasterChief.
 
 Run `verify-workstation` or its short alias `vw` on MasterChief for a read-only
 workstation report that includes both universe directories, inventory records,
-agent aliases, and any running identity session. A stopped session is valid and
+agent aliases, and any running universe session. A stopped session is valid and
 is not reported as a failure.
 
-`inf --cycle` discovers worker identities from the current station's
-`agentRuntime.identities` inventory. When identities are configured, it writes a
-normalized companion TSV beside the system history with each identity's state,
+`inf --cycle` discovers worker universes from the current station's
+`agentRuntime.identities` inventory. When universes are configured, it writes a
+normalized companion TSV beside the system history with each universe's state,
 CPU usage, resident memory, and process count. Stations without configured
-identities keep the generic system-only history behavior.
+worker universes keep the generic system-only history behavior.
 
 The same aliases on Hades run the report remotely over SSH; checks that require
 MasterChief's graphical session are explicitly skipped in that mode.
 
 The session exports `FORGE_AGENT_IDENTITY`, `FORGE_UNIVERSE_ROOT`, and
-`FORGE_WORK_ROOT`. Linux work aliases resolve against `FORGE_WORK_ROOT`, so
-`perf` enters the active identity's `ardis-perform` clone while the same alias
+`FORGE_WORK_ROOT`; the legacy `FORGE_AGENT_IDENTITY` value selects the universe.
+Linux work aliases resolve against `FORGE_WORK_ROOT`, so
+`perf` enters the active universe's `ardis-perform` clone while the same alias
 in a normal MasterChief shell still uses `/home/oliver/work/ardis-perform`.
 Agent shells guard against changing outside their universe. Their `codex`
 function starts Codex in the current in-universe directory with the

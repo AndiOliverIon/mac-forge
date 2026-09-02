@@ -1,38 +1,37 @@
-# Coding Guidelines — Operations and Remote Server Hygiene
+# Operations and Remote Server Hygiene
 
-> Generic, project-agnostic rules for deploys, provisioning, and any work touching remote
-> servers (e.g. vps1). Intended as a living reference.
+Apply these project-agnostic rules to deployments, provisioning, remote-server work, and
+Docker-hosted database operations, including vps1.
 
----
+## Docker Database Routing
 
-## 1. Remote Temporary-Artifact Cleanup (vps1 and any remote host)
+- VPS1 is the default Docker-hosted development database for Hades, Cerber, and MasterChief. Use the
+  established private connection, tunnel, and client helpers for the active station; never expose or
+  hardcode connection secrets.
+- Do not select a local SQL container merely because local Docker is available. Hades local SQL is a
+  contingency only when Oliver explicitly requests it, or VPS1 connectivity is verified unavailable
+  and Oliver confirms changing database targets.
+- Only for that contingency, load
+  `~/.config/ai/guidelines/stacks/docker-db-local-fallback.md`. Do not read it for normal VPS1 work.
+- This routing governs Docker-hosted databases only. Local image builds, application containers,
+  Compose, and unrelated Docker cleanup remain local when the task requires them.
 
-The server must be kept tidy and on a green, functional state. Do not leave junk behind.
+## Remote Temporary Artifacts
 
-- **Track every temporary artifact you create on a remote host.** This includes staged
-  scripts, uploaded helpers, `/tmp` files, scratch logs, ad-hoc backups you created, and any
-  one-off file that is not a permanent part of the deployment.
-- **Clean them up at task closure.** Once the task is complete (or abandoned), remove every
-  temporary artifact you introduced. The host should be left with only the files it is meant
-  to keep permanently.
-- **Keep permanent deployment files.** Released build artifacts, deploy scripts under the
-  service's own `deploy/` directory, systemd units, env files, and config the server needs to
-  run are NOT temporary — do not delete these.
-- **Prefer staging temporaries in a predictable, easy-to-purge location** (e.g. `/tmp` with a
-  clear, project-prefixed name like `tally-...`) so cleanup is unambiguous.
-- **Verify the cleanup.** After removing, confirm nothing is left (e.g. list the directory or
-  the name pattern) rather than assuming the delete succeeded.
-- **If a temporary must intentionally survive** the task (rare), say so explicitly to the user
-  and note where it lives and why, so it is a deliberate decision rather than forgotten junk.
+- Track every temporary artifact created remotely: staged scripts, uploaded helpers, `/tmp` files,
+  scratch logs, ad-hoc backups, and other one-off files outside the permanent deployment.
+- At task completion or abandonment, remove every temporary artifact introduced. Preserve required
+  release artifacts, service `deploy/` scripts, systemd units, environment files, and runtime
+  configuration.
+- Stage temporary files in a predictable, easy-to-purge location with a clear project-prefixed name,
+  such as `/tmp/tally-...`.
+- Verify cleanup by listing the relevant directory or name pattern; do not assume deletion succeeded.
+- If a temporary file must intentionally remain, tell the user its location and why.
 
-This rule is mandatory: never raise junk on a remote host that must stay tidy and functional.
+## Safe Remote Changes
 
----
-
-## 2. Safe Remote Changes
-
-- Back up any existing server config before editing it (timestamped backup), and validate
-  before reloading the service (e.g. `caddy validate` before `systemctl reload caddy`).
-- Make idempotent change scripts where possible, so a re-run after a partial failure is safe.
-- Verify the end state after every privileged step (service `is-active`, health endpoint,
-  public URL) rather than assuming success.
+- Before editing server configuration, create a timestamped backup. Validate the new configuration
+  before reloading the service, such as `caddy validate` before `systemctl reload caddy`.
+- Prefer idempotent change scripts so rerunning after a partial failure is safe.
+- After every privileged step, verify the end state through the relevant service status, health
+  endpoint, or public URL.

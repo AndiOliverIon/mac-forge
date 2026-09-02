@@ -12,13 +12,13 @@ Rule intent in this development file must remain synchronized with the detailed 
 - Keep components, services, methods, and action flows single-responsibility.
 - Use standalone components by default.
 - Use strict TypeScript: no `any`, no implicit types.
-- Always declare explicit access modifiers and type annotations on class members, method parameters, and return types.
+- Always declare explicit access modifiers and type annotations on class members, method parameters, and return types, except reactive-form member types may be inferred as allowed by §8.
 - Use `readonly` for injected dependencies, signals, and values that should not be reassigned.
 - Remove `console.log` and debug statements before merge.
 
 ## 2. Modern Angular APIs
 
-- Use `inject()` instead of constructor injection.
+- Use `inject()` instead of constructor injection unless a base-class constructor requires the dependency, such as passing `DialogRef` to `DialogContentBase`.
 - Use `input()` and `output()` signal APIs instead of `@Input()` and `@Output()`.
 - Use `@if`, `@else if`, `@else`, `@for`, and `@switch` instead of legacy structural directives.
 - Always provide `track` in `@for` loops.
@@ -91,8 +91,9 @@ Rule intent in this development file must remain synchronized with the detailed 
 
 ## 8. Forms
 
-- Use reactive forms only. Do not use template-driven forms.
-- Use typed `FormGroup`, `FormControl`, and `FormArray`.
+- Use reactive forms for actual forms, validation flows, and multi-field dialogs.
+- Allow `ngModel` only for standalone controls and direct grid-cell or row editing that is not part of a form.
+- Prefer typed `FormGroup`, `FormControl`, and `FormArray`, but accept bare or inferred form types when they match the local feature pattern.
 - Prefer `NonNullableFormBuilder` when all controls should be non-nullable.
 - Use `fb.control<Type>(value, { validators: [...] })` with an options object for validators and control config.
 - Use `nonNullable: true` only when mixing nullable and non-nullable controls with `FormBuilder`.
@@ -100,7 +101,8 @@ Rule intent in this development file must remain synchronized with the detailed 
 - Use custom validators with proper `ValidatorFn` or `AsyncValidatorFn` typing.
 - Use Kendo form controls with `formControlName`.
 - Use `getRawValue()` for non-nullable forms.
-- Avoid untyped forms, `ngModel`, template variables as form state, and `form.value` on nullable forms.
+- Do not use `ngModel` or template variables as form state inside an actual form.
+- Avoid `form.value` on nullable forms.
 
 ## 9. Backend Communication
 
@@ -180,9 +182,10 @@ Rule intent in this development file must remain synchronized with the detailed 
 
 ## 15. Templates And Styling
 
-- Always use separate template and style files.
+- Use separate template and style files for rendered components.
 - Use `templateUrl` and `styleUrl`; omit `styleUrl` if no custom styles are needed.
-- Never use inline templates, inline styles, or `style="..."`.
+- Allow `template: ''` only for abstract, non-rendering base components.
+- Never use non-empty inline component templates, inline component styles, or `style="..."`.
 - Use BEM naming for custom CSS classes.
 - Prefer Kendo UI CSS utilities over custom CSS.
 - Use Kendo theme variables for colors, spacing, borders, shadows, typography, and design tokens.

@@ -21,6 +21,17 @@ REQUIRED_SOURCES=(
     guidelines/handoff/common.md
     guidelines/handoff/hades.md
     guidelines/handoff/masterchief.md
+    guidelines/stacks/angular-development.md
+    guidelines/stacks/angular-review/_core.md
+    guidelines/stacks/angular-review/forms.md
+    guidelines/stacks/angular-review/routing.md
+    guidelines/stacks/angular-review/rxjs.md
+    guidelines/stacks/angular-review/templates-styling.md
+    guidelines/stacks/angular-review/ui-kendo.md
+    guidelines/stacks/docker-db-local-fallback.md
+    guidelines/stacks/dotnet.md
+    guidelines/stacks/ops.md
+    guidelines/stacks/sql.md
     bootstrap/codex-AGENTS.md
     bootstrap/claude-CLAUDE.md
 )

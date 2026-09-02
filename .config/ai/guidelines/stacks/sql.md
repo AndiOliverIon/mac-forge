@@ -1,476 +1,221 @@
 # SQL Server Coding Guidelines
 
-This document defines the coding standards and best practices for all SQL Server development.
-Developers are expected to follow these guidelines to ensure consistency, readability, and maintainability across the codebase.
-
----
+Rule-first standards for consistent, readable, and maintainable SQL Server development.
 
 ## 1. Naming Conventions
 
-### General Rules
+Apply the target naming conventions in this section to genuinely new database objects. When
+altering or enriching an existing object, preserve its established name so current consumers remain
+compatible. References to legacy names are not violations. Rename an existing object only when the
+requested scope explicitly includes the rename and its consumers have been identified and handled.
 
-- Use **PascalCase** for all identifiers: tables, columns, views, procedures, functions, and indexes.
-- Names must be descriptive and unambiguous.
-- Avoid abbreviations unless they are universally understood (e.g., `Id`, `Url`).
-- Never use reserved SQL keywords as identifiers.
-- Never use spaces or special characters in names.
+### General naming
 
-### Tables
-
-- Use **singular** names — a table represents an entity, not a collection.
-- Do not use prefixes like `tbl_`.
-
-```sql
--- ✅ Correct
-Customer
-OrderLine
-ProductCategory
-
--- ❌ Incorrect
-Customers
-tbl_OrderLines
-product_category
-```
-
-### Columns
-
-- Use PascalCase for all column names.
-- Primary keys should be named `Id`.
-- Foreign keys should be named after the referenced table followed by `Id`.
-
-```sql
--- ✅ Correct
-Id
-Name
-FirstName
-LastName
-CustomerId       -- FK referencing Customer.Id
-ProductCategoryId
-
--- ❌ Incorrect
-id
-customer_id
-FIRST_NAME
-fkCustomer
-```
-
-### Boolean Fields
-
-Boolean (BIT) columns must use a meaningful prefix to make their intent immediately clear:
-
-| Prefix | Example |
-|--------|---------|
-| `Is`   | `IsActive`, `IsDeleted`, `IsVerified` |
-| `Has`  | `HasDiscount`, `HasChildren` |
-| `Can`  | `CanEdit`, `CanLogin` |
-| `Allow` | `AllowNotification` |
-| `Requires` | `RequiresApproval` |
-
-```sql
--- ✅ Correct
-IsActive        BIT NOT NULL DEFAULT 1,
-HasDiscount     BIT NOT NULL DEFAULT 0,
-CanLogin        BIT NOT NULL DEFAULT 1,
-
--- ❌ Incorrect
-Active          BIT,
-Discount        BIT,
-LoginFlag       BIT,
-```
-
-### Other Object Naming
+- Use PascalCase for tables, columns, and the descriptive portion of object names. For views,
+  procedures, and functions, use the required lowercase prefix followed by a PascalCase descriptive
+  name. Follow the explicit patterns below for indexes and constraints.
+- Use descriptive, unambiguous names. Avoid abbreviations unless universally understood, such as
+  `Id` and `Url`.
+- New identifiers must not use reserved SQL keywords, spaces, or special characters.
+- Use singular table names and no prefixes such as `tbl_`.
+- Use PascalCase column names. Name primary keys `Id` and foreign keys after the referenced table
+  followed by `Id`, such as `CustomerId`.
+- Prefix boolean names by intent: `Is`, `Has`, `Can`, `Allow`, or `Requires`.
+- Use `BIT NOT NULL` for true two-state values. Use nullable `BIT` only when unknown or not evaluated
+  is a real domain state. Add a named default only when the domain defines a safe implicit value.
 
 | Object | Convention | Example |
-|--------|-----------|---------|
-| View | `vw` prefix | `vwActiveCustomer` |
-| Stored Procedure | `usp` prefix | `uspGetCustomerById` |
-| Scalar Function | `ufn` prefix | `ufnCalculateTax` |
-| Table-Valued Function | `tvf` prefix | `tvfGetOrdersByDate` |
+| --- | --- | --- |
+| View | `vw` + PascalCase name | `vwActiveCustomer` |
+| Stored procedure | `usp` + PascalCase name | `uspGetCustomerById` |
+| Scalar function | `ufn` + PascalCase name | `ufnCalculateTax` |
+| Table-valued function | `tvf` + PascalCase name | `tvfGetOrdersByDate` |
 | Index | `IX_Table_Column` | `IX_Order_CustomerId` |
-| Unique Index | `UX_Table_Column` | `UX_Customer_Email` |
-| Primary Key | `PK_Table` | `PK_Customer` |
-| Foreign Key | `FK_Table_RefTable` | `FK_Order_Customer` |
-| Default Constraint | `DF_Table_Column` | `DF_Customer_IsActive` |
+| Unique index | `UX_Table_Column` | `UX_Customer_Email` |
+| Primary key | `PK_Table` | `PK_Customer` |
+| Foreign key | `FK_Table_RefTable` | `FK_Order_Customer` |
+| Default constraint | `DF_Table_Column` | `DF_Customer_IsActive` |
 
----
+## 2. Formatting
 
-## 2. Formatting & Indentation
-
-### Keywords
-
-All SQL keywords must be written in **UPPERCASE**.
-
-```sql
-SELECT, FROM, WHERE, JOIN, ON, AND, OR, NOT, IN,
-INSERT, UPDATE, DELETE, CREATE, ALTER, DROP,
-GROUP BY, ORDER BY, HAVING, WITH, AS, CASE, WHEN, THEN, END
-```
-
-### Indentation
-
-- Use **4 spaces** per indentation level. Do not use tabs.
-- Each major clause (`SELECT`, `FROM`, `WHERE`, `JOIN`, `GROUP BY`, etc.) starts on a new line.
-- Column lists and conditions are indented one level under their clause.
+- Write SQL keywords in uppercase.
+- Indent with 4 spaces, never tabs.
+- Start each major clause—`SELECT`, `FROM`, `JOIN`, `WHERE`, `GROUP BY`, `HAVING`, and
+  `ORDER BY`—on a new line. Indent column lists and conditions one level below their clause.
+- Place commas at the end of lines in multiline column lists.
+- Put each `WHERE` condition on its own line with `AND` or `OR` at the beginning.
+- Always use `AS` for table and column aliases. Keep table aliases short but meaningful, normally
+  one to three characters derived from the table name.
+- Use square brackets only for an existing reserved or space-containing name that cannot be changed,
+  such as `[Order]`. Do not bracket ordinary identifiers.
+- Terminate every statement with a semicolon.
 
 ```sql
--- ✅ Correct
 SELECT
     c.Id,
     c.FirstName,
     c.LastName,
-    o.Id AS OrderId,
-    o.CreatedAt
+    po.CreatedAt
 FROM Customer AS c
-INNER JOIN [Order] AS o
-    ON o.CustomerId = c.Id
+INNER JOIN ProductionOrder AS po
+    ON po.CustomerId = c.Id
 WHERE
     c.IsActive = 1
-    AND o.CreatedAt >= '2024-01-01'
+    AND po.CreatedAt >= '2024-01-01'
 ORDER BY
     c.LastName,
     c.FirstName;
-
--- ❌ Incorrect
-select c.Id, c.FirstName, c.LastName, o.Id as OrderId, o.CreatedAt from Customer c inner join [Order] o on o.CustomerId=c.Id where c.IsActive=1 and o.CreatedAt>='2024-01-01'
 ```
-
-### Commas
-
-Place commas **at the beginning** of each new line in column lists. This makes it easier to comment out individual columns and spot errors.
-
-```sql
--- ✅ Correct
-SELECT
-    c.Id
-    ,c.FirstName
-    ,c.LastName
-    ,c.Email
-
--- Also acceptable (trailing commas)
-SELECT
-    c.Id,
-    c.FirstName,
-    c.LastName,
-    c.Email
-```
-
-> Pick one style and apply it **consistently** across the entire project.
-
-### Aliases
-
-- Always use the `AS` keyword when aliasing columns or tables.
-- Table aliases should be short but meaningful (typically 1–3 characters based on the table name).
-
-```sql
--- ✅ Correct
-SELECT
-    c.FirstName AS CustomerFirstName,
-    p.Name AS ProductName
-FROM Customer AS c
-INNER JOIN Product AS p ON p.Id = ol.ProductId
-
--- ❌ Incorrect
-SELECT c.FirstName CustomerFirstName
-FROM Customer c
-```
-
-### Brackets
-
-- Wrap object names in square brackets `[ ]` only when the name is a reserved word or contains spaces.
-- Do not use brackets on regular identifiers — it adds noise.
-
-```sql
--- ✅ Use brackets only when necessary
-FROM [Order]       -- 'Order' is a reserved word
-FROM Customer      -- no brackets needed
-
--- ❌ Unnecessary brackets
-FROM [Customer]
-SELECT [Id], [Name]
-```
-
-### Semicolons
-
-Always terminate statements with a semicolon `;`. This is required for CTEs and considered best practice generally.
-
----
 
 ## 3. Data Types
 
-Choose the most appropriate and least storage-consuming data type for each column.
+Choose the appropriate and least storage-consuming type while following these project standards:
 
-### Recommended Types
-
-| Use Case | Recommended Type | Avoid |
-|----------|-----------------|-------|
-| Primary / Foreign Keys | `INT` or `BIGINT` | `UNIQUEIDENTIFIER` unless required |
-| Short strings (codes, etc.) | `NVARCHAR(n)` | `NCHAR`, `VARCHAR` for multilingual data |
+| Use case | Use | Avoid |
+| --- | --- | --- |
+| Primary and foreign keys | `INT` or `BIGINT` | `UNIQUEIDENTIFIER` unless required |
+| Short strings | `NVARCHAR(n)` | `NCHAR`; `VARCHAR` for multilingual data |
 | Long text | `NVARCHAR(MAX)` | `TEXT`, `NTEXT` (deprecated) |
 | Boolean flags | `BIT NOT NULL` | `CHAR(1)`, `INT` |
-| Dates only | `DATE` | `DATETIME` |
+| Date only | `DATE` | `DATETIME` |
 | Date and time | `DATETIME2(7)` | `DATETIME`, `SMALLDATETIME` |
-| Money / Currency | `DECIMAL(18, 2)` | `MONEY`, `FLOAT` |
-| Identifiers (GUID) | `UNIQUEIDENTIFIER` | `CHAR(36)` |
+| Money and currency | `DECIMAL(18, 2)` | `MONEY`, `FLOAT` |
+| GUID | `UNIQUEIDENTIFIER` | `CHAR(36)` |
 
-### Rules
-
-- Always define `NOT NULL` or `NULL` explicitly on every column — never rely on defaults.
-- Boolean columns must always be `BIT NOT NULL` with a `DEFAULT` constraint.
-- Never use `FLOAT` or `REAL` for financial values — use `DECIMAL`.
+- Explicitly declare every column `NULL` or `NOT NULL`.
+- Use nullable `BIT` only for a meaningful third state and add a named default only when an implicit
+  value is valid for the domain.
+- Never use `FLOAT` or `REAL` for financial values; use `DECIMAL(18, 2)`.
+- Name defaults with `DF_Table_Column` for genuinely new constraints.
 
 ```sql
--- ✅ Correct
-IsActive        BIT          NOT NULL DEFAULT 1,
-Price           DECIMAL(18, 2) NOT NULL DEFAULT 0,
-CreatedAt       DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
-Description     NVARCHAR(MAX) NULL,
-
--- ❌ Incorrect
-IsActive        INT,
-Price           FLOAT,
-CreatedAt       DATETIME,
-Description     TEXT
+CREATE TABLE Product
+(
+    Id INT NOT NULL IDENTITY(1, 1),
+    Price DECIMAL(18, 2) NOT NULL
+        CONSTRAINT DF_Product_Price DEFAULT (0),
+    CreatedAt DATETIME2(7) NOT NULL
+        CONSTRAINT DF_Product_CreatedAt DEFAULT (SYSDATETIME()),
+    Description NVARCHAR(MAX) NULL,
+    CONSTRAINT PK_Product PRIMARY KEY CLUSTERED (Id)
+);
 ```
-
----
 
 ## 4. Queries
 
-### SELECT
-
-- Never use `SELECT *`. Always list the columns you need explicitly.
-- Always qualify column references with the table alias when joining multiple tables.
-
-```sql
--- ✅ Correct
-SELECT
-    c.Id,
-    c.Name,
-    o.CreatedAt
-FROM Customer AS c
-INNER JOIN [Order] AS o ON o.CustomerId = c.Id;
-
--- ❌ Incorrect
-SELECT * FROM Customer;
-```
-
-### JOINs
-
-- Always use explicit `JOIN` syntax — never implicit comma joins.
-- Prefer `INNER JOIN` over `JOIN` for clarity.
-- Put the `ON` condition on its own indented line.
+- Never use `SELECT *`; list only the required columns.
+- Qualify columns with their table alias when joining multiple tables.
+- Use explicit joins, never comma joins. Prefer `INNER JOIN` over bare `JOIN` and put each `ON`
+  condition on its own indented line.
+- Prefer a CTE over a deeply nested subquery when it improves readability.
 
 ```sql
--- ✅ Correct
-FROM [Order] AS o
-INNER JOIN Customer AS c
-    ON c.Id = o.CustomerId
-LEFT JOIN Address AS a
-    ON a.Id = c.AddressId
-
--- ❌ Incorrect
-FROM [Order] o, Customer c WHERE o.CustomerId = c.Id
-```
-
-### WHERE Conditions
-
-- Place each condition on its own line.
-- Put the `AND` / `OR` operator at the beginning of the line.
-
-```sql
-WHERE
-    c.IsActive = 1
-    AND o.CreatedAt >= '2024-01-01'
-    AND o.TotalAmount > 100;
-```
-
-### CTEs (Common Table Expressions)
-
-Prefer CTEs over deeply nested subqueries for readability.
-
-```sql
-WITH ActiveCustomer AS (
+WITH ActiveCustomer AS
+(
     SELECT
-        Id,
-        Name,
-        Email
-    FROM Customer
-    WHERE IsActive = 1
+        c.Id,
+        c.Name
+    FROM Customer AS c
+    WHERE c.IsActive = 1
 )
 SELECT
     ac.Name,
-    COUNT(o.Id) AS OrderCount
+    COUNT(po.Id) AS OrderCount
 FROM ActiveCustomer AS ac
-INNER JOIN [Order] AS o ON o.CustomerId = ac.Id
-GROUP BY ac.Name;
+INNER JOIN ProductionOrder AS po
+    ON po.CustomerId = ac.Id
+GROUP BY
+    ac.Name;
 ```
 
----
+## 5. Stored Procedures and Functions
 
-## 5. Stored Procedures & Functions
-
-### General Rules
-
-- Prefix stored procedures with `usp` and functions with `ufn` / `tvf`.
-- Always include `SET NOCOUNT ON` at the start of stored procedures.
-- Always use `BEGIN` / `END` blocks.
-- Always handle errors using `TRY` / `CATCH` with transaction management.
-- Never use dynamic SQL unless absolutely necessary. If used, always parameterize with `sp_executesql`.
-
-### Stored Procedure Template
+- Prefix stored procedures with `usp`, scalar functions with `ufn`, and table-valued functions with
+  `tvf`.
+- Start stored procedures with `SET NOCOUNT ON` and use `BEGIN` / `END` blocks.
+- Prefix parameters with `@`, use PascalCase after it, and place each parameter on its own line.
+  Provide sensible defaults where appropriate.
+- Use explicit transactions only when multiple operations must commit atomically or deliberate
+  concurrency control requires one. Do not wrap read-only procedures in explicit transactions by
+  default.
+- With an explicit transaction, enable `SET XACT_ABORT ON`, use `TRY` / `CATCH`, roll back when
+  `XACT_STATE() <> 0`, and rethrow with `THROW`.
+- Use `TRY` / `CATCH` without a transaction only for necessary cleanup or contextual error handling.
+- Avoid dynamic SQL unless absolutely necessary. When necessary, parameterize it with
+  `sp_executesql`.
+- Scalar functions return one value; use them sparingly in `WHERE` clauses because they can harm
+  performance. Table-valued functions return a result set and are preferred for that purpose.
 
 ```sql
-CREATE PROCEDURE uspGetOrderByCustomerId
-    @CustomerId INT,
-    @IsActive   BIT = 1
+CREATE PROCEDURE uspCompleteOrder
+    @OrderId INT,
+    @CompletedBy INT
 AS
 BEGIN
     SET NOCOUNT ON;
+    SET XACT_ABORT ON;
 
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        SELECT
-            o.Id,
-            o.CreatedAt,
-            o.TotalAmount
-        FROM [Order] AS o
-        WHERE
-            o.CustomerId = @CustomerId
-            AND o.IsActive = @IsActive;
+        UPDATE ProductionOrder
+        SET
+            Status = 'Completed',
+            CompletedAt = SYSDATETIME()
+        WHERE Id = @OrderId;
+
+        INSERT INTO OrderHistory
+        (
+            OrderId,
+            EventType,
+            CreatedBy
+        )
+        VALUES
+        (
+            @OrderId,
+            'Completed',
+            @CompletedBy
+        );
 
         COMMIT TRANSACTION;
     END TRY
     BEGIN CATCH
-        IF @@TRANCOUNT > 0
+        IF XACT_STATE() <> 0
+        BEGIN
             ROLLBACK TRANSACTION;
+        END;
 
         THROW;
     END CATCH;
 END;
 ```
 
-### Functions
+## 6. Indexing
 
-- **Scalar functions** return a single value. Use sparingly in `WHERE` clauses as they can cause performance issues.
-- **Table-valued functions (TVF)** return a result set and should be preferred over scalar functions when returning data.
-
-```sql
--- Scalar function
-CREATE FUNCTION ufnCalculateTax
-(
-    @Amount     DECIMAL(18, 2),
-    @TaxRate    DECIMAL(5, 4)
-)
-RETURNS DECIMAL(18, 2)
-AS
-BEGIN
-    RETURN @Amount * @TaxRate;
-END;
-
--- Table-valued function
-CREATE FUNCTION tvfGetOrdersByDateRange
-(
-    @StartDate  DATE,
-    @EndDate    DATE
-)
-RETURNS TABLE
-AS
-RETURN
-(
-    SELECT
-        o.Id,
-        o.CustomerId,
-        o.CreatedAt,
-        o.TotalAmount
-    FROM [Order] AS o
-    WHERE o.CreatedAt BETWEEN @StartDate AND @EndDate
-);
-```
-
-### Parameters
-
-- Prefix parameter names with `@`.
-- Use PascalCase after the `@`: `@CustomerId`, `@IsActive`.
-- Always provide sensible defaults where appropriate.
-- Place each parameter on its own line.
-
----
-
-## 6. Indexing Strategies
-
-### Naming
-
-Follow the naming conventions defined in Section 1:
+- Every table should have a clustered index, normally on its primary key. Consider a date column
+  instead for tables dominated by range queries on that date.
+- Create non-clustered indexes for demonstrated query patterns involving `WHERE`, foreign-key joins,
+  `ORDER BY`, or `GROUP BY`.
+- Order composite keys according to the equality and join predicates, range predicates, and ordering
+  of the supported queries. Equality and join keys generally precede range keys. Selectivity matters,
+  but must not determine key order alone.
+- Use `INCLUDE` for frequently returned non-key columns when it avoids key lookups for the supported
+  query.
+- Do not over-index; every index adds write overhead. Validate important indexes against
+  representative execution plans and workload.
+- Use `sys.dm_db_index_usage_stats` only to identify review candidates, never as the sole reason for
+  removal. Confirm the observation window, server restart history, representative business cycles,
+  execution plans, constraint dependencies, and known application, reporting, migration, and
+  maintenance workloads.
+- Avoid indexing low-cardinality columns such as `BIT` in isolation.
+- Consider filtered indexes for columns with a dominant null or inactive value.
 
 ```sql
--- Primary Key
-CONSTRAINT PK_Customer PRIMARY KEY (Id)
+CREATE INDEX IX_ProductionOrder_CustomerIdCreatedAt
+    ON ProductionOrder (CustomerId, CreatedAt DESC)
+    INCLUDE (TotalAmount, IsActive);
 
--- Index
-CREATE INDEX IX_Order_CustomerId ON [Order] (CustomerId);
-
--- Unique Index
-CREATE UNIQUE INDEX UX_Customer_Email ON Customer (Email);
-```
-
-### Clustered Index
-
-- Every table should have a clustered index, typically on the primary key (`Id`).
-- For tables with heavy range queries on a date column, consider the date column as the clustered index.
-
-```sql
--- Default: cluster on primary key
-CREATE TABLE [Order] (
-    Id          INT          NOT NULL IDENTITY(1,1),
-    CustomerId  INT          NOT NULL,
-    CreatedAt   DATETIME2(7) NOT NULL DEFAULT SYSDATETIME(),
-    IsActive    BIT          NOT NULL DEFAULT 1,
-    CONSTRAINT PK_Order PRIMARY KEY CLUSTERED (Id)
-);
-```
-
-### Non-Clustered Indexes
-
-Create non-clustered indexes on columns that are:
-- Frequently used in `WHERE` clauses.
-- Foreign key columns used in `JOIN` conditions.
-- Columns used in `ORDER BY` or `GROUP BY`.
-
-```sql
--- Index on FK column
-CREATE INDEX IX_Order_CustomerId
-    ON [Order] (CustomerId);
-
--- Composite index (leading column = most selective)
-CREATE INDEX IX_Order_CustomerIdCreatedAt
-    ON [Order] (CustomerId, CreatedAt DESC);
-```
-
-### Include Columns
-
-Use `INCLUDE` to add non-key columns to an index when they are frequently selected alongside the indexed column, avoiding key lookups.
-
-```sql
-CREATE INDEX IX_Order_CustomerId
-    ON [Order] (CustomerId)
-    INCLUDE (CreatedAt, TotalAmount, IsActive);
-```
-
-### Guidelines
-
-- Do not over-index. Every index has a write overhead — only add indexes that address a real query pattern.
-- Regularly review and remove unused indexes using `sys.dm_db_index_usage_stats`.
-- Avoid indexing low-cardinality columns (e.g., `BIT` columns) in isolation.
-- Consider **filtered indexes** for columns with a dominant null or inactive value.
-
-```sql
--- Filtered index: only index active orders
-CREATE INDEX IX_Order_CustomerId_Active
-    ON [Order] (CustomerId)
+CREATE INDEX IX_ProductionOrder_CustomerId_Active
+    ON ProductionOrder (CustomerId)
     WHERE IsActive = 1;
 ```
-
----
-
-*Last updated: April 2026*

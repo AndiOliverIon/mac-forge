@@ -25,7 +25,7 @@
 | Class | PascalCase | `OrderManager`, `OrderValidator` |
 | Interface | PascalCase with `I` prefix | `IOrderManager` |
 | Method | PascalCase | `GetById`, `ValidateCreate` |
-| Async method | PascalCase + `Async` suffix | `GetByIdAsync`, `CreateAsync` |
+| Async service/manager/data method | PascalCase + `Async` suffix | `GetByIdAsync`, `CreateAsync` |
 | Property | PascalCase | `TotalCount`, `IsActive` |
 | Private field | `_camelCase` | `_orderManager`, `_validator` |
 | Local variable | camelCase | `orderId`, `pageResult` |
@@ -157,7 +157,7 @@ private const string CreateRoute  = $"{BaseRoute}_{nameof(Create)}";
 [ProducesResponseType(typeof(Order), StatusCodes.Status200OK)]
 [ProducesResponseType(StatusCodes.Status404NotFound)]
 [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-public async Task<ActionResult> GetByIdAsync([FromRoute] int id)
+public async Task<ActionResult> GetById([FromRoute] int id)
 {
     var item = await orderManager.GetAsync(id);
     return Ok(item);
@@ -177,7 +177,8 @@ public async Task<ActionResult> GetByIdAsync([FromRoute] int id)
 ### 4.6 Async/await *(preference, not a review blocker)*
 
 - Where possible, prefer async endpoints and manager methods when the underlying data access supports it.
-- When async, suffix method names with `Async`: `GetByIdAsync`, `CreateAsync`.
+- Keep controller action names resource-oriented and without an `Async` suffix, even when they return
+  `Task`. Suffix async manager, service, and data-access methods with `Async`.
 - Synchronous implementations are fully acceptable. This preference does not constitute a code review failure.
 
 ---

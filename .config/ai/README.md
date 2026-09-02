@@ -29,9 +29,9 @@ ai-config sync
 The shell aliases provide `ai-verify` for `ai-config verify` and `ai-install`
 for `ai-config install`. Reload the shell after pulling an alias change.
 
-- `verify` is read-only. It checks the shared symlink, canonical Codex and
-  Claude bootstrap files, station routing, active MasterChief agent context,
-  and local Mac Forge Git state.
+- `verify` is read-only. It checks every required shared instruction source, the shared symlink,
+  canonical Codex and Claude bootstrap files, station routing, active MasterChief agent context, and
+  local Mac Forge Git state.
 - `install` backs up conflicting config or bootstrap paths before replacement.
   It never replaces the complete `~/.codex` or `~/.claude` directory.
 - `sync` refuses a dirty Mac Forge checkout, pulls with `--ff-only`, runs
