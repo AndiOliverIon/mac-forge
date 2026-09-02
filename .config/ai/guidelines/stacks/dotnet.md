@@ -6,12 +6,22 @@
 
 ## 1. General Principles
 
-- **SOLID**: Every class has one reason to change. Split when a second responsibility appears.
-- **Small methods**: Public methods should fit on screen (~5–30 lines). Extract private helpers when logic grows.
-- **Meaningful, short names**: Names should state intent without abbreviation or redundancy. Avoid `Manager2`, `HandleStuff`, `DoProcess`.
+- **SOLID**: Keep each class cohesive around one responsibility or reason to change. Split it when
+  concerns evolve independently, require materially different dependencies, or make the class
+  difficult to understand—not merely because it contains multiple related operations.
+- **Prefer small methods when practical**: A method fitting on screen is a useful readability signal,
+  not a strict line limit. Keep one coherent responsibility and extract only when a block is
+  reusable, independently meaningful, substantially complex, or represents a separate concern.
+- **Meaningful, concise names**: State intent and avoid obscure, ambiguous, or newly invented
+  abbreviations. Established domain acronyms and project terminology are valid. Do not rename an
+  existing public or broadly consumed identifier solely to expand an accepted abbreviation. Avoid
+  names such as `Manager2`, `HandleStuff`, and `DoProcess`.
 - **No comments for the obvious**: Only comment when the *why* is non-obvious — a hidden constraint, a quirk, a workaround. Never describe what the code already says.
 - **No over-engineering**: Don't introduce abstractions for hypothetical future needs. Three similar lines beat a premature helper.
-- **Avoid deep nesting**: Deep `if`/`else` chains and nested `foreach` loops are a readability smell. Flatten with early returns, guard clauses, or extracted helper methods.
+- **Avoid deep nesting**: Flatten deep branches with early returns, guards, indexing, projection, or
+  focused helpers. Avoid nested loops unless they are the clearest way to express a necessary
+  hierarchy after considering those alternatives, and verify they do not introduce accidental
+  repeated scans.
 - **No `static` for injectable concerns**: Don't use `static` helper classes for anything that touches configuration, logging, or external services. Inject an interface instead — keeps code testable and replaceable.
 
 ---
@@ -65,40 +75,18 @@ var result = mapper.ToDto(entity);      // obvious — use var
 PageResult<Order> page = GetPage();     // not obvious — use explicit type
 ```
 
-### 3.2 Expression-body members
+### 3.2 Other style preferences
 
-Prefer `=>` for single-expression methods and read-only properties. Use block bodies when more than one statement is needed.
+- Prefer `=>` for single-expression methods and read-only properties; use a block for multiple
+  statements.
+- Prefer switch expressions and type patterns over equivalent `if`/`else if` chains.
+- Prefer `using var` when end-of-scope disposal is appropriate; use a `using` block for earlier or
+  visibly constrained disposal.
 
-```csharp
-public int Total => Items.Sum(i => i.Quantity);
-public Order ToDto(OrderEntity e) => mapper.ToDto(e);
-```
+### 3.3 Throw-helper methods
 
-### 3.3 Pattern matching
-
-Prefer `switch` expressions and `is` type patterns over chains of `if`/`else if` on types or values.
-
-```csharp
-// Preferred
-var label = status switch
-{
-    eOrderStatus.Open   => "Open",
-    eOrderStatus.Closed => "Closed",
-    _                   => "Unknown"
-};
-```
-
-### 3.4 `using` declarations
-
-Use the no-brace `using var` form for disposable resources. Same deterministic disposal, less indentation.
-
-```csharp
-using var stream = File.OpenRead(path);
-```
-
-### 3.5 Throw-helper methods
-
-Prefer built-in throw helpers over manual null/range checks:
+Prefer built-in throw helpers when the target framework supports them and nearby code uses them.
+Otherwise follow the project's established explicit guard style:
 
 ```csharp
 ArgumentNullException.ThrowIfNull(request);
@@ -112,16 +100,21 @@ ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
 ### 4.1 Structure
 
-- Use **primary constructor** injection (C# 12). Inject one manager interface per controller.
-- Declare `[ApiController]`, `[Authorize]`, `[Route("api/v{version}/...")]`, and a `[Tags("...")]` group at class level.
-- Group related endpoints into one controller when the resource is cohesive; split when a controller would otherwise exceed ~5–6 endpoints.
+- Prefer **primary constructor** injection when the project supports it and nearby controllers use it.
+- Reuse the established base controller. Ensure `[ApiController]` and other shared metadata are
+  declared either on that base or directly on the controller; do not duplicate inherited attributes.
+- Follow the project's established authorization, tags, API explorer, and versioned-route shape.
+- Prefer one primary manager for a cohesive controller, but allow additional class-level or
+  action-scoped dependencies when its use cases require them.
+- Group endpoints by resource cohesion and responsibility. Split when responsibilities diverge, not
+  because of an arbitrary endpoint count.
 
 ```csharp
 [Tags("Orders")]
 [ApiExplorerSettings(GroupName = "v1")]
 [Route("api/v1/orders")]
 [Authorize]
-public class OrdersApiController(IOrderManager orderManager) : ControllerBase
+public class OrdersApiController(IOrderManager orderManager) : AbstractApiController
 {
     // endpoints
 }
@@ -131,7 +124,8 @@ public class OrdersApiController(IOrderManager orderManager) : ControllerBase
 
 - Use **nouns** for resource paths, not verbs: `/orders`, not `/getOrders`.
 - Nest sub-resources under their parent: `GET /orders/{orderId}/lines`.
-- Use HTTP verbs semantically: `GET` reads, `POST` creates, `PUT` replaces/updates, `DELETE` removes.
+- Use HTTP verbs semantically: `GET` reads, `POST` creates, `PUT` replaces or performs the project's
+  established complete update, `PATCH` modifies part of a resource, and `DELETE` removes.
 - Use kebab-case for multi-word path segments: `/order-lines`, not `/orderLines`.
 - **Prefer single-resource endpoints**: Design update, delete, and create endpoints to act on one resource at a time. Batch operations are the exception, not the default.
 
@@ -148,7 +142,10 @@ private const string CreateRoute  = $"{BaseRoute}_{nameof(Create)}";
 ### 4.4 Endpoint methods
 
 - Controller methods are **thin**: binding → manager call → return. No business logic.
-- Always declare `[ProducesResponseType]` for every possible status code, including 400, 404 and 500.
+- Declare `[ProducesResponseType]` for the success response and every applicable endpoint-specific
+  status, including 400, 404, and 500 according to project conventions. Document globally handled
+  authentication, authorization, and middleware responses where the project's OpenAPI convention
+  requires them.
 - Use `[FromRoute]`, `[FromQuery]`, `[FromBody]` explicitly on every parameter.
 - Apply type constraints on route segments: `{id:int}`, `{code:guid}`.
 
@@ -172,6 +169,7 @@ public async Task<ActionResult> GetById([FromRoute] int id)
 | GET (single) | Found | `Ok(item)` — 200 |
 | POST | Created | `CreatedAtRoute(GetByIdRoute, new { id }, item)` — 201 |
 | PUT | Updated | `Ok(item)` — 200 |
+| PATCH | Partially updated | `Ok(item)` — 200 |
 | DELETE | Deleted | `NoContent()` — 204 |
 
 ### 4.6 Async/await *(preference, not a review blocker)*
@@ -192,35 +190,41 @@ Every manager exposes a focused interface. The interface defines only what calle
 ```csharp
 public interface IOrderManager
 {
-    Task<Order> GetAsync(int orderId, CancellationToken ct = default);
-    Task<Order[]> FilterAsync(OrderFilter filter = null, CancellationToken ct = default);
-    Task<PageResult<Order>> FilterAsync(OrderFilter filter, PageRequest paging, CancellationToken ct = default);
-    Task<Order> CreateAsync(OrderForCreate request, CancellationToken ct = default);
-    Task<Order> UpdateAsync(int orderId, OrderForUpdate request, CancellationToken ct = default);
-    Task DeleteAsync(int orderId, CancellationToken ct = default);
+    Task<Order> GetAsync(int orderId, CancellationToken cancellationToken = default);
+    Task<Order[]> FilterAsync(OrderFilter filter = null, CancellationToken cancellationToken = default);
+    Task<PageResult<Order>> FilterAsync(OrderFilter filter, PageRequest paging, CancellationToken cancellationToken = default);
+    Task<Order> CreateAsync(OrderForCreate request, CancellationToken cancellationToken = default);
+    Task<Order> UpdateAsync(int orderId, OrderForUpdate request, CancellationToken cancellationToken = default);
+    Task DeleteAsync(int orderId, CancellationToken cancellationToken = default);
 }
 ```
 
 ### 5.2 Cancellation tokens *(preference, not a review blocker)*
 
-Where async methods are used, passing `CancellationToken ct = default` as the last parameter is encouraged. Forward it to all downstream I/O calls. The default value keeps callers that don't opt in unaffected. Not required if async is not yet adopted.
+Where async methods are used, passing `CancellationToken cancellationToken = default` as the last
+parameter is encouraged. Forward it to downstream I/O calls. Follow an existing local signature's
+parameter name; do not rename consumed parameters solely for consistency. Not required if async is
+not yet adopted.
 
 ### 5.3 Short, focused public methods
 
-Public methods should follow a clear, linear flow:
+Keep public methods linear and focused. A command commonly follows these relevant stages:
 
 1. Validate inputs (delegate to validator)
 2. Load or create the entity
 3. Apply changes (delegate to mapper)
-4. Persist and return DTO
+4. Persist and construct its result
+
+Include only the stages the use case needs. Retrieval and computation methods should follow their
+simplest coherent flow.
 
 ```csharp
-public async Task<Order> CreateAsync(OrderForCreate request, CancellationToken ct = default)
+public async Task<Order> CreateAsync(OrderForCreate request, CancellationToken cancellationToken = default)
 {
     validator.ValidateCreate(request);
 
     var entity = BuildEntity(request);
-    await SaveAsync(entity, ct);
+    await SaveAsync(entity, cancellationToken);
 
     return mapper.ToDto(entity);
 }
@@ -233,17 +237,25 @@ Decompose complex orchestration into focused private helpers, each handling one 
 | Responsibility | Delegate to |
 |---|---|
 | Input validation | `IXxxValidator` |
-| Entity ↔ DTO mapping | `XxxMapper` |
+| Reusable entity ↔ DTO property mapping | The project's established mapper pattern |
 | Complex sub-operations | Private methods with descriptive names |
 
-- **Never map inside a manager**: Mapping between entities and DTOs belongs in a dedicated `XxxMapper` class. Inline mapping in manager methods mixes concerns and makes both harder to test.
+- Managers own use-case output and may invoke dedicated mappers when constructing responses.
+- Do not handwrite routine entity-to-DTO property copying inline in managers. Prefer the project's
+  established mapping generator or mapper pattern when it expresses the mapping cleanly.
+- Contextual aggregation and response orchestration may remain in the manager when they combine
+  results or require business context; extract reusable property mapping.
+- Validators validate inputs and business rules; they do not construct response DTOs.
 
-### 5.5 Immutable return types for collections
+### 5.5 Collection return contracts
 
-Return `IReadOnlyList<T>` or `T[]` from public methods and interfaces rather than `List<T>`. Signals to callers that the result is not meant to be mutated.
+Expose the narrowest contract callers need. Use `IReadOnlyList<T>` when callers should only read the
+collection, and follow established project conventions such as arrays for materialized result DTOs.
+Return `List<T>` only when caller mutation is intentionally part of the API. Arrays are fixed-size,
+not immutable.
 
 ```csharp
-Task<Order[]> FilterAsync(OrderFilter filter = null, CancellationToken ct = default);
+Task<Order[]> FilterAsync(OrderFilter filter = null, CancellationToken cancellationToken = default);
 ```
 
 ---
@@ -251,7 +263,9 @@ Task<Order[]> FilterAsync(OrderFilter filter = null, CancellationToken ct = defa
 ## 6. Validation
 
 - Each domain has its own `IXxxValidator` / `XxxValidator`.
-- Validators are responsible for **validating incoming request DTOs** — field presence, format, and business constraints on input.
+- Validators enforce input and business preconditions, including relevant loaded domain state or
+  prepared validation data. They may expose focused predicates used by that validation.
+- Validators do not own persistence, use-case orchestration, or response construction.
 - Validators can share a base class for common checks (max length, required, format).
 - Throw typed domain exceptions (`BusinessException`, `NotFoundException`) — never embed user-facing message strings inline.
 
@@ -277,8 +291,13 @@ public class OrderValidator : IOrderValidator
 
 - **Separate request and response models**: response models expose what clients read; request models capture only what clients may send.
 - Use `[Required]` data annotations on mandatory properties.
-- Use nullable types (`int?`, `string?`) for optional fields.
-- Flatten: avoid nesting DTOs deeper than one level.
+- Use `T?` for optional value types. For optional reference types, use `T?` only when the project
+  enables nullable reference types; otherwise follow its established plain-reference and `null`
+  conventions. Do not introduce `#nullable` or nullable-reference syntax locally without a
+  project-level decision.
+- Keep DTOs as shallow as the use case permits. Nest when the response is naturally hierarchical and
+  every level is required by the consumer; do not expose or mirror a broad entity graph merely
+  because those relationships exist.
 - **Don't wrap a single value in a response object**: If an endpoint returns only one scalar value, return it directly. A wrapper DTO with a single property adds noise without benefit.
 
 ### 7.1 When to use ForUpsert vs ForCreate/ForUpdate
@@ -296,23 +315,23 @@ Use shared `PageRequest` (in, from query) and `PageResult<T>` (out) types consis
 
 ## 8. Performance
 
-- **Use `Dictionary<TKey, TValue>` for repeated key lookups**: Build a dictionary upfront when looking up items by key more than once. Avoid `.FirstOrDefault(x => x.Id == id)` inside loops — that is O(n²).
+- Prevent algorithmic problems such as repeated linear searches inside loops. Pre-index data with a
+  dictionary or lookup for repeated keyed access, and use a set for repeated membership checks.
+- Prefer `TryGetValue` over `ContainsKey` followed by the dictionary indexer when one lookup is
+  sufficient.
+- Keep clear LINQ unless it causes repeated or expensive work, or the path is demonstrably hot.
+  Optimize hot paths based on evidence rather than assumed allocation savings.
+- Materialize an enumerable when a stable snapshot, multiple enumeration, or a query-execution
+  boundary requires it. Avoid materializing solely to enumerate once.
+- Use `StringBuilder` for substantial repeated concatenation; do not introduce it mechanically for
+  small, simple loops.
+- Choose collection types according to the public contract described above, not as an assumed
+  micro-optimization.
 
-- **Prefer `TryGetValue` over `ContainsKey` + indexer**: `dict.TryGetValue(key, out var val)` is a single lookup. `ContainsKey` followed by `dict[key]` performs the lookup twice.
-
-- **Avoid LINQ inside tight loops**: LINQ allocates enumerators and closures. For hot paths, prefer `for`/`foreach` with direct indexing.
-
-- **Use `HashSet<T>` for membership tests**: When the question is "does this id exist in a set", use `HashSet<T>` — O(1) — instead of `.Contains()` on a `List<T>` — O(n).
-
-- **Prefer `T[]` over `List<T>` for fixed-size results**: When the size is known at construction time (e.g. `.Select(...).ToArray()`), prefer arrays. `List<T>` carries resize overhead and signals mutability you don't intend.
-
-- **Use `StringBuilder` for string concatenation in loops**: String concatenation with `+` inside a loop allocates a new string per iteration. Use `StringBuilder` or build the string once outside the loop.
-
-- **Avoid unnecessary `ToList()` / `ToArray()`**: Don't materialise a collection just to `foreach` over it once. Operate on `IEnumerable<T>` directly when you don't need random access or multiple iterations.
-
-- **Be explicit about deferred LINQ execution**: LINQ queries are lazy. If a query is consumed more than once, materialise it with `.ToArray()` to avoid re-evaluating it. If consumed once, leave it lazy.
-
-- **Avoid `async void`**: `async void` methods swallow exceptions and cannot be awaited. Use `async Task` even for fire-and-forget scenarios; catch exceptions explicitly inside.
+- **Avoid `async void` except for genuine framework event handlers**: Callers cannot await these
+  methods or directly observe their exceptions. Return `Task` for other asynchronous methods. In an
+  event handler, catch or deliberately route exceptions through the application's established error
+  handling.
 
 ---
 
@@ -320,12 +339,10 @@ Use shared `PageRequest` (in, from query) and `PageResult<T>` (out) types consis
 
 ### 9.1 Coverage expectations
 
-Code coverage is a shared responsibility, not an afterthought.
-
-- **Bug fixes** — by preference and where technically feasible, every bug fix should include a regression test that reproduces the failure before the fix and passes after. This prevents the same bug from silently reappearing.
-- **New functionality** — unit tests are strongly expected for all new manager methods, validators, and mappers. A feature is not considered complete without test coverage of its happy path, its validation failures, and its not-found/edge cases.
-
-These are not optional suggestions. PRs for new functionality without tests, or bug fixes without regression tests where a test is clearly feasible, should be flagged in code review.
+- Bug fixes must include a regression test when technically feasible.
+- New manager, validator, mapper, and other testable behavior must cover its meaningful happy path,
+  validation failures, and relevant not-found or edge cases.
+- In review, flag missing required coverage unless a clear technical constraint makes it impractical.
 
 ### 9.2 Framework stack
 
@@ -346,102 +363,37 @@ Examples:
 
 ### 9.4 Arrange-Act-Assert
 
-Every test follows strict AAA with blank-line separation:
+Structure tests as Arrange–Act–Assert, normally separated by blank lines. Do not require phase-label
+comments; comment only when a non-obvious setup or boundary needs explanation.
 
 ```csharp
 [Fact]
 public async Task Update_ChangedName_ShouldReturnUpdatedDto()
 {
-    // arrange
     var request = new OrderForUpdate { Name = "New" };
 
-    // act
     var result = await manager.UpdateAsync(existingId, request);
 
-    // assert
     result.Name.Should().Be("New");
 }
 ```
 
 ### 9.5 Builder pattern for test data
 
-Use a fluent builder for complex test objects. Keep builders internal to the test project.
+Use a builder or factory when repeated complex setup would otherwise obscure the test. Reuse the
+project's established test-data pattern, keep helpers internal to the test project, and do not
+introduce a builder abstraction for one-off setup.
 
-```csharp
-internal class OrderBuilder : AbstractBuilder<Order>
-{
-    public static OrderBuilder Init(int id, string reference) =>
-        new OrderBuilder().WithId(id).WithReference(reference);
+### 9.6 Parameterized tests
 
-    public OrderBuilder WithId(int value) =>
-        SetValue<OrderBuilder>(o => o.Id = value);
+Use `[Theory]` and the project's established data source when one behavior must be checked across
+multiple inputs.
 
-    public OrderBuilder WithReference(string value) =>
-        SetValue<OrderBuilder>(o => o.Reference = value);
-}
+### 9.7 Fixtures for shared context
 
-// Usage
-var order = OrderBuilder.Init(1, "REF-001").WithStatus(eOrderStatus.Open).Build();
-```
+When tests share expensive setup such as a database context, use xUnit `ICollectionFixture<T>` rather
+than repeating that setup in every test.
 
-### 9.6 Mocking with Moq
+### 9.8 Test categorization
 
-```csharp
-private readonly Mock<IOrderValidator> _validatorMock = new();
-
-_validatorMock.Setup(v => v.ValidateCreate(It.IsAny<OrderForCreate>()));
-```
-
-### 9.7 Parameterized tests
-
-```csharp
-[Theory]
-[InlineData(null)]
-[InlineData("")]
-public async Task Create_InvalidReference_ShouldThrow(string reference)
-{
-    var request = new OrderForCreate { Reference = reference };
-    var act = () => manager.CreateAsync(request);
-
-    await act.Should().ThrowAsync<BusinessException>();
-}
-```
-
-### 9.8 Fixtures for shared context
-
-When tests share expensive setup (e.g. a DB context), use xUnit `ICollectionFixture<T>` rather than repeating setup in every test:
-
-```csharp
-[CollectionDefinition(nameof(DbCollection))]
-public class DbCollection : ICollectionFixture<DbFixture> { }
-
-[Collection(nameof(DbCollection))]
-public class OrderIntegrationTests(DbFixture fixture) { ... }
-```
-
-### 9.9 Test categorization
-
-Use `[Trait("Category", "...")]` to allow selective CI runs:
-
-```csharp
-[Trait("Category", "Orders.Manager")]
-[Fact]
-public async Task Create_ValidRequest_ShouldReturnDto() { ... }
-```
-
----
-
-## 10. Checklist — Before Merging
-
-- [ ] Each public method is ≤ ~30 lines
-- [ ] No business logic in controllers — controllers only bind and delegate
-- [ ] Validator class covers all mandatory fields and constraints on incoming request DTOs
-- [ ] Unit tests cover: happy path, missing required field, not-found scenario
-- [ ] Bug fix includes a regression test (where technically feasible)
-- [ ] New functionality includes unit tests for happy path, validation failures, and edge cases
-- [ ] Test method names follow `Method_Scenario_ShouldExpected`
-- [ ] `[ProducesResponseType]` declared for all expected HTTP status codes
-- [ ] Request and response DTOs are separate types
-- [ ] If async is used: methods carry the `Async` suffix and ideally accept `CancellationToken`
-- [ ] No comments that describe *what* — only *why* when non-obvious
-- [ ] No deep nesting — guard clauses used instead
+Use `[Trait("Category", "...")]` to allow selective CI runs.

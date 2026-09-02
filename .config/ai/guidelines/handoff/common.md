@@ -8,6 +8,8 @@ decision-maker.
 - Artanis is the coworker and implementation partner: Artanis prepares requests and evaluates
   findings. Argus independently reviews actual repository state and writes findings; Argus does not
   implement changes through this protocol.
+- Transporter files are the exclusive handoff channel. Do not search for handoff state in other AI
+  sessions or contact another session to locate or exchange it.
 - Findings authorize analysis only. Artanis may implement only after Oliver explicitly confirms the
   accepted scope.
 - A handoff concerns exactly one repository. For multiple repositories, stop and ask Oliver to pick
