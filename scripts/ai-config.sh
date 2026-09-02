@@ -53,7 +53,8 @@ Commands:
   install Back up conflicting local paths, install the shared symlink and
           canonical Codex/Claude bootstrap files, then verify the result.
           Complete ~/.codex and ~/.claude directories are never replaced.
-  sync    Refuse a dirty Mac Forge checkout, pull with --ff-only, then verify.
+  sync    Refuse a dirty Mac Forge checkout, pull with --ff-only, install the
+          shared symlink and canonical bootstrap files, then verify.
 EOF
 }
 
@@ -391,7 +392,7 @@ sync_config() {
     printf 'Syncing Mac Forge from %s with fast-forward only...\n' "$upstream"
     git -C "$FORGE_ROOT" pull --ff-only
     printf '\n'
-    "$FORGE_ROOT/scripts/ai-config.sh" verify
+    install_config
     printf '\nStart new Codex and Claude sessions after instruction changes.\n'
 }
 

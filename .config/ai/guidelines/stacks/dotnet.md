@@ -6,23 +6,23 @@
 
 ## 1. General Principles
 
-- **SOLID**: Keep each class cohesive around one responsibility or reason to change. Split it when
-  concerns evolve independently, require materially different dependencies, or make the class
-  difficult to understand—not merely because it contains multiple related operations.
-- **Prefer small methods when practical**: A method fitting on screen is a useful readability signal,
-  not a strict line limit. Keep one coherent responsibility and extract only when a block is
-  reusable, independently meaningful, substantially complex, or represents a separate concern.
-- **Meaningful, concise names**: State intent and avoid obscure, ambiguous, or newly invented
-  abbreviations. Established domain acronyms and project terminology are valid. Do not rename an
-  existing public or broadly consumed identifier solely to expand an accepted abbreviation. Avoid
-  names such as `Manager2`, `HandleStuff`, and `DoProcess`.
-- **No comments for the obvious**: Only comment when the *why* is non-obvious — a hidden constraint, a quirk, a workaround. Never describe what the code already says.
+- **SOLID**: Keep each class cohesive around one reason to change. Split only when concerns evolve
+  independently, need materially different dependencies, or impair understanding—not merely for
+  multiple related operations.
+- **Prefer small methods when practical**: Screen length is a readability signal, not a limit. Keep
+  one coherent responsibility; extract only reusable, independently meaningful, substantially
+  complex, or separate concerns.
+- **Meaningful, concise names**: State intent; avoid obscure, ambiguous, or invented abbreviations.
+  Established domain acronyms and project terms are valid. Do not rename a public or broadly
+  consumed identifier solely to expand an accepted abbreviation.
+- **No obvious comments**: Explain only a non-obvious *why*, such as a hidden constraint, quirk, or
+  workaround; never restate the code.
 - **No over-engineering**: Don't introduce abstractions for hypothetical future needs. Three similar lines beat a premature helper.
-- **Avoid deep nesting**: Flatten deep branches with early returns, guards, indexing, projection, or
-  focused helpers. Avoid nested loops unless they are the clearest way to express a necessary
-  hierarchy after considering those alternatives, and verify they do not introduce accidental
-  repeated scans.
-- **No `static` for injectable concerns**: Don't use `static` helper classes for anything that touches configuration, logging, or external services. Inject an interface instead — keeps code testable and replaceable.
+- **Avoid deep nesting**: Flatten deep branches with guards, indexing, projection, or focused helpers.
+  Avoid nested loops unless they most clearly express a necessary hierarchy after considering those
+  alternatives; rule out accidental repeated scans.
+- **No `static` for injectable concerns**: Inject configuration, logging, and external-service
+  concerns behind interfaces to keep them testable and replaceable.
 
 ---
 
@@ -59,7 +59,6 @@
 | Update DTO (different payload) | `{Entity}ForUpdate` | `OrderForUpdate` |
 | Filter DTO | `{Entity}Filter` | `OrderFilter` |
 | Test class | `{Feature}UnitTest` or `{Feature}Tests` | `OrderManagerTests` |
-| Test method | `{Method}_{Scenario}_Should{Expected}` | `Create_MissingName_ShouldThrow` |
 
 ---
 
@@ -193,9 +192,6 @@ public interface IOrderManager
     Task<Order> GetAsync(int orderId, CancellationToken cancellationToken = default);
     Task<Order[]> FilterAsync(OrderFilter filter = null, CancellationToken cancellationToken = default);
     Task<PageResult<Order>> FilterAsync(OrderFilter filter, PageRequest paging, CancellationToken cancellationToken = default);
-    Task<Order> CreateAsync(OrderForCreate request, CancellationToken cancellationToken = default);
-    Task<Order> UpdateAsync(int orderId, OrderForUpdate request, CancellationToken cancellationToken = default);
-    Task DeleteAsync(int orderId, CancellationToken cancellationToken = default);
 }
 ```
 
@@ -208,35 +204,22 @@ not yet adopted.
 
 ### 5.3 Short, focused public methods
 
-Keep public methods linear and focused. A command commonly follows these relevant stages:
+A command commonly uses only the relevant stages below:
 
-1. Validate inputs (delegate to validator)
+1. Validate inputs with local guards or a validator, as appropriate
 2. Load or create the entity
 3. Apply changes (delegate to mapper)
 4. Persist and construct its result
 
-Include only the stages the use case needs. Retrieval and computation methods should follow their
-simplest coherent flow.
-
-```csharp
-public async Task<Order> CreateAsync(OrderForCreate request, CancellationToken cancellationToken = default)
-{
-    validator.ValidateCreate(request);
-
-    var entity = BuildEntity(request);
-    await SaveAsync(entity, cancellationToken);
-
-    return mapper.ToDto(entity);
-}
-```
-
-Decompose complex orchestration into focused private helpers, each handling one specific step. Private helpers must not be exposed through the interface.
+Retrieval and computation methods should follow their simplest coherent flow. Keep internal helpers
+off the public interface.
 
 ### 5.4 Delegation over inline logic
 
 | Responsibility | Delegate to |
 |---|---|
-| Input validation | `IXxxValidator` |
+| Cohesive, non-trivial, or reused domain validation | `IXxxValidator` |
+| Simple argument guards | Keep local when consistent with nearby code |
 | Reusable entity ↔ DTO property mapping | The project's established mapper pattern |
 | Complex sub-operations | Private methods with descriptive names |
 
@@ -245,7 +228,6 @@ Decompose complex orchestration into focused private helpers, each handling one 
   established mapping generator or mapper pattern when it expresses the mapping cleanly.
 - Contextual aggregation and response orchestration may remain in the manager when they combine
   results or require business context; extract reusable property mapping.
-- Validators validate inputs and business rules; they do not construct response DTOs.
 
 ### 5.5 Collection return contracts
 
@@ -254,20 +236,21 @@ collection, and follow established project conventions such as arrays for materi
 Return `List<T>` only when caller mutation is intentionally part of the API. Arrays are fixed-size,
 not immutable.
 
-```csharp
-Task<Order[]> FilterAsync(OrderFilter filter = null, CancellationToken cancellationToken = default);
-```
-
 ---
 
 ## 6. Validation
 
-- Each domain has its own `IXxxValidator` / `XxxValidator`.
+- Use the established `IXxxValidator` / `XxxValidator` pattern for cohesive, non-trivial, or reused
+  domain validation. Keep simple argument guards local when that matches nearby code; do not create
+  an empty or pass-through validator solely to satisfy the pattern.
 - Validators enforce input and business preconditions, including relevant loaded domain state or
   prepared validation data. They may expose focused predicates used by that validation.
 - Validators do not own persistence, use-case orchestration, or response construction.
 - Validators can share a base class for common checks (max length, required, format).
-- Throw typed domain exceptions (`BusinessException`, `NotFoundException`) — never embed user-facing message strings inline.
+- Throw the project's established typed domain exceptions (`BusinessException`,
+  `NotFoundException`). For new client-facing or localizable errors, use its stable error-code or
+  translation mechanism rather than inline text. Preserve existing exception codes and messages
+  during refactoring unless the change explicitly includes that contract.
 
 ```csharp
 public class OrderValidator : IOrderValidator
@@ -277,10 +260,10 @@ public class OrderValidator : IOrderValidator
         ArgumentNullException.ThrowIfNull(request);
 
         if (string.IsNullOrWhiteSpace(request.Reference))
-            throw new BusinessException("ORDER_REFERENCE_REQUIRED");
+            throw new BusinessException(OrderErrorCodes.ReferenceRequired);
 
         if (request.Reference.Length > 100)
-            throw new BusinessException("ORDER_REFERENCE_TOO_LONG");
+            throw new BusinessException(OrderErrorCodes.ReferenceTooLong);
     }
 }
 ```
@@ -358,8 +341,6 @@ Use shared `PageRequest` (in, from query) and `PageResult<T>` (out) types consis
 
 Examples:
 - `Create_MissingReference_ShouldThrowBusinessException`
-- `Filter_NoResults_ShouldReturnEmptyPage`
-- `Delete_ValidId_ShouldRemoveEntity`
 
 ### 9.4 Arrange-Act-Assert
 
@@ -378,22 +359,13 @@ public async Task Update_ChangedName_ShouldReturnUpdatedDto()
 }
 ```
 
-### 9.5 Builder pattern for test data
+### 9.5 Additional test practices
 
-Use a builder or factory when repeated complex setup would otherwise obscure the test. Reuse the
-project's established test-data pattern, keep helpers internal to the test project, and do not
-introduce a builder abstraction for one-off setup.
-
-### 9.6 Parameterized tests
-
-Use `[Theory]` and the project's established data source when one behavior must be checked across
-multiple inputs.
-
-### 9.7 Fixtures for shared context
-
-When tests share expensive setup such as a database context, use xUnit `ICollectionFixture<T>` rather
-than repeating that setup in every test.
-
-### 9.8 Test categorization
-
-Use `[Trait("Category", "...")]` to allow selective CI runs.
+- Use a builder or factory when repeated complex setup would otherwise obscure the test. Reuse the
+  project's established test-data pattern, keep helpers internal to the test project, and do not
+  introduce a builder abstraction for one-off setup.
+- Use `[Theory]` and the project's established data source when one behavior must be checked across
+  multiple inputs.
+- When tests share expensive setup such as a database context, use xUnit
+  `ICollectionFixture<T>` rather than repeating that setup in every test.
+- Use `[Trait("Category", "...")]` to allow selective CI runs.
