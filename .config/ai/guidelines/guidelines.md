@@ -25,8 +25,8 @@ This file is the single tool-neutral entry point for deciding which shared guide
 | **Development / co-work** | Implementing, modifying, refactoring, fixing, or planning/designing a concrete change for implementation. |
 | **Review** | Reviewing, checking, inspecting, approving, preparing findings, or read-only investigation, diagnosis, explanation, comparison, or architecture analysis of existing work. |
 
-- A non-code audit that neither inspects nor changes a stack loads only always-applicable and project
-  instructions.
+- A repository-scoped non-code audit that neither inspects nor changes a stack loads only
+  always-applicable, provisional general, and project instructions.
 - Before moving from read-only investigation to implementation, switch to development mode and state
   the updated source list.
 - For a task that changes code and then explicitly reviews the result, use development mode while
@@ -49,27 +49,37 @@ Select stacks through this deterministic sequence:
 1. Enumerate the actual files in scope: exact changed files from the authoritative review target, or
    development targets and directly affected dependencies. Do not select from the ticket title,
    user summary, or intended primary area alone.
-2. Use file paths, extensions, project metadata, and relevant contents to load the union of all
+2. For every repository-scoped development or review task, load
+   `~/.config/ai/guidelines/provisional/general.md`.
+3. Use file paths, extensions, project metadata, and relevant contents to load the union of all
    represented stacks:
    - Angular / TypeScript / frontend development:
-     `~/.config/ai/guidelines/stacks/angular-development.md`
+     `~/.config/ai/guidelines/stacks/angular-development.md`, then
+     `~/.config/ai/guidelines/provisional/angular.md`
    - Angular / TypeScript / frontend review:
      `~/.config/ai/guidelines/stacks/angular-review/_core.md`, then every topic file whose trigger
-     matches the enumerated files according to the core table
-   - .NET / C# / backend: `~/.config/ai/guidelines/stacks/dotnet.md`
-   - MSSQL / stored procedures / database: `~/.config/ai/guidelines/stacks/sql.md`
+     matches the enumerated files according to the core table, then
+     `~/.config/ai/guidelines/provisional/angular.md`
+   - .NET / C# / backend: `~/.config/ai/guidelines/stacks/dotnet.md`, then
+     `~/.config/ai/guidelines/provisional/dotnet.md`
+   - MSSQL / stored procedures / database: `~/.config/ai/guidelines/stacks/sql.md`, then
+     `~/.config/ai/guidelines/provisional/sql.md`
    - Deployment, provisioning, remote-server work, or Docker-hosted database operations:
      `~/.config/ai/guidelines/stacks/ops.md`
-3. For Angular, load exactly the development set or the review set selected by task mode, never both.
-4. Re-evaluate whenever development scope expands. When an additional stack or Angular topic may
+4. For Angular, load exactly the development set or the review set selected by task mode, never both.
+5. Re-evaluate whenever development scope expands. When an additional stack or Angular topic may
    match, include it rather than risk silently missing a rule.
 
-Do not read unselected stack files. Topic selection must follow the selected set's trigger table, not
-judgment about what the change is primarily "about".
+Do not read unselected stack or provisional files. Topic selection must follow the selected set's
+trigger table, not judgment about what the change is primarily "about".
 
 ## Priority
 
 - Priority 0: the files in `always/` and the stack guideline files selected by this router.
 - Priority 1: project-specific instruction files such as repository `AGENTS.md`, repository `CLAUDE.md`, or local tool instructions.
+- Priority 2: the provisional guideline files selected by this router.
 
 Priority 1 files may add project-specific rules, safety constraints, or workflow requirements. They must not contradict Priority 0.
+Priority 2 rules are mandatory within their scope but never override sealed Priority 0 or Priority 1
+rules. Admit them only when no conflict exists; if a later conflict appears, follow the sealed rule
+and bring the provisional rule back to Oliver for a decision.

@@ -16,6 +16,7 @@ CLAUDE_TEMPLATE="$AI_SOURCE/bootstrap/claude-CLAUDE.md"
 REQUIRED_SOURCES=(
     identities.md
     guidelines/guidelines.md
+    guidelines/always/provisional-rules.md
     guidelines/always/review-handoff.md
     guidelines/always/test-execution.md
     guidelines/handoff/common.md
@@ -32,6 +33,10 @@ REQUIRED_SOURCES=(
     guidelines/stacks/dotnet.md
     guidelines/stacks/ops.md
     guidelines/stacks/sql.md
+    guidelines/provisional/general.md
+    guidelines/provisional/angular.md
+    guidelines/provisional/dotnet.md
+    guidelines/provisional/sql.md
     bootstrap/codex-AGENTS.md
     bootstrap/claude-CLAUDE.md
 )
