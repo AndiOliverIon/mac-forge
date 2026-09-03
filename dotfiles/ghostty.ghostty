@@ -1,5 +1,5 @@
 # Oliver's Ghostty configuration (shared across macOS and Linux stations)
-# Symlinked into ~/.config/ghostty/config.ghostty on each station.
+# Symlinked into each station's native Ghostty config location.
 # Ghostty reloads most settings after saving this file.
 # Fully restart Ghostty after changing background opacity.
 

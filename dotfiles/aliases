@@ -33,6 +33,12 @@ alias info="~/mac-forge/scripts/info.sh"
 alias inf="clear && info"
 alias help="~/mac-forge/scripts/help.sh"
 alias codex-local-register="bash ~/mac-forge/scripts/codex-local-register.sh"
+alias ai-config="~/mac-forge/scripts/ai-config.sh"
+alias ai-verify="~/mac-forge/scripts/ai-config.sh verify"
+alias ai-install="~/mac-forge/scripts/ai-config.sh install"
+alias ai-context="~/.config/ai/bin/ai-context.sh"
+alias verify-workstation="~/mac-forge/linux/scripts/verify-workstation.sh"
+alias vw=verify-workstation
 alias port-release="~/mac-forge/scripts/port-release.sh"
 alias prl=port-release
 alias web="~/mac-forge/scripts/web.sh"
@@ -98,6 +104,9 @@ alias perf-to-cerber="~/mac-forge/scripts/perform-cerber-sync.sh up perf"
 alias perf-from-cerber="~/mac-forge/scripts/perform-cerber-sync.sh down perf"
 alias perf-to-cerber-preview="~/mac-forge/scripts/perform-cerber-sync.sh preview-up perf"
 alias perf-from-cerber-preview="~/mac-forge/scripts/perform-cerber-sync.sh preview-down perf"
+alias cerber-tunnel-up="~/mac-forge/scripts/cerber-hades-tunnel.sh up"
+alias cerber-tunnel-status="~/mac-forge/scripts/cerber-hades-tunnel.sh status"
+alias cerber-tunnel-down="~/mac-forge/scripts/cerber-hades-tunnel.sh down"
 
 # ------------------------------------------------------------------------------
 # Git Shortcuts
@@ -108,6 +117,10 @@ alias gp="git pull"
 alias gfo="git fetch origin"
 alias gpu="git push"
 alias gpo="~/mac-forge/scripts/git-publish-origin.sh"
+alias peer-fetch="~/mac-forge/scripts/git-peer-fetch.sh"
+alias mc2h="~/mac-forge/scripts/git-peer-fetch.sh masterchief work"
+alias r2h="~/mac-forge/scripts/git-peer-fetch.sh masterchief raynor"
+alias z2h="~/mac-forge/scripts/git-peer-fetch.sh masterchief zeratul"
 alias gb="git branch"
 alias switch="~/mac-forge/scripts/git-switch.sh"
 alias sw=switch
@@ -227,6 +240,8 @@ alias screenshotclean="desk && rm -f *.png"
 # ------------------------------------------------------------------------------
 alias rmc="ssh -t oliver@masterchief"
 alias rmcr="ssh -t oliver@masterchief-ts"
+alias raynor="~/mac-forge/scripts/masterchief-agent-session.sh raynor"
+alias zeratul="~/mac-forge/scripts/masterchief-agent-session.sh zeratul"
 alias disp="~/mac-forge/scripts/disp.sh"
 alias showeth='networksetup -listallhardwareports | awk "/Hardware Port|Device/"; echo; for i in $(networksetup -listallhardwareports | awk "/Device/ {print \$2}"); do ip=$(ipconfig getifaddr $i 2>/dev/null); echo "$i : ${ip:-no-ip}"; done'
 alias mcshutdown='ssh -t oliver@masterchief "sudo systemctl poweroff"'
@@ -236,6 +251,8 @@ alias ms=mcsleep
 alias mcboot='~/mac-forge/scripts/mcboot.sh'
 alias mcbt=mcboot
 alias mb=mcboot
+
+alias wake='~/mac-forge/scripts/wake.sh'
 
 # ------------------------------------------------------------------------------
 # Apps & Utilities

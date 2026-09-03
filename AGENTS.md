@@ -2,47 +2,49 @@
 
 ## Purpose
 
-`mac-forge` is a personal macOS operations toolbox for Andi Ion Oliver. It manages local SQL Server Docker workflows, station automation, aliases, and machine-maintenance scripts.
+`mac-forge` is a personal operations toolbox for Andi Ion Oliver. It manages shared VPS1 database
+workflows, a Hades-local database fallback, station automation, aliases, and machine-maintenance
+scripts.
 
 ## Always-read rules
 
-- Lead with the direct answer or outcome. Keep responses short, precise, and free of filler, recap, praise, or conversational padding. Add detail only when it materially improves correctness, clarity, or safety.
 - Read existing scripts and config before proposing or making structural changes.
 - Treat this repo as operational tooling; preserve existing workflows unless the user asks to redesign them.
 - Prefer targeted changes over broad refactors.
 - Keep shell scripts simple, explicit, and compatible with the existing Bash-oriented style.
-- Always check `configs/stations.json` when investigating station or attached-device metadata and
-  `configs/work-state.json` when investigating Docker paths or other active
-  machine state. Sensitive station network facts are stored only in the ignored
-  `config-local/stations.json` overlay.
+
+## Configuration sources
+
+- `configs/work-state.json` is canonical local operational state, including the Hades-local database
+  fallback. Inspect it for relevant local/path work; never overwrite it casually or hardcode its
+  values in scripts.
+- `configs/stations.json` is the canonical non-secret station and attached-device inventory.
+- `config-local/stations.json` is the ignored overlay for sensitive station identifiers and network
+  addressing. Never expose or commit its values.
+- `config-local/local-store.json` is the ignored local connection store, including VPS1 SQL secrets.
+  Never expose or commit its values.
 
 ## Safety rules
 
 - Never print or expose secret values from the forge secrets file.
-- Never commit values from `config-local/stations.json`; it holds sensitive
-  station identifiers and network addressing referenced by the public station
-  inventory.
-- Do not overwrite `configs/work-state.json` casually; it represents active machine state.
-- If operational state already exists in `configs/work-state.json`, prefer
-  reading it from there instead of hardcoding duplicate values in scripts. If
-  station metadata exists in `configs/stations.json`, treat that inventory as
-  canonical.
-- If a task would change active storage paths, station behavior, organizer behavior, or destructive cleanup flows, call that out clearly.
-- Do not introduce silent changes to active paths, station behavior, or destructive cleanup behavior; document them when behavior meaning changes.
-- Be cautious with scripts that delete files, clear SQL data, or modify mounted storage.
+- Call out and document behavior changes affecting active storage paths, stations, the organizer, or
+  destructive cleanup flows.
+- For scripts that delete files, clear SQL data, or modify mounted storage, preserve or improve
+  confirmations and safety checks.
 
 ## Git rules
 
-- Git commands are allowed when they do not affect the online repository.
-- Safe-by-default examples include `git status`, `git diff`, `git log`, `git show`, and `git branch`.
-- Do not run remote-affecting commands unless the user explicitly instructs it.
-- Never assume permission for commits, rebases, resets, stashes, or other history-changing operations.
+- Read-only local Git inspection is allowed.
+- Work directly on `main`; do not create feature branches. Commit and push completed scoped changes
+  by default unless Oliver requests a separate branch or asks not to push.
+- Rebases, resets, stashes, and destructive history changes require Oliver's explicit permission.
 
 ## Task-based reading map
 
 Read the additional file that matches the work you are doing. If a task spans multiple areas, read all relevant files before acting.
 
-- `agents/architecture.md` — read when touching Forge runtime, `work-state.json`, SQL/Docker workflow, storage switching, snapshots, or database helper scripts.
+- `agents/architecture.md` — read when touching Forge runtime, `work-state.json`, Docker or database
+  workflows, storage switching, snapshots, tunnels, or database helper scripts.
 - `agents/stations.md` — read when touching station metadata, SSH aliases, sleep/shutdown/boot flows, Wake-on-LAN, or network-topology-sensitive behavior.
 - `agents/interfaces.md` — read when changing `dotfiles/aliases`, Linux alias parity, or any high-frequency user-facing command surface.
 - `agents/preferences.md` — read when the task involves machine setup, tool installation, operator preferences, or Hades-specific environment choices.
@@ -51,8 +53,8 @@ Read the additional file that matches the work you are doing. If a task spans mu
 
 - Match the existing repo style and keep comments sparse.
 - Prefer updating documentation when behavior or workflow meaning changes.
-- When changing a user-facing alias in `dotfiles/aliases`, update the corresponding Linux alias file too when that command surface exists there.
-- Treat aliases and high-frequency scripts as a public interface; preserve backward-compatible names where practical when refining behavior.
-- Keep station power commands explicitly separated by intent (`sleep`, `shutdown`, `boot`) and never use a sleep alias to perform a shutdown.
-- If changing a script with destructive behavior, preserve or improve confirmations and safety checks.
+- When changing Angular guidelines under `.config/ai`, keep `angular-development.md` synchronized
+  with the equivalent rule intent in the detailed Angular review set. Update both representations in
+  the same change unless a rule is explicitly mode-specific; a mode-specific rule must explain why.
+  Do not accept silent drift between development and review guidance.
 - When a task depends on machine-specific paths, document assumptions instead of hardcoding new ones without reason.

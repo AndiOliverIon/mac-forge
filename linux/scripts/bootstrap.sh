@@ -87,6 +87,7 @@ sudo apt install -y \
     tree \
     htop \
     btop \
+    bubblewrap \
     cifs-utils \
     fzf \
     jq \
@@ -103,7 +104,8 @@ sudo apt install -y \
     snapd \
     python3-gi \
     ydotool \
-    software-properties-common
+    software-properties-common \
+    tmux
 
 sudo usermod -aG input "${USER}"
 systemctl --user enable ydotool.service
@@ -346,6 +348,7 @@ fi
 echo "  Ghostty:   $(ghostty --version | head -n 1)"
 echo "  fzf:       $(fzf --version | awk '{ print $1 }')"
 echo "  Zsh:       $(zsh --version)"
+echo "  tmux:      $(tmux -V)"
 echo "  Docker:    $(docker --version)"
 echo "  Compose:   $(docker compose version)"
 echo "  sqlcmd:    $(sqlcmd --version 2>/dev/null | awk '/Version:/ { print $2; exit }')"

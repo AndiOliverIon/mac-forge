@@ -19,6 +19,8 @@ fi
 [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
 [[ -f "$HOME/mac-forge/linux/aliases.zsh" ]] && source "$HOME/mac-forge/linux/aliases.zsh"
 [[ -f "$HOME/mac-forge/dotfiles/aliases-vps1" ]] && source "$HOME/mac-forge/dotfiles/aliases-vps1"
+[[ -f "$HOME/mac-forge/linux/dotfiles/agent-universe.zsh" ]] \
+  && source "$HOME/mac-forge/linux/dotfiles/agent-universe.zsh"
 
 if (( $+commands[ng] )); then
   source <(ng completion script)
@@ -38,11 +40,46 @@ fi
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$PATH:$HOME/.local/share/JetBrains/Toolbox/scripts"
 
-# Make sure the ssh keys are in
-# Start ssh-agent if not running
-if ! pgrep -u "$USER" ssh-agent > /dev/null; then
-  eval "$(ssh-agent -s)" > /dev/null
+_forge_ssh_agent_usable() {
+  local socket="$1"
+  local agent_status
+
+  [[ -S "$socket" ]] || return 1
+  SSH_AUTH_SOCK="$socket" ssh-add -l >/dev/null 2>&1
+  agent_status=$?
+  [[ "$agent_status" -ne 2 ]]
+}
+
+if ! _forge_ssh_agent_usable "${SSH_AUTH_SOCK:-}"; then
+  runtime_dir="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+  for candidate in \
+    "$runtime_dir/gcr/ssh" \
+    "$runtime_dir/openssh_agent" \
+    "$runtime_dir/gnupg/S.gpg-agent.ssh"; do
+    if _forge_ssh_agent_usable "$candidate"; then
+      export SSH_AUTH_SOCK="$candidate"
+      break
+    fi
+  done
+
+  if ! _forge_ssh_agent_usable "${SSH_AUTH_SOCK:-}"; then
+    fallback_socket="$runtime_dir/forge-ssh-agent.sock"
+    [[ -S "$fallback_socket" ]] && rm -f -- "$fallback_socket"
+    eval "$(ssh-agent -a "$fallback_socket" -s)" >/dev/null
+  fi
+
+  unset candidate fallback_socket runtime_dir
 fi
 
-# Add keys if not already added
-ssh-add -l >/dev/null 2>&1 || ssh-add ~/.ssh/ardis-ed25519 ~/.ssh/id_ed25519_personal_gmail
+if ! ssh-add -l >/dev/null 2>&1; then
+  agent_keys=()
+  [[ -f "$HOME/.ssh/ardis-ed25519" ]] && agent_keys+=("$HOME/.ssh/ardis-ed25519")
+  [[ -f "$HOME/.ssh/id_ed25519_personal_gmail" ]] \
+    && agent_keys+=("$HOME/.ssh/id_ed25519_personal_gmail")
+  (( ${#agent_keys[@]} == 0 )) \
+    || ssh-add "${agent_keys[@]}" >/dev/null 2>&1 \
+    || print -u2 "Warning: SSH keys could not be loaded into the active agent."
+  unset agent_keys
+fi
+
+unfunction _forge_ssh_agent_usable

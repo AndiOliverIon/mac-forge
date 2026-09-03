@@ -1,96 +1,82 @@
-# Architecture scope
+# Architecture Scope
 
-Read this file when working on Forge runtime, `configs/work-state.json`, SQL/Docker behavior, storage switching, snapshots, or database workflow scripts.
+Read this file when working on Forge runtime, `configs/work-state.json`, SQL/Docker behavior, storage
+switching, snapshots, or database workflow scripts.
 
-## High-level layout
+## High-Level Layout
 
 - `scripts/`: executable workflows and utilities.
-- `configs/work-state.json`: active machine state for Docker SQL paths, organizer rules, and destination lists.
+- `scripts/vps1/`: default shared VPS1 database, tunnel, and deployment helpers.
+- `configs/work-state.json`: mutable local operational state, including the Hades-local database
+  fallback, organizer rules, and destination lists.
 - `configs/stations.json`: canonical non-secret station, VM, server, and attached-device inventory.
-- `config-local/stations.json`: ignored local overlay for sensitive station identifiers and network addressing.
-- `dotfiles/aliases`: shell command surface that exposes most repo functionality.
+- `config-local/stations.json`: ignored overlay for sensitive station identifiers and networking.
+- `config-local/local-store.json`: ignored local connection store, including the VPS1 SQL profile.
+- `dotfiles/aliases`: primary operator command surface; `dotfiles/aliases-vps1` exposes VPS1 helpers.
 - `profiles/`: optional shell/profile presets.
-- `config-local/`: local-only machine-specific state if present.
 
-## Cross-platform shared configuration
+## Cross-Platform Shared Configuration
 
-Some configuration is intentionally shared across station architectures and lives
-in a neutral location so a single file is the source of truth. Each station
-symlinks its local config path to the repo file rather than keeping a divergent copy.
+Configuration shared across station architectures lives in a neutral location, with station-local
+paths symlinked to the tracked source instead of divergent copies.
 
-- `dotfiles/ghostty.ghostty`: shared Ghostty terminal config, currently used by
-  **Linux only**. Symlinked to `~/.config/ghostty/config.ghostty` on each Linux
-  station (wired in `linux/scripts/bootstrap.sh` step 15). macOS no longer uses
-  Ghostty — the preferred terminal there is iTerm2. Windows is not covered yet.
-  The shared file uses the login shell by default (no hardcoded `command` path)
-  so it stays OS-agnostic; `macos-titlebar-style` is kept and harmlessly ignored
-  on Linux.
+- `dotfiles/ghostty.ghostty` is shared by macOS and Linux. Linux bootstrap links it to
+  `~/.config/ghostty/config.ghostty`; `scripts/configure-ghostty.sh` links it to Ghostty's macOS path
+  and also links the shared zsh and Powerlevel10k profiles. Its login-shell default is OS-agnostic;
+  `macos-titlebar-style` is harmlessly ignored on Linux. Windows is not covered yet.
+- `.config/ai` is the shared Artanis, Argus, and Aegis instruction source. Unix stations expose it at
+  `~/.config/ai`; tool-owned `~/.codex` and `~/.claude` directories remain physical. Use
+  `scripts/ai-config.sh` to verify, install, or fast-forward-sync the shared configuration.
 
-## Forge runtime
+## Runtime and State Authorities
 
-`scripts/forge.sh` is the central shared runtime. Most important scripts source it first.
+- `scripts/vps1/vps1.sh` supplies the default database connection, tunnel, SQL, SSH, snapshot, and
+  safety helpers used by `scripts/vps1/vps1-db-*`.
+- `scripts/forge.sh` supplies shared machine/repository paths and the older local workflow's Docker
+  defaults and derived paths.
+- `configs/work-state.json` is operational state, not documentation. Its Docker paths and storage
+  presets govern only the Hades-local database fallback; it also governs clean targets, organizer
+  categories/folders, station destinations, and other local workflow values.
+- Secret connection values come from ignored local configuration. Never print, copy into tracked
+  files, or hardcode them.
 
-It defines:
+## Docker Database Model
 
-- machine and repo paths;
-- SQL container defaults such as container name, image, port, and mount roots;
-- iCloud secret-file location;
-- derived active paths loaded from `configs/work-state.json`.
+VPS1 is the default Docker-hosted development database for Hades, Cerber, and MasterChief. Clients
+use their established private connection or tunnel; they do not assume a local SQL container merely
+because a Docker daemon is present.
 
-## Active state
+The Mac Forge VPS1 workflow uses local `sqlcmd` through the managed tunnel and SSH/rsync for remote
+files. Prefer the established `scripts/vps1/vps1-db-*` helpers and `v1*` aliases over ad-hoc remote
+commands. Verify the selected host, database, and operation before mutations.
 
-`configs/work-state.json` is the main mutable state file.
+Hades retains a rarely used local Docker SQL fallback. Its details live in
+`~/.config/ai/guidelines/stacks/docker-db-local-fallback.md` and must not be loaded unless `ops.md`
+selects that fallback. Existing local database scripts and `work-state.json` Docker fields are
+compatibility mechanisms, not the normal database route.
 
-It currently controls:
+General Docker work—image builds, application containers, Compose, and cleanup unrelated to the
+development database—may still run locally and is not redirected to VPS1 by this rule.
 
-- active SQL Docker data path;
-- active SQL snapshot path;
-- known storage location presets;
-- clean target presets;
-- organizer folder categories;
-- folders to organize;
-- station destination presets.
+## Important Scripts
 
-This file is operational state, not just documentation.
-
-## Main workflow model
-
-This repo is centered around a cyclical DB workflow:
-
-1. Select active storage with `scripts/work.sh`.
-2. Start or ensure SQL/Docker environment.
-3. Restore a `.bak` into the `forge-sql` SQL Server container.
-4. Work locally against that DB.
-5. Snapshot if needed.
-6. Clear the environment when done.
-
-Default SQL container identity:
-
-- container: `forge-sql`
-- user: `sa`
-- port: `2022`
-- image: `mcr.microsoft.com/mssql/server:2022-latest`
-
-## Important scripts
-
-- `scripts/forge.sh`: shared environment and state loader.
-- `scripts/work.sh`: switches the active Docker and snapshot paths in `configs/work-state.json`.
-- `scripts/db-restore.sh`: ensures SQL container availability and restores a selected `.bak`.
-- `scripts/db-snapshot.sh`: creates DB snapshots/backups.
-- `scripts/db-clear.sh`: soft or hard cleanup of databases, container, and data.
-- `scripts/db-admin.sh`: launches DB admin tooling.
-- `scripts/docker-start.sh`: starts stopped Docker containers.
-- `scripts/organizer.sh`: organizes files from configured folders by extension rules.
+- `scripts/vps1/vps1.sh`: shared VPS1 connection and operation helpers.
+- `scripts/vps1/vps1-db-*`: list, migrate, restore, snapshot, upload/download, optimize, index,
+  state, and destructive database workflows on VPS1.
+- `scripts/vps1/vps1-sql-tunnel.sh`: private local-to-VPS1 SQL tunnel.
+- `scripts/forge.sh`, `scripts/work.sh`, and `scripts/db-*`: local operational and fallback helpers.
+- `scripts/organizer.sh`: organizes configured folders by extension rules.
 - `scripts/help.sh`: interactive launcher over aliases and scripts.
-- `scripts/info.sh`: machine health snapshot.
+- `scripts/info.sh` and `scripts/vps1-status`: local and VPS1 health views.
+- `scripts/ai-config.sh`: verifies, installs, and synchronizes shared AI instructions.
 - `scripts/clean.sh`: interactive cleaner for configured target directories.
-- `scripts/perform-prep.sh`, `scripts/perform-test.sh`, `scripts/ardis-migrate.sh`, `scripts/gen-open-api.sh`: work-specific Ardis/Perform helpers.
+- `scripts/perform-prep.sh`, `scripts/perform-test.sh`, `scripts/ardis-migrate.sh`, and
+  `scripts/gen-open-api.sh`: Ardis/Perform helpers.
 
-## Operational context
+## Operational Priorities
 
-- This repo is a macOS developer operations toolbox.
-- The primary technical concern is a Dockerized SQL Server workflow with switchable storage roots.
-- `forge.sh` and `work-state.json` are the core context files.
-- Ardis/Perform support scripts are important but secondary to the shared Forge runtime.
-- Safety matters more than cleverness because changes can affect the machine, databases, and mounted storage immediately.
-- Several workflows assume macOS and tools like `docker`, `fzf`, `python3`, `sqlcmd`, `open`, and Homebrew-managed binaries.
+- Treat VPS1 as the normal database authority and local SQL as an explicit contingency.
+- Safety matters more than cleverness because operations can affect databases, remote services, and
+  mounted storage immediately.
+- Preserve confirmations and verify outcomes around destructive or privileged operations.
+- Inspect the relevant scripts and live configuration rather than relying only on this overview.

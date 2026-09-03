@@ -1,0 +1,98 @@
+# Project Instructions
+
+Rules originating from accepted reviewer feedback apply during both development and review unless
+the rule explicitly limits its scope.
+
+## Pre-Push Review
+
+Before calling a change push-ready, explicitly review its changed files against every applicable
+shared and project rule.
+
+- Apply backend checks to server-side, shared-model, controller, manager, database, migration, and
+  other non-Angular changes.
+- Apply Angular checks to changes under `ardis.perform.client`; apply both sets to mixed changes.
+- For Angular, explicitly scan new or changed private helpers, wrappers, computed properties,
+  services, and small abstractions. Inline single-use minor logic unless extraction improves reuse,
+  isolates substantial complexity, or clearly names an important concept.
+- Do not approve or recommend pushing with an applicable violation unresolved. Fix it or disclose it
+  and obtain the user's conscious acceptance.
+
+## Repository Safety
+
+- Do not run builds unless Oliver explicitly asks.
+- Do not run any git action that changes the remote repository unless the user explicitly asks for it.
+- Local-only git commands are allowed.
+- Do not manually edit `ardis.perform.client/src/app/shared/api/PerformApiClient.ts`.
+- Do not modify files under `ardis.perform.client/docs` unless Oliver explicitly asks.
+- `Asms2.Web/openapi-v*.json` is framework-generated: never edit it directly; only Oliver may
+  regenerate it so generation drift remains visible. Unless Oliver explicitly requests those files
+  be reviewed, do not flag their changes as rule violations.
+- Ignore the current local-only station override entries unless the user explicitly asks to work on them or they are already part of the commit being prepared.
+- Preserve the `LOCAL_OVERRIDES` blocks in `Ardis.Perform.UnitTest/DatabaseHelper.cs`, `Ardis.Perform.UnitTest/Session.cs`, `Asms2.Web/Asms2.Web.csproj`, and `Asms2.Web/Startup.cs`, including the nearby commented-out original lines that those overrides replace.
+
+## Backend Project Rules
+
+- For mapper classes, prefer Mapperly over handwritten property-copy code when the mapping can be expressed cleanly with the existing Mapperly patterns in this codebase.
+- For C# methods that implement an interface member, keep XML documentation comments such as `<summary>`, `<param>`, and `<returns>` on the interface contract only. Do not duplicate equivalent XML docs on the concrete implementation; add implementation XML docs only when documenting behavior that is specific to that implementation and not already part of the interface contract.
+- For straightforward retrieval or filtering, prefer `Get...` over `Load...` or
+  `Resolve...` when either would fit. Keep `Resolve...` for methods that genuinely decide or derive
+  among alternatives.
+- When an action flow loads candidates and chooses one actionable entity, keep one
+  selector as the source of truth. If already-loaded data is sufficient, select first and treat
+  `null` as invalid instead of duplicating predicates in a pre-validator.
+- Before simplifying a "load many then choose one" flow into a direct single-load flow, confirm from the domain that the lookup key is actually unique.
+- When refactoring from validator-driven flow to selection-driven flow, preserve the existing user-facing error codes and messages unless there is an explicit reason to change them.
+- Do not introduce new architectural concepts, helper categories, or naming families during a refactor unless the user explicitly asks for that redesign or the codebase already uses that pattern.
+- For single-entity action or completion endpoints, put the acted-on resource
+  identifier in the route, keep the request body to the minimal action payload, and align completion
+  overview and execution endpoints around that resource shape.
+- When the UI intentionally supports multi-selection in one dialog, a dedicated batch overview endpoint is allowed in addition to the single-resource route shape. Keep that endpoint only for loading multiple entities at once, not for command execution.
+- For completion execution flows, prefer the smallest sufficient payload. When one identifier already uniquely identifies the actionable target within the chosen resource context, do not also send additional identifiers that only restate the same target.
+- Do not introduce wrapper request or response DTOs around a single array unless the use case already needs additional metadata. Return the array directly.
+- For dialog-specific overview endpoints, return only the fields the dialog actually renders or needs for decision-making. Do not expose a broader hierarchy just because it matches the domain graph.
+- When building hierarchical dialog data such as product -> SSI -> planning, group child collections by parent id using a lookup- or dictionary-style structure before projecting the final response.
+- When filtering identifier collections for API selection flows, prefer `!= 0` over `> 0` unless negative ids are a meaningful invalid-case distinction.
+
+## `Ardis.WS.Shared`
+
+- `Ardis.WS.Shared` does not enable nullable reference types; do not introduce `#nullable` or
+  nullable-reference syntax locally.
+- Keep every non-private class in its own file. A private nested class may remain with its parent when
+  co-location clearly improves readability; ask Oliver before any exception that would co-locate
+  non-private classes.
+
+## Formatting
+
+- Format touched files with the available repository formatter when it does not invoke builds or
+  tests; otherwise match surrounding formatting.
+- For touched Angular `ts`, `html`, and `scss`, run `npx prettier --write <files>` from
+  `ardis.perform.client` and verify the files before finishing. Formatting is allowed independently
+  of build or test authorization.
+
+## Angular Coding Rules
+
+- For routed project detail subpages under `ardis.perform.client/src/app/views/projects/detail`, pass the route project id through the shared project detail child-route resolver as `resolve: { projectId: ... }` and receive it with `public readonly projectId: InputSignal<number> = input.required<number>();`. Do not read `ActivatedRoute.parent.paramMap` in each subpage or introduce per-subpage resolver variants for the same project id.
+- Respect the surrounding code in the affected file and nearby feature area. When multiple implementations satisfy the rules, prefer the one that best matches the local patterns, naming, flow shape, and abstraction level unless another rule explicitly requires otherwise.
+- In `switch` statements inside `void` methods, prefer `break` over `return` when a case only finishes that switch branch and there is no need to exit the method semantically.
+- Do not introduce dedicated normalized or pass-through computed properties for simple input validation or casting when the value can be used directly and the validity check can live inline at the actual usage site.
+- Do not add `take(1)` to HTTP, query, dialog-result, or other streams that already
+  have the intended single-emission or completion lifecycle unless a concrete safety need remains.
+- Do not use `filter()` to separate dialog cancel vs submit paths on dialog result streams. Subscribe to the dialog result directly and handle close/cancel vs valid result explicitly in the subscription.
+
+## Angular UI And Dialog Rules
+
+- Do not create local UI mirror models for backend completion contracts when the only transformation is shape-copying. Shape the backend response correctly instead.
+- For future Angular dialog/popup additions or refactors, keep data and result models beside the owning dialog component, preferably in a sibling `.types.ts` file, when they are only used by that dialog and its opener. Put them under `shared/models` only when they are reused across feature areas, represent a domain/API contract, or belong to a shared reusable component.
+
+## Review Output Rules
+
+- When reporting a code-review violation, name its source file and quote the violated rule.
+- If this file conflicts with higher-priority shared guidance, follow the higher-priority source and
+  report the conflict when finishing a review or code change.
+
+## Migrations
+
+- Any PR adding or changing translations must add one timestamped `.sql` under
+  `Ardis.Migrations.Console/Migrations/Always/Before/Translations`, containing all translations for
+  that PR and marked as an embedded resource.
+- Preserve `2020-01-01.0800.Translations.sql` as the legacy seed.

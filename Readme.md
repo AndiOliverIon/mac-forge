@@ -91,6 +91,7 @@ brew install bash displayplacer fzf gh git jq mas mono-libgdiplus ncdu nvm pyenv
 - dotnet-sdk9
 - dotnet-sdk9-0-300
 - font-jetbrains-mono
+- ghostty
 - google-chrome
 - google-drive
 - iterm2
@@ -105,7 +106,7 @@ brew install bash displayplacer fzf gh git jq mas mono-libgdiplus ncdu nvm pyenv
 Install all casks at once:
 
 ```bash
-brew install --cask arc bitwarden codex docker-desktop dotnet-sdk dotnet-sdk8 dotnet-sdk8-0-400 dotnet-sdk9 dotnet-sdk9-0-300 font-jetbrains-mono google-chrome google-drive iterm2 jetbrains-toolbox microsoft-teams raycast rectangle rustdesk visual-studio-code zed
+brew install --cask arc bitwarden codex docker-desktop dotnet-sdk dotnet-sdk8 dotnet-sdk8-0-400 dotnet-sdk9 dotnet-sdk9-0-300 font-jetbrains-mono ghostty google-chrome google-drive iterm2 jetbrains-toolbox microsoft-teams raycast rectangle rustdesk visual-studio-code zed
 ```
 
 ### 0.3 Other Software (not from Homebrew)
@@ -122,6 +123,30 @@ Install these separately from vendor sources:
   Do not install the Windows suite on macOS and never commit the license file.
 - Parallels Desktop: needed when using Windows-side tools and shortcut cleanup workflow.
 - Oh My Zsh: install from official GitHub project for shell profile baseline.
+
+### 0.4 Ghostty shell initialization
+
+iTerm2 uses the normal interactive zsh, with `~/.zshrc` symlinked to
+`dotfiles/zshrc`. That file loads Powerlevel10k, the Forge macOS aliases,
+VPS aliases, local environment variables, and the shared command-line tools.
+
+Configure Ghostty to use the same shell initialization and the tracked Ghostty
+settings:
+
+```bash
+./scripts/configure-ghostty.sh
+```
+
+The configurator creates these links:
+
+- `~/.zshrc` -> `dotfiles/zshrc`
+- `~/.p10k.zsh` -> `profiles/p10k.zsh`
+- `~/Library/Application Support/com.mitchellh.ghostty/config.ghostty` ->
+  `dotfiles/ghostty.ghostty`
+
+Ghostty uses the normal interactive shell; the shared terminal config does not
+hardcode a shell command. Existing files at those destinations are moved to a
+timestamped backup before the links are created.
 
 ---
 

@@ -47,8 +47,104 @@ Ghostty split shortcuts:
 Focused panels close immediately without a confirmation prompt.
 
 The Ghostty config is shared with macOS from the neutral repo file
-`dotfiles/ghostty.ghostty`; bootstrap symlinks it to
+`dotfiles/ghostty.ghostty`; Linux bootstrap symlinks it to
 `~/.config/ghostty/config.ghostty`. Edit the shared file, not a local copy.
+
+## MasterChief agent workspaces
+
+Raynor and Zeratul each use a separate tmux server and persistent session. From
+Hades or MasterChief, enter the corresponding universe with:
+
+```bash
+raynor
+zeratul
+```
+
+Each command creates its session when absent and otherwise reattaches to it.
+Raynor starts at `/home/oliver/raynor`; Zeratul starts at
+`/home/oliver/zeratul`. Detach with `Ctrl+B`, then `d`. The shell and any agent
+running inside it remain active after detaching or losing the SSH connection.
+
+Plain `raynor` and `zeratul` remain the smart defaults. Optional lifecycle
+actions provide more deliberate control when needed:
+
+```bash
+raynor start        # Create it in the background when absent.
+raynor attach       # Attach only if it already exists.
+raynor shell        # Open an independent terminal in Raynor's universe.
+raynor status       # Show state, command, directory, and start time.
+raynor logs         # Show the last 100 lines without attaching.
+raynor logs 250     # Show a chosen number of recent lines.
+raynor stop         # Confirm before terminating the session.
+```
+
+The same actions work with `zeratul`. `attach` reports an error instead of
+creating a missing session, while the plain command continues to create one
+when necessary. `shell` uses the current terminal or iTerm2 pane and ends when
+you type `exit`; it never creates, attaches to, or stops the persistent tmux
+session.
+
+The base tmux workflow remains available inside the persistent session. Press
+`Ctrl+B`, then `c` to create another tmux window, and use `Ctrl+B`, then `0`,
+`1`, or `w` to select a window. In a separate iTerm2 pane, use `raynor shell`
+or `zeratul shell` when both terminals need to remain visible simultaneously.
+
+Inside an agent session, the existing work aliases automatically resolve under
+that identity's universe. For example, `perf` enters
+`/home/oliver/raynor/ardis-perform` for Raynor and
+`/home/oliver/zeratul/ardis-perform` for Zeratul. In a normal MasterChief shell,
+the same alias remains `/home/oliver/work/ardis-perform`. This applies to all
+Linux aliases based on the work root, including `work`, `perf230`, `timetrack`,
+`gpt`, and `localconnector`.
+
+Agent shells reject accidental directory changes outside their universe. The
+session-specific `codex` function starts Codex in the current directory with
+`workspace-write` and approval-on-request, and rejects command-line options
+that could replace or broaden that boundary. MasterChief's bootstrap installs
+the Linux `bubblewrap` prerequisite used for reliable Codex sandboxing.
+
+MasterChief also hosts two isolated worker identities:
+
+- Raynor uses `/home/oliver/raynor`.
+- Zeratul uses `/home/oliver/zeratul`.
+
+At most two agents may run on MasterChief: one Raynor and one Zeratul. These
+universe roots are directories owned by the `oliver` Linux account, not
+separate user homes or accounts. Raynor must work only inside its own root and
+must never inspect or modify Zeratul's root; Zeratul has the inverse boundary.
+Launch each agent with only its own universe configured as writable, and never
+start a third agent on this station.
+
+Committed feature branches move directly between Hades and MasterChief over
+SSH without touching `origin`. Hades work repositories live below `~/work`.
+Their MasterChief counterpart is selected explicitly:
+
+```text
+mc2h  / h2mc   MasterChief personal work
+r2h   / h2r    Raynor
+z2h   / h2z    Zeratul
+```
+
+Run commands ending in `2h` from the Hades repository. Run commands beginning
+with `h2` from the intended destination repository on MasterChief. For example:
+
+```bash
+r2h   # Raynor to the current Hades repository.
+h2r   # Hades to the current Raynor repository.
+```
+
+Each command opens an fzf picker containing that source's transferable feature
+branches, with the current local branch first when it is also available. Pass a
+branch name directly to skip the picker, for example
+`r2h aoi/per-1234-feature-dev`. The destination commands validate that `h2r`
+runs below `/home/oliver/raynor` and `h2z` runs below
+`/home/oliver/zeratul`; a mismatch is refused. Standard home-relative
+repositories such as `~/mac-forge` remain supported by `mc2h` and `h2mc`.
+
+The first import creates the local branch without assigning the peer as its
+upstream. Later transfers require a clean worktree and advance only by
+fast-forward. Diverged histories and protected base branches are refused. The
+workflow transfers committed Git history only; uncommitted files never move.
 
 ## Private Forge configuration
 
@@ -260,15 +356,23 @@ and back in after bootstrap if it adds the user to the `input` group.
 ## Utilities
 
 Run the non-destructive workstation drift report after setup or desktop/package
-changes:
+changes. The same aliases work from Hades and MasterChief:
 
 ```bash
-./linux/scripts/verify-workstation.sh
+verify-workstation
+# Short form:
+vw
 ```
 
 It checks Plasma/SDDM, `/data`, core packages and commands, services, portals,
-Docker configuration, SSH agent state, displays, and failed units. It does not
-start services, connect the VPN, access secrets, or change machine state.
+Docker configuration, SSH agent state, displays, failed units, and the static
+configuration of both MasterChief agent universes. When Raynor or Zeratul is
+running, it also verifies that session's identity variables and pane boundary;
+a stopped agent session is reported as a valid state. The report does not start
+services or sessions, connect the VPN, access secrets, or change machine state.
+From Hades, the command connects to MasterChief over SSH and marks graphical
+session and connected-display checks as skipped because those facts cannot be
+measured accurately through the remote shell.
 
 ### Cleanup
 
@@ -321,15 +425,30 @@ tunnel connects through the `hades` SSH host alias by default; set
 `HADES_SSH_HOST` (e.g. `hades`) or `HADES_TUNNEL_PORTS` to
 override the defaults.
 
+### SSH agent
 
-- **SSH Agent**: Automatically start the agent and add keys in `~/.zshrc`:
-  ```bash
-  # Make sure the ssh keys are in
-  # Start ssh-agent if not running
-  if ! pgrep -u "$USER" ssh-agent > /dev/null; then
-    eval "$(ssh-agent -s)" > /dev/null
-  fi
+The tracked Linux Zsh configuration establishes a usable SSH agent for normal
+shells and persistent Raynor and Zeratul sessions. It preserves an existing
+working `SSH_AUTH_SOCK`; otherwise it looks for the desktop GCR, OpenSSH, or
+GnuPG agent socket under `XDG_RUNTIME_DIR`. If none is usable, it starts a
+fallback agent on a stable runtime socket.
 
-  # Add keys if not already added
-  ssh-add -l >/dev/null 2>&1 || ssh-add ~/.ssh/id_ed25519_ardis ~/.ssh/id_ed25519_github
-  ```
+When the selected agent has no identities, the shell silently loads the
+existing `~/.ssh/ardis-ed25519` and
+`~/.ssh/id_ed25519_personal_gmail` keys. Missing key files are skipped. A
+running `ssh-agent` process alone is not considered sufficient because the
+current shell must also have its usable socket in `SSH_AUTH_SOCK`.
+
+After pulling a Zsh configuration update into MasterChief, start a fresh shell
+inside an existing tmux session:
+
+```bash
+exec zsh
+```
+
+Check the active socket and loaded identities with:
+
+```bash
+print -r -- "$SSH_AUTH_SOCK"
+ssh-add -l
+```

@@ -6,6 +6,8 @@ if [[ -f "$SCRIPT_DIR/forge.sh" ]]; then
   # shellcheck disable=SC1091
   source "$SCRIPT_DIR/forge.sh"
 fi
+FORGE_ROOT="${FORGE_ROOT:-$(cd -- "$SCRIPT_DIR/.." && pwd)}"
+STATIONS_CONFIG="${FORGE_STATIONS_CONFIG:-$FORGE_ROOT/configs/stations.json}"
 
 format_size() {
   awk -v kib="$1" '
@@ -48,6 +50,288 @@ memory_stats() {
       pct = (total > 0) ? used / total * 100 : 0
       printf "%d %d %d %d %.0f\n", used / 1024, cached / 1024, freeb / 1024, avail / 1024, pct
     }'
+}
+
+create_history_log() {
+  local downloads_dir="$HOME/Downloads"
+  local today
+  local iteration=1
+  local existing_file
+  local existing_iteration
+  local history_file
+
+  if ! mkdir -p "$downloads_dir"; then
+    printf 'Unable to create Downloads directory: %s\n' "$downloads_dir" >&2
+    return 1
+  fi
+  today="$(date '+%Y-%m-%d')"
+  for existing_file in "$downloads_dir"/inf-history-"$today"-*.tsv; do
+    [[ -e "$existing_file" ]] || continue
+    existing_iteration="${existing_file%.tsv}"
+    existing_iteration="${existing_iteration##*-}"
+    if [[ "$existing_iteration" =~ ^[0-9]+$ ]] && (( 10#$existing_iteration >= iteration )); then
+      iteration=$((10#$existing_iteration + 1))
+    fi
+  done
+
+  while true; do
+    history_file="$(printf '%s/inf-history-%s-%02d.tsv' "$downloads_dir" "$today" "$iteration")"
+    if (
+      set -o noclobber
+      printf 'timestamp\tcpu_user_percent\tcpu_system_percent\tmemory_used_kib\tmemory_total_kib\tmemory_used_percent\ttemperature_c\troot_used_kib\troot_total_kib\troot_used_percent\tdata_used_kib\tdata_total_kib\tdata_used_percent\n' \
+        > "$history_file"
+    ) 2>/dev/null; then
+      printf '%s' "$history_file"
+      return
+    fi
+    if [[ -e "$history_file" ]]; then
+      iteration=$((iteration + 1))
+    else
+      printf 'Unable to create info history log: %s\n' "$history_file" >&2
+      return 1
+    fi
+  done
+}
+
+cpu_history_values() {
+  top -l 1 -n 0 2>/dev/null | awk -F': ' '/CPU usage/ {
+    split($2, values, ", *")
+    user=values[1]
+    sys=values[2]
+    gsub(/[^0-9.]/, "", user)
+    gsub(/[^0-9.]/, "", sys)
+    if (user != "" && sys != "") {
+      printf "%s %s", user, sys
+      exit
+    }
+  }'
+}
+
+history_sample() {
+  local cpu_user cpu_system
+  local memory_used memory_cached memory_free memory_available memory_used_percent
+  local memory_total
+  local root_total root_used root_used_percent
+
+  read -r cpu_user cpu_system < <(cpu_history_values || true)
+  memory_total="$(( $(sysctl -n hw.memsize) / 1024 ))"
+  read -r memory_used memory_cached memory_free memory_available memory_used_percent < <(memory_stats)
+  read -r root_total root_used root_used_percent < <(
+    df -k / 2>/dev/null | awk 'NR==2 {percent=$5; sub(/%$/, "", percent); print $2, $3, percent}'
+  )
+
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' \
+    "${cpu_user:-Unavailable}" \
+    "${cpu_system:-Unavailable}" \
+    "${memory_used:-Unavailable}" \
+    "${memory_total:-Unavailable}" \
+    "${memory_used_percent:-Unavailable}" \
+    'Unavailable' \
+    "${root_used:-Unavailable}" \
+    "${root_total:-Unavailable}" \
+    "${root_used_percent:-Unavailable}" \
+    'Unavailable' \
+    'Unavailable' \
+    'Unavailable'
+}
+
+meaningful_history_change() {
+  local previous_sample="$1"
+  local current_sample="$2"
+
+  awk \
+    -v previous="$previous_sample" \
+    -v current="$current_sample" \
+    -v cpu_delta="$HISTORY_CPU_DELTA_PERCENT" \
+    -v memory_delta="$HISTORY_MEMORY_DELTA_PERCENT" \
+    -v temperature_delta="$HISTORY_TEMPERATURE_DELTA_C" \
+    -v storage_delta="$HISTORY_STORAGE_DELTA_KIB" '
+    function numeric(value) {
+      return value ~ /^-?[0-9]+([.][0-9]+)?$/
+    }
+    function changed_by(field_number, threshold, difference) {
+      if (!numeric(before[field_number]) || !numeric(after[field_number])) {
+        return before[field_number] != after[field_number]
+      }
+      difference = after[field_number] - before[field_number]
+      if (difference < 0) difference = -difference
+      return difference >= threshold
+    }
+    BEGIN {
+      split(previous, before, "\t")
+      split(current, after, "\t")
+
+      if (changed_by(1, cpu_delta) || changed_by(2, cpu_delta)) exit 0
+      if (numeric(before[1]) && numeric(before[2]) && numeric(after[1]) && numeric(after[2])) {
+        difference = (after[1] + after[2]) - (before[1] + before[2])
+        if (difference < 0) difference = -difference
+        if (difference >= cpu_delta) exit 0
+      }
+      if (changed_by(5, memory_delta) || changed_by(6, temperature_delta)) exit 0
+      if (changed_by(7, storage_delta) || changed_by(10, storage_delta)) exit 0
+      if (before[4] != after[4] || before[8] != after[8] || before[11] != after[11]) exit 0
+      exit 1
+    }'
+}
+
+record_history_sample() {
+  local history_file="$1"
+  local sample="$2"
+  local now
+
+  now="$(date '+%s')"
+  if (( HISTORY_LAST_EPOCH > 0 && now - HISTORY_LAST_EPOCH < HISTORY_MIN_INTERVAL_SECONDS )); then
+    HISTORY_STATUS="waiting"
+    return
+  fi
+  if [[ -n "$HISTORY_LAST_SAMPLE" ]] && ! meaningful_history_change "$HISTORY_LAST_SAMPLE" "$sample"; then
+    HISTORY_STATUS="unchanged"
+    return
+  fi
+
+  HISTORY_TIMESTAMP="$(date '+%Y-%m-%dT%H:%M:%S%z')"
+  printf '%s\t%s\n' "$HISTORY_TIMESTAMP" "$sample" >> "$history_file"
+  HISTORY_LAST_EPOCH="$now"
+  HISTORY_LAST_SAMPLE="$sample"
+  HISTORY_STATUS="recorded"
+}
+
+discover_station_agents() {
+  local station_id
+
+  command -v jq >/dev/null 2>&1 || return
+  [[ -r "$STATIONS_CONFIG" ]] || return
+  station_id="$(hostname -s 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+  jq -r --arg station_id "$station_id" '
+    ([
+      .stations[]
+      | select(
+          (([.id, .name] + (.identifiers.hostnames // []))
+          | map(select(type == "string") | ascii_downcase)
+          | index($station_id)) != null
+        )
+    ][0].agentRuntime.identities // [])[]
+    | select((.id | type) == "string")
+    | [
+        .id,
+        (.universeRoot // ""),
+        (.tmuxSocket // .id),
+        (.tmuxSession // .id)
+      ]
+    | @tsv
+  ' "$STATIONS_CONFIG" 2>/dev/null || true
+}
+
+create_agent_history_log() {
+  local system_history_file="$1"
+  local history_dir="${system_history_file%/*}"
+  local history_name="${system_history_file##*/}"
+  local agent_history_file
+
+  history_name="${history_name/inf-history-/inf-agents-}"
+  agent_history_file="$history_dir/$history_name"
+  if ! (
+    set -o noclobber
+    printf 'timestamp\tidentity\tstate\tcpu_core_percent\tcpu_system_percent\tmemory_rss_kib\tprocess_count\n' \
+      > "$agent_history_file"
+  ) 2>/dev/null; then
+    printf 'Unable to create agent history log: %s\n' "$agent_history_file" >&2
+    return 1
+  fi
+  printf '%s' "$agent_history_file"
+}
+
+logical_cpu_count() {
+  sysctl -n hw.logicalcpu 2>/dev/null || printf '1'
+}
+
+history_monitor_pids() {
+  printf '%s' "$HISTORY_MONITOR_PID"
+  LC_ALL=C ps -axo pid=,command= 2>/dev/null | awk -v current="$HISTORY_MONITOR_PID" '
+    $1 != current && ($0 ~ /\/inf\.sh[[:space:]]+--cycle/ || $0 ~ /\/info\.sh[[:space:]]+--cycle/) {
+      printf ",%s", $1
+    }'
+}
+
+agent_process_metrics() {
+  local tmux_socket="$1"
+  local tmux_session="$2"
+  local pane_pids
+  local root_pids
+  local monitor_pids
+
+  if ! command -v tmux >/dev/null 2>&1 \
+    || ! tmux -L "$tmux_socket" has-session -t "$tmux_session" 2>/dev/null; then
+    printf 'inactive\t0.0\t0.0\t0\t0'
+    return
+  fi
+
+  pane_pids="$(tmux -L "$tmux_socket" list-panes -s -t "$tmux_session" -F '#{pane_pid}' 2>/dev/null || true)"
+  root_pids="${pane_pids//$'\n'/,}"
+  monitor_pids="$(history_monitor_pids)"
+  if [[ -z "$root_pids" ]]; then
+    printf 'idle\t0.0\t0.0\t0\t0'
+    return
+  fi
+
+  LC_ALL=C ps -axo pid=,ppid=,%cpu=,rss= 2>/dev/null | awk \
+    -v roots="$root_pids" \
+    -v exclude_roots="$monitor_pids" \
+    -v logical_cpus="$HISTORY_LOGICAL_CPU_COUNT" '
+    {
+      process_count++
+      pid[process_count] = $1
+      parent[process_count] = $2
+      cpu[process_count] = $3
+      memory[process_count] = $4
+    }
+    END {
+      root_count = split(roots, root, ",")
+      for (i = 1; i <= root_count; i++) {
+        if (root[i] != "") owned[root[i]] = 1
+      }
+      excluded_count = split(exclude_roots, excluded_root, ",")
+      for (i = 1; i <= excluded_count; i++) {
+        if (excluded_root[i] != "") excluded[excluded_root[i]] = 1
+      }
+      do {
+        found = 0
+        for (i = 1; i <= process_count; i++) {
+          if (!owned[pid[i]] && owned[parent[i]]) {
+            owned[pid[i]] = 1
+            found = 1
+          }
+          if (!excluded[pid[i]] && excluded[parent[i]]) {
+            excluded[pid[i]] = 1
+            found = 1
+          }
+        }
+      } while (found)
+
+      for (i = 1; i <= process_count; i++) {
+        if (owned[pid[i]] && !excluded[pid[i]]) {
+          agent_processes++
+          agent_cpu += cpu[i]
+          agent_memory += memory[i]
+        }
+      }
+      system_cpu = (logical_cpus > 0) ? agent_cpu / logical_cpus : 0
+      state = (agent_cpu >= 1) ? "busy" : "idle"
+      printf "%s\t%.1f\t%.1f\t%.0f\t%d", state, agent_cpu, system_cpu, agent_memory, agent_processes
+    }'
+}
+
+record_agent_history_samples() {
+  local agent_history_file="$1"
+  local timestamp="$2"
+  local identities="$3"
+  local identity_id universe_root tmux_socket tmux_session metrics
+
+  while IFS=$'\t' read -r identity_id universe_root tmux_socket tmux_session; do
+    [[ -n "$identity_id" ]] || continue
+    metrics="$(agent_process_metrics "$tmux_socket" "$tmux_session")"
+    printf '%s\t%s\t%s\n' "$timestamp" "$identity_id" "$metrics" >> "$agent_history_file"
+  done <<< "$identities"
 }
 
 friendly_uptime() {
@@ -436,6 +720,19 @@ if [[ -t 1 && -z "${NO_COLOR+x}" ]]; then
   RESET=$'\033[0m'
 fi
 
+HISTORY_MIN_INTERVAL_SECONDS=60
+HISTORY_CPU_DELTA_PERCENT=5
+HISTORY_MEMORY_DELTA_PERCENT=1
+HISTORY_TEMPERATURE_DELTA_C=1
+HISTORY_STORAGE_DELTA_KIB=102400
+HISTORY_LAST_EPOCH=0
+HISTORY_LAST_SAMPLE=""
+HISTORY_STATUS=""
+HISTORY_TIMESTAMP=""
+HISTORY_LOGICAL_CPU_COUNT=1
+HISTORY_MONITOR_PID="$$"
+AGENT_IDENTITIES=""
+
 cycle_interval=""
 if [[ "${1:-}" == "--cycle" ]]; then
   cycle_interval="${2:-5}"
@@ -453,11 +750,25 @@ elif (( $# > 0 )); then
 fi
 
 if [[ -n "$cycle_interval" ]]; then
+  HISTORY_LOGICAL_CPU_COUNT="$(logical_cpu_count)"
+  AGENT_IDENTITIES="$(discover_station_agents)"
+  history_file="$(create_history_log)"
+  agent_history_file=""
+  if [[ -n "$AGENT_IDENTITIES" ]]; then
+    agent_history_file="$(create_agent_history_log "$history_file")"
+  fi
   trap 'printf "\033[?25h"' EXIT
   printf '\033[?25l'
   while true; do
+    sample="$(history_sample)"
+    record_history_sample "$history_file" "$sample"
+    if [[ "$HISTORY_STATUS" == "recorded" && -n "$agent_history_file" ]]; then
+      record_agent_history_samples "$agent_history_file" "$HISTORY_TIMESTAMP" "$AGENT_IDENTITIES"
+    fi
     snapshot="$(print_info)"
-    printf '\033[H%s\n\033[J' "$snapshot"
+    printf '\033[H%s\n\nHistory  %s (%s)\n' "$snapshot" "$history_file" "$HISTORY_STATUS"
+    [[ -z "$agent_history_file" ]] || printf 'Agents   %s\n' "$agent_history_file"
+    printf '\033[J'
     sleep "$cycle_interval"
   done
 else

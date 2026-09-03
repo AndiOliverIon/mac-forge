@@ -28,8 +28,14 @@ alias forge="cd ~/mac-forge"
 alias aliases="sed -n '1,240p' ~/mac-forge/linux/aliases.zsh"
 alias help="~/mac-forge/scripts/help.sh"
 alias codex-local-register="bash ~/mac-forge/linux/scripts/codex-local-register.sh"
+alias ai-config="~/mac-forge/scripts/ai-config.sh"
+alias ai-verify="~/mac-forge/scripts/ai-config.sh verify"
+alias ai-install="~/mac-forge/scripts/ai-config.sh install"
+alias ai-context="~/.config/ai/bin/ai-context.sh"
 alias link-dotfiles="~/mac-forge/linux/scripts/link-dotfiles.sh"
 alias ldf=link-dotfiles
+alias verify-workstation="~/mac-forge/linux/scripts/verify-workstation.sh"
+alias vw=verify-workstation
 alias inf="clear && ~/mac-forge/linux/scripts/inf.sh"
 alias web="~/mac-forge/scripts/web.sh"
 alias ftp="~/mac-forge/scripts/ftp.sh"
@@ -57,6 +63,10 @@ alias gp="git pull"
 alias gfo="git fetch origin"
 alias gpu="git push"
 alias gpo="~/mac-forge/scripts/git-publish-origin.sh"
+alias peer-fetch="~/mac-forge/scripts/git-peer-fetch.sh"
+alias h2mc="~/mac-forge/scripts/git-peer-fetch.sh hades work"
+alias h2r="~/mac-forge/scripts/git-peer-fetch.sh hades raynor"
+alias h2z="~/mac-forge/scripts/git-peer-fetch.sh hades zeratul"
 alias gb="git branch"
 alias switch="~/mac-forge/scripts/git-switch.sh"
 alias sw=switch
@@ -97,27 +107,35 @@ alias sr=script-run
 # ------------------------------------------------------------------------------
 # Workspaces & Paths
 # ------------------------------------------------------------------------------
+case "${FORGE_AGENT_IDENTITY:-}:${FORGE_UNIVERSE_ROOT:-}" in
+  raynor:/home/oliver/raynor | zeratul:/home/oliver/zeratul)
+    export FORGE_WORK_ROOT="$FORGE_UNIVERSE_ROOT"
+    ;;
+  *)
+    export FORGE_WORK_ROOT="$HOME/work"
+    ;;
+esac
 alias workspace-primary="~/mac-forge/linux/scripts/load-workspace.sh"
 alias wp=workspace-primary
 alias data="cd /data"
 alias dock="cd /data/docker"
-alias work="cd ~/work"
-alias perf="cd ~/work/ardis-perform"
-alias perf230="cd ~/work/ardis-perform-230"
-alias timetrack="cd ~/work/ardis.timetrack"
+alias work='cd "$FORGE_WORK_ROOT"'
+alias perf='cd "$FORGE_WORK_ROOT/ardis-perform"'
+alias perf230='cd "$FORGE_WORK_ROOT/ardis-perform-230"'
+alias timetrack='cd "$FORGE_WORK_ROOT/ardis.timetrack"'
 alias tt=timetrack
-alias ttbs="cd ~/work/ardis.timetrack && ./buildsolution.sh"
-alias ttbd="cd ~/work/ardis.timetrack && ./Ardis.Timetrack/build-docker.sh"
-alias ttc="cd ~/work/ardis.timetrack/ardis.timetrack.client"
-alias ttclient="cd ~/work/ardis.timetrack/ardis.timetrack.client"
-alias ttmd="cd ~/work/ardis.timetrack/Ardis.Timetrack.Migrations/Database"
-alias perfclient="cd ~/work/ardis-perform/ardis.perform.client"
-alias perfdev="cd ~/work/ardis-perform-dev"
-alias perfold="cd ~/work/ardis-perform-older"
-alias gpt="cd ~/work/ardis.tools.extensions"
-alias gptbin="cd ~/work/ardis.tools.extensions/Ardis.Utils/bin/debug/net8.0"
-alias lc="cd ~/work/ardis-local-connector"
-alias localconnector="cd ~/work/ardis-local-connector"
+alias ttbs='cd "$FORGE_WORK_ROOT/ardis.timetrack" && ./buildsolution.sh'
+alias ttbd='cd "$FORGE_WORK_ROOT/ardis.timetrack" && ./Ardis.Timetrack/build-docker.sh'
+alias ttc='cd "$FORGE_WORK_ROOT/ardis.timetrack/ardis.timetrack.client"'
+alias ttclient='cd "$FORGE_WORK_ROOT/ardis.timetrack/ardis.timetrack.client"'
+alias ttmd='cd "$FORGE_WORK_ROOT/ardis.timetrack/Ardis.Timetrack.Migrations/Database"'
+alias perfclient='cd "$FORGE_WORK_ROOT/ardis-perform/ardis.perform.client"'
+alias perfdev='cd "$FORGE_WORK_ROOT/ardis-perform-dev"'
+alias perfold='cd "$FORGE_WORK_ROOT/ardis-perform-older"'
+alias gpt='cd "$FORGE_WORK_ROOT/ardis.tools.extensions"'
+alias gptbin='cd "$FORGE_WORK_ROOT/ardis.tools.extensions/Ardis.Utils/bin/debug/net8.0"'
+alias lc='cd "$FORGE_WORK_ROOT/ardis-local-connector"'
+alias localconnector='cd "$FORGE_WORK_ROOT/ardis-local-connector"'
 alias meerkat="cd ~/projects/meerkat"
 alias rooted="cd ~/projects/rooted"
 alias aiwk="cd /Users/oliver/projects/alice-in-wonderkitchen"
@@ -146,6 +164,8 @@ alias hades-tunnel-down='~/mac-forge/linux/scripts/hades-tunnel.sh down'
 alias hades-tunnel-status='~/mac-forge/linux/scripts/hades-tunnel.sh status'
 alias htu=hades-tunnel-up
 alias htd=hades-tunnel-down
+alias raynor="~/mac-forge/scripts/masterchief-agent-session.sh raynor"
+alias zeratul="~/mac-forge/scripts/masterchief-agent-session.sh zeratul"
 alias rmc="ssh -t oliver@masterchief"
 alias rmcr="ssh -t oliver@masterchief-ts"
 alias mcshutdown='ssh -t oliver@masterchief "sudo systemctl poweroff"'

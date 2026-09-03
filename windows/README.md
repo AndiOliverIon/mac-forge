@@ -157,6 +157,25 @@ Login enabled and key-based SSH access must work from Windows. The tunnel uses
 `hades` and `~/.ssh/id_ed25519_hades_tunnel` by default; set
 `HADES_SSH_HOST` or `HADES_SSH_IDENTITY_FILE` to override them.
 
+From Hades, the preferred controls are:
+
+```bash
+cerber-tunnel-up
+cerber-tunnel-status
+cerber-tunnel-down
+```
+
+`cerber-tunnel-up` reads the Parallels VM name from `configs/stations.json`,
+starts the existing Windows tunnel in Cerber's logged-in user session, and
+verifies that Cerber receives HTTP 200 from `http://localhost:4200`. Angular
+must already be running on Hades. The VM must be running and a Windows user
+must be logged in.
+
+Use the Parallels-backed command instead of starting `hades-tunnel-up` through
+an SSH login to Cerber. Windows ends the child `ssh.exe` process when that SSH
+session closes; `prlctl exec --current-user` launches it in the interactive
+Windows session so it remains available for browser testing.
+
 ## Shared versus station-specific state
 
 The shared Bash runtime now derives the repository root from its own location

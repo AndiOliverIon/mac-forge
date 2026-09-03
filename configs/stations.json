@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-26",
+  "updatedAt": "2026-08-31",
   "description": "Canonical non-secret inventory of physical machines, virtual machines, and servers used by mac-forge.",
   "stations": [
     {
@@ -226,10 +226,12 @@
       },
       "network": {
         "permittedConnectionTypes": [
-          "wifi"
+          "wifi",
+          "utp"
         ],
         "segments": [
           "personal-lan",
+          "isp-lan",
           "tailscale"
         ],
         "endpoints": [
@@ -239,9 +241,11 @@
             "scope": "lan",
             "interface": "wlp0s20f3",
             "localFactsKey": "stations.masterchief.network.wifi",
+            "macAddressLocalFactsKey": "stations.masterchief.identifiers.macAddresses",
             "addressing": "dhcp",
             "status": "active",
-            "defaultRoute": true,
+            "defaultRoute": false,
+            "wakeOnLan": true,
             "hostAliases": [
               "masterchief"
             ],
@@ -249,9 +253,27 @@
             "observedAt": "2026-08-26"
           },
           {
+            "name": "utp",
+            "connectionType": "utp",
+            "hardwarePort": "Realtek USB 10/100/1000 LAN",
+            "transportToHost": "USB",
+            "scope": "lan",
+            "interface": "enp0s13f0u1u4",
+            "localFactsKey": "stations.masterchief.network.utp",
+            "macAddressLocalFactsKey": "stations.masterchief.network.utp.macAddress",
+            "addressing": "dhcp",
+            "status": "active",
+            "defaultRoute": true,
+            "hostAliases": [
+              "masterchief-utp"
+            ],
+            "aliasAuthority": "/etc/hosts",
+            "observedAt": "2026-08-31"
+          },
+          {
             "name": "tailscale",
             "connectionType": "overlay",
-            "usesConnection": "wifi",
+            "usesConnection": "utp",
             "scope": "overlay",
             "localFactsKey": "stations.masterchief.network.tailscale",
             "hostAliases": [
@@ -267,6 +289,7 @@
           "primaryAlias": "masterchief",
           "aliases": [
             "masterchief",
+            "masterchief-utp",
             "masterchief-ts"
           ],
           "commandShortcuts": [
@@ -278,6 +301,7 @@
         "wake": {
           "method": "wake-on-wireless-lan",
           "command": "mcboot",
+          "macAddressLocalFactsKey": "stations.masterchief.identifiers.macAddresses",
           "limitations": "Works from sleep, not from a full shutdown"
         },
         "powerCommands": [
@@ -288,7 +312,35 @@
       "availability": {
         "mode": "on-demand",
         "power": "sleep-capable",
-        "lanReachability": "same subnet as Hades Wi-Fi"
+        "lanReachability": "same personal Wi-Fi and ISP wired LANs as Hades"
+      },
+      "agentRuntime": {
+        "maxConcurrentAgents": 2,
+        "directoryOwner": "oliver",
+        "isolation": "agent-enforced-universe-boundary",
+        "identities": [
+          {
+            "id": "raynor",
+            "name": "Raynor",
+            "universeRoot": "/home/oliver/raynor",
+            "forbiddenUniverseRoot": "/home/oliver/zeratul",
+            "workRoot": "/home/oliver/raynor",
+            "tmuxSocket": "raynor",
+            "tmuxSession": "raynor",
+            "attachCommand": "raynor"
+          },
+          {
+            "id": "zeratul",
+            "name": "Zeratul",
+            "universeRoot": "/home/oliver/zeratul",
+            "forbiddenUniverseRoot": "/home/oliver/raynor",
+            "workRoot": "/home/oliver/zeratul",
+            "tmuxSocket": "zeratul",
+            "tmuxSession": "zeratul",
+            "attachCommand": "zeratul"
+          }
+        ],
+        "verifiedAt": "2026-08-31"
       },
       "relationships": {
         "onDemandDisplays": [
@@ -304,6 +356,10 @@
         "/etc/hosts",
         "agents/stations.md",
         "remote system inventory over SSH",
+        "remote network inventory and reachability check on 2026-08-31",
+        "remote agent-universe directory inventory over SSH",
+        "user-confirmed UTP address and MAC address",
+        "user-confirmed agent identities, universe boundaries, and two-agent concurrency limit",
         "user-confirmed display connection path"
       ]
     },

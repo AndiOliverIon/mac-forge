@@ -1,0 +1,45 @@
+# Project Instructions
+
+## Repository Layout
+
+- The Angular workspace contains the publishable `projects/ngx-kendo-ui` library and the
+  `projects/demo` application.
+- `projects/ngx-kendo-ui/public-api.ts` owns the package's public API. Export new reusable APIs
+  there.
+- Library packaging is configured in `projects/ngx-kendo-ui/ng-package.json`; publishable output
+  goes to `dist/ngx-kendo-ui`.
+
+## Library Architecture
+
+- `KendoMagicGridComponent` orchestrates the grid through `dataProvider`,
+  `configurationProvider`, and optional `expressionConfigurationProvider` inputs.
+- Grid data uses `GridDataProvider` strategies. Existing implementations cover local data, generic
+  HTTP, and the Ardis backend under `projects/ngx-kendo-ui/src/kendo-magic-grid/data-providers`.
+- Grid view/configuration state uses `GridConfigurationProvider`; the Ardis provider loads views,
+  metadata, translations, and settings. Expression-editor behavior is supplied by
+  `ArdisExpressionConfigurationProvider`.
+
+## Themes And Demo
+
+- Runtime theme metadata belongs in `projects/ngx-kendo-ui/styles/theme/themes.ts`. SCSS themes
+  belong under `projects/ngx-kendo-ui/styles/theme`, and consumers import one
+  `@ardis/ngx-kendo-ui/theme/<theme>` entrypoint.
+- Palette sources are `swatch/*.tokens.json`; regenerate palette outputs with
+  `npm run generate:palettes`.
+- Runtime theme switching uses the `data-theme` and `data-color-mode` HTML attributes.
+- The demo exposes `NG_APP_AUTH_TOKEN` and `NG_APP_BASE_APP_URL` through `@ngx-env/builder`
+  and applies its authentication interceptors under `projects/demo/src/app/auth`.
+
+## Project Workflow
+
+- Activate the Kendo license with `npx kendo-ui-license activate` before local runs or builds.
+- Use `npm start` for the demo, `npm run build:lib` or `npm run watch:lib` for the library,
+  `npm run lint-lib` for linting, and the Storybook scripts for component exploration.
+- Unit-test commands remain subject to Oliver's approval under the always-loaded test rule. When
+  authorized, use `npm test` or `npm run test:coverage`; tests use Karma/Jasmine and replace the
+  Monaco import with the configured mock.
+- Follow `eslint.config.mjs`, including its complexity limit, explicit-member rules, `ardis`
+  selector prefix, and semicolon convention.
+- Commits follow the configured conventional types and `ORP` Jira prefix.
+- The Azure pipeline builds the library, runs semantic-release, builds Storybook, and publishes its
+  Docker image.
