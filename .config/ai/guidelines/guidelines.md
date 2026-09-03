@@ -10,8 +10,11 @@ This file is the single tool-neutral entry point for deciding which shared guide
 2. Verify that the resolved station, universe, repository, mode, stacks, and project-instruction
    paths match the task scope. Perform only the missing read-only inventory when the result is
    partial, then rerun the resolver with the discovered repository or target files.
-3. Load every path in the resolved context's `NEXT_INSTRUCTION_PATHS` section before substantive
-   analysis, recommendations, findings, or changes.
+3. Run every `INSTRUCTION_BATCH_N_COMMAND` in numeric order, one command per tool call, before
+   substantive analysis, recommendations, findings, or changes. Accept a batch only when its final
+   `INSTRUCTION_BATCH_COMPLETE` marker is present. If the reader reports changed content, rerun the
+   resolver. If output is incomplete or its completion marker is absent, read that batch's files
+   individually. `NEXT_INSTRUCTION_PATHS` remains the authoritative order and manual fallback.
 4. If the resolver is unavailable or fails, fall back to reading every direct `always/*.md` file in
    lexical order, determine the task mode, inventory the scope, and follow the manual discovery and
    stack-selection rules below.

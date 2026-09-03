@@ -18,6 +18,9 @@ routed_instructions=()
 stack_instructions=()
 provisional_instructions=()
 next_instructions=()
+instruction_batch_assignments=()
+instruction_batch_sizes=()
+INSTRUCTION_BATCH_LIMIT_BYTES=22528
 
 usage() {
     cat <<'EOF'
@@ -32,7 +35,7 @@ Scope:
   --review-target <target>  HEAD, working-tree, staged, or a Git diff range.
 
 The output contains the resolved execution context, the already-loaded base
-instruction paths, and the project/stack instruction paths to load next.
+instruction paths, and size-bounded commands for loading them in order.
 EOF
 }
 
@@ -438,6 +441,77 @@ print_list() {
     printf '%s_END\n' "$label"
 }
 
+file_size_bytes() {
+    local path="$1"
+
+    [[ -f "$path" ]] || die "instruction source is missing: $path"
+    wc -c < "$path" | tr -d '[:space:]'
+}
+
+shell_quote() {
+    printf '%q' "$1"
+}
+
+prepare_instruction_batches() {
+    local path path_size batch_number=0 batch_size=0 path_index=0
+
+    for path in "${next_instructions[@]}"; do
+        path_size="$(file_size_bytes "$path")"
+        if ((batch_number == 0 || (batch_size > 0 && batch_size + path_size > INSTRUCTION_BATCH_LIMIT_BYTES))); then
+            batch_number=$((batch_number + 1))
+            batch_size=0
+        fi
+        batch_size=$((batch_size + path_size))
+        instruction_batch_assignments[path_index]="$batch_number"
+        instruction_batch_sizes[batch_number]="$batch_size"
+        path_index=$((path_index + 1))
+    done
+
+    instruction_batch_count="$batch_number"
+}
+
+print_instruction_batches() {
+    local batch_number path_index batch_file_count batch_bytes
+
+    printf 'INSTRUCTION_BATCH_LIMIT_BYTES=%s\n' "$INSTRUCTION_BATCH_LIMIT_BYTES"
+    printf 'INSTRUCTION_BATCH_COUNT=%s\n' "$instruction_batch_count"
+    for ((batch_number=1; batch_number <= instruction_batch_count; batch_number++)); do
+        batch_file_count=0
+        batch_bytes="${instruction_batch_sizes[batch_number]}"
+        for ((path_index=0; path_index < ${#next_instructions[@]}; path_index++)); do
+            [[ "${instruction_batch_assignments[path_index]}" == "$batch_number" ]] \
+                && batch_file_count=$((batch_file_count + 1))
+        done
+
+        printf 'INSTRUCTION_BATCH_%s_BYTES=%s\n' "$batch_number" "$batch_bytes"
+        printf 'INSTRUCTION_BATCH_%s_FILES=%s\n' "$batch_number" "$batch_file_count"
+        printf 'INSTRUCTION_BATCH_%s_BEGIN\n' "$batch_number"
+        for ((path_index=0; path_index < ${#next_instructions[@]}; path_index++)); do
+            if [[ "${instruction_batch_assignments[path_index]}" == "$batch_number" ]]; then
+                printf '%s\n' "${next_instructions[path_index]}"
+            fi
+        done
+        printf 'INSTRUCTION_BATCH_%s_END\n' "$batch_number"
+
+        printf 'INSTRUCTION_BATCH_%s_COMMAND=' "$batch_number"
+        shell_quote "$AI_ROOT/bin/ai-read-instructions.sh"
+        printf ' --batch '
+        shell_quote "$batch_number"
+        printf ' --expected-files '
+        shell_quote "$batch_file_count"
+        printf ' --expected-bytes '
+        shell_quote "$batch_bytes"
+        printf ' --'
+        for ((path_index=0; path_index < ${#next_instructions[@]}; path_index++)); do
+            if [[ "${instruction_batch_assignments[path_index]}" == "$batch_number" ]]; then
+                printf ' '
+                shell_quote "${next_instructions[path_index]}"
+            fi
+        done
+        printf '\n'
+    done
+}
+
 while (($# > 0)); do
     case "$1" in
         --mode)
@@ -503,6 +577,7 @@ universe="$(discover_universe "$station" "$scope_path")"
 classify_stacks
 collect_project_instructions
 collect_job_instruction_paths
+prepare_instruction_batches
 
 append_unique base_instructions "$AI_ROOT/identities.md"
 append_unique base_instructions "$AI_ROOT/guidelines/guidelines.md"
@@ -528,3 +603,4 @@ print_list STACK_INSTRUCTION_PATHS "${stack_instructions[@]}"
 print_list PROJECT_INSTRUCTION_PATHS "${project_instructions[@]}"
 print_list PROVISIONAL_INSTRUCTION_PATHS "${provisional_instructions[@]}"
 print_list NEXT_INSTRUCTION_PATHS "${next_instructions[@]}"
+print_instruction_batches

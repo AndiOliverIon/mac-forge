@@ -38,6 +38,7 @@ REQUIRED_SOURCES=(
     guidelines/provisional/dotnet.md
     guidelines/provisional/sql.md
     bin/ai-context.sh
+    bin/ai-read-instructions.sh
     bootstrap/codex-AGENTS.md
     bootstrap/claude-CLAUDE.md
 )
@@ -116,6 +117,12 @@ check_required_sources() {
         fail "shared resolver is not executable: $AI_SOURCE/bin/ai-context.sh"
     fi
 
+    if [[ -x "$AI_SOURCE/bin/ai-read-instructions.sh" ]]; then
+        pass "shared executable: bin/ai-read-instructions.sh"
+    else
+        fail "shared batch reader is not executable: $AI_SOURCE/bin/ai-read-instructions.sh"
+    fi
+
     if command -v jq >/dev/null 2>&1; then
         pass "AI context dependency: jq"
         if jq -e '.schemaVersion == 1 and (.stations | type == "array")' "$FORGE_ROOT/configs/stations.json" >/dev/null 2>&1; then
@@ -132,6 +139,80 @@ check_required_sources() {
     else
         fail "AI context resolver has invalid Bash syntax"
     fi
+    if bash -n "$AI_SOURCE/bin/ai-read-instructions.sh"; then
+        pass "AI instruction batch reader syntax"
+    else
+        fail "AI instruction batch reader has invalid Bash syntax"
+    fi
+}
+
+check_instruction_batching() {
+    local context_output next_paths batch_paths limit batch_count begin_count command_count
+    local first_path second_path expected_bytes reader_output reader_paths
+
+    if ! context_output="$(
+        "$AI_SOURCE/bin/ai-context.sh" \
+            --mode review \
+            --repository "$FORGE_ROOT" \
+            --target "$FORGE_ROOT/.ai-verify.cs" \
+            --target "$FORGE_ROOT/.ai-verify.sql" \
+            --target "$FORGE_ROOT/.ai-verify.ts" \
+            --target "$FORGE_ROOT/.ai-verify.html"
+    )"; then
+        fail "AI context resolver could not produce a batch verification plan"
+        return
+    fi
+
+    next_paths="$(printf '%s\n' "$context_output" | awk '
+        $0 == "NEXT_INSTRUCTION_PATHS_BEGIN" { capture = 1; next }
+        $0 == "NEXT_INSTRUCTION_PATHS_END" { capture = 0 }
+        capture { print }
+    ')"
+    batch_paths="$(printf '%s\n' "$context_output" | awk '
+        /^INSTRUCTION_BATCH_[0-9]+_BEGIN$/ { capture = 1; next }
+        /^INSTRUCTION_BATCH_[0-9]+_END$/ { capture = 0; next }
+        capture { print }
+    ')"
+    if [[ -n "$next_paths" && "$batch_paths" == "$next_paths" ]]; then
+        pass "AI instruction batches preserve every routed path in order"
+    else
+        fail "AI instruction batches omit, duplicate, or reorder routed paths"
+    fi
+
+    limit="$(printf '%s\n' "$context_output" | awk -F= '$1 == "INSTRUCTION_BATCH_LIMIT_BYTES" { print $2; exit }')"
+    batch_count="$(printf '%s\n' "$context_output" | awk -F= '$1 == "INSTRUCTION_BATCH_COUNT" { print $2; exit }')"
+    begin_count="$(printf '%s\n' "$context_output" | awk '/^INSTRUCTION_BATCH_[0-9]+_BEGIN$/ { count++ } END { print count + 0 }')"
+    command_count="$(printf '%s\n' "$context_output" | awk '/^INSTRUCTION_BATCH_[0-9]+_COMMAND=/ { count++ } END { print count + 0 }')"
+    if [[ "$batch_count" == "$begin_count" && "$batch_count" == "$command_count" ]] \
+        && printf '%s\n' "$context_output" | awk -F= -v limit="$limit" '
+            /^INSTRUCTION_BATCH_[0-9]+_BYTES=/ { found = 1; if ($2 > limit) invalid = 1 }
+            END { if (!found || invalid) exit 1 }
+        '; then
+        pass "AI instruction batch count and size limits are valid"
+    else
+        fail "AI instruction batch metadata is incomplete or exceeds its size limit"
+    fi
+
+    first_path="$AI_SOURCE/guidelines/provisional/general.md"
+    second_path="$AI_SOURCE/guidelines/provisional/dotnet.md"
+    expected_bytes=$(( $(wc -c < "$first_path") + $(wc -c < "$second_path") ))
+    if reader_output="$(
+        "$AI_SOURCE/bin/ai-read-instructions.sh" \
+            --batch 1 \
+            --expected-files 2 \
+            --expected-bytes "$expected_bytes" \
+            -- "$first_path" "$second_path"
+    )"; then
+        reader_paths="$(printf '%s\n' "$reader_output" | sed -n 's/^===== INSTRUCTION_FILE_BEGIN index=[0-9][0-9]* bytes=[0-9][0-9]* path=\(.*\) =====$/\1/p')"
+        if [[ "$reader_paths" == "$(printf '%s\n%s' "$first_path" "$second_path")" ]] \
+            && printf '%s\n' "$reader_output" | grep -q '^===== INSTRUCTION_BATCH_COMPLETE id=1 files=2 bytes='; then
+            pass "AI instruction batch reader preserves order and reports completion"
+        else
+            fail "AI instruction batch reader output is incomplete or out of order"
+        fi
+    else
+        fail "AI instruction batch reader rejected a valid batch"
+    fi
 }
 
 require_source_layout() {
@@ -144,6 +225,8 @@ require_source_layout() {
 
     [[ -x "$AI_SOURCE/bin/ai-context.sh" ]] \
         || die "shared resolver is not executable: $AI_SOURCE/bin/ai-context.sh"
+    [[ -x "$AI_SOURCE/bin/ai-read-instructions.sh" ]] \
+        || die "shared batch reader is not executable: $AI_SOURCE/bin/ai-read-instructions.sh"
     command -v jq >/dev/null 2>&1 \
         || die "required command is unavailable: jq"
     jq -e '.schemaVersion == 1 and (.stations | type == "array")' "$FORGE_ROOT/configs/stations.json" >/dev/null 2>&1 \
@@ -202,6 +285,17 @@ render_bootstrap() {
     printf '\n'
 }
 
+bootstrap_matches() {
+    local source_path="$1"
+    local target_path="$2"
+    local rendered_checksum target_checksum
+
+    [[ -f "$target_path" && ! -L "$target_path" ]] || return 1
+    rendered_checksum="$(render_bootstrap "$source_path" | cksum)"
+    target_checksum="$(cksum < "$target_path")"
+    [[ "$rendered_checksum" == "$target_checksum" ]]
+}
+
 check_bootstrap() {
     local source_path="$1"
     local target_path="$2"
@@ -211,7 +305,7 @@ check_bootstrap() {
         fail "$tool_name bootstrap must be a regular file: $target_path"
     elif [[ ! -f "$target_path" ]]; then
         fail "$tool_name bootstrap is missing: $target_path"
-    elif cmp -s <(render_bootstrap "$source_path") "$target_path"; then
+    elif bootstrap_matches "$source_path" "$target_path"; then
         pass "$tool_name bootstrap matches the generated shared sources"
     else
         fail "$tool_name bootstrap differs from the generated $source_path"
@@ -331,6 +425,7 @@ verify_config() {
 
     printf 'AI configuration verification\n\n'
     check_required_sources
+    check_instruction_batching
     check_ai_link
     check_tool_directory "$CODEX_DIR" "Codex"
     check_tool_directory "$CLAUDE_DIR" "Claude"
@@ -404,8 +499,7 @@ install_bootstrap() {
     local target_path="$2"
     local temporary_path
 
-    if [[ -f "$target_path" && ! -L "$target_path" ]] \
-        && cmp -s <(render_bootstrap "$source_path") "$target_path"; then
+    if bootstrap_matches "$source_path" "$target_path"; then
         printf 'Already current: %s\n' "$target_path"
         return
     fi

@@ -12,7 +12,11 @@ mode (`development`, `review`, or `handoff`) from the request, then run:
 
 Read its complete output. It returns the station, universe, canonical repository, mode, represented
 stacks, the base source paths already embedded here, and the ordered instruction paths to load next.
-Load every path in `NEXT_INSTRUCTION_PATHS` before acting.
+Load every batch in numeric order by running its exact `INSTRUCTION_BATCH_N_COMMAND`, one command per
+tool call. A batch is understood only when its `INSTRUCTION_BATCH_COMPLETE` marker is present. If the
+reader reports that content changed, rerun the resolver. If output is incomplete or its completion
+marker is absent, read that batch's files individually. `NEXT_INSTRUCTION_PATHS` is the authoritative
+ordered list and manual file-by-file fallback.
 
 Use `--review-target HEAD`, `working-tree`, `staged`, or a Git diff range when the review scope is
 known. If the resolver reports a partial result because the repository or files are not yet known,

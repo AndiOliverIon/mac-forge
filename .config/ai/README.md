@@ -26,8 +26,12 @@ a latency-sensitive tool call.
 The global bootstrap invokes `bin/ai-context.sh` before task work. The resolver combines the
 canonical `configs/stations.json` inventory with the current hostname, scope path, Git metadata, and
 review corpus. It reports the station, execution universe, canonical repository, mode, represented
-stacks, and ordered stack, project, and provisional instruction paths to load next. The output is
-ephemeral; no current-context file is written.
+stacks, and ordered stack, project, and provisional instruction paths to load next. It also packs
+those paths, without reordering or omission, into deterministic 22 KiB batches. Run each emitted
+batch command in numeric order. The batch reader verifies file counts and byte totals, wraps every
+source in boundary markers, and emits a final completion marker so truncation is detectable.
+`NEXT_INSTRUCTION_PATHS` remains the file-by-file fallback. The output is ephemeral; no
+current-context file is written.
 
 Use `ai-context --help` for its scope arguments. A partial result is expected when the repository or
 target files are not yet known; identify only the missing scope and rerun it.
