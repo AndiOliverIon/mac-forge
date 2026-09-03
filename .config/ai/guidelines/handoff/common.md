@@ -24,6 +24,9 @@ decision-maker.
   other's file.
 - Before reading or writing a present transporter file, reject it if it is a symlink or not a regular
   file. Create a missing owned file only when the active trigger and station flow allow it.
+- Replace a present owned transporter file with one update operation. When using `apply_patch`, use
+  exactly one operation for that path; never combine `Delete File` and `Add File` for the same path
+  in one patch. Use `Add File` only after verifying that the owned file is absent.
 - Transporter files contain only the latest state; conversation and version-control history provide
   the long-term record.
 
