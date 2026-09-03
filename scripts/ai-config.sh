@@ -37,6 +37,7 @@ REQUIRED_SOURCES=(
     guidelines/provisional/angular.md
     guidelines/provisional/dotnet.md
     guidelines/provisional/sql.md
+    bin/ai-context.sh
     bootstrap/codex-AGENTS.md
     bootstrap/claude-CLAUDE.md
 )
@@ -108,6 +109,29 @@ check_required_sources() {
             fail "shared source missing or not a regular file: $relative_path"
         fi
     done
+
+    if [[ -x "$AI_SOURCE/bin/ai-context.sh" ]]; then
+        pass "shared executable: bin/ai-context.sh"
+    else
+        fail "shared resolver is not executable: $AI_SOURCE/bin/ai-context.sh"
+    fi
+
+    if command -v jq >/dev/null 2>&1; then
+        pass "AI context dependency: jq"
+        if jq -e '.schemaVersion == 1 and (.stations | type == "array")' "$FORGE_ROOT/configs/stations.json" >/dev/null 2>&1; then
+            pass "AI station inventory is valid"
+        else
+            fail "AI station inventory is missing or invalid: $FORGE_ROOT/configs/stations.json"
+        fi
+    else
+        fail "AI context dependency is unavailable: jq"
+    fi
+
+    if bash -n "$AI_SOURCE/bin/ai-context.sh"; then
+        pass "AI context resolver syntax"
+    else
+        fail "AI context resolver has invalid Bash syntax"
+    fi
 }
 
 require_source_layout() {
@@ -117,6 +141,13 @@ require_source_layout() {
         [[ -f "$AI_SOURCE/$relative_path" && ! -L "$AI_SOURCE/$relative_path" ]] \
             || die "shared source missing or not a regular file: $AI_SOURCE/$relative_path"
     done
+
+    [[ -x "$AI_SOURCE/bin/ai-context.sh" ]] \
+        || die "shared resolver is not executable: $AI_SOURCE/bin/ai-context.sh"
+    command -v jq >/dev/null 2>&1 \
+        || die "required command is unavailable: jq"
+    jq -e '.schemaVersion == 1 and (.stations | type == "array")' "$FORGE_ROOT/configs/stations.json" >/dev/null 2>&1 \
+        || die "AI station inventory is missing or invalid: $FORGE_ROOT/configs/stations.json"
 }
 
 check_ai_link() {
@@ -153,6 +184,24 @@ check_tool_directory() {
     fi
 }
 
+render_bootstrap() {
+    local template_path="$1"
+    local relative_path source_path
+
+    cat "$template_path"
+    for relative_path in identities.md guidelines/guidelines.md; do
+        source_path="$AI_SOURCE/$relative_path"
+        printf '\n\n# Embedded source: ~/.config/ai/%s\n\n' "$relative_path"
+        cat "$source_path"
+    done
+    while IFS= read -r source_path; do
+        relative_path="${source_path#"$AI_SOURCE/"}"
+        printf '\n\n# Embedded source: ~/.config/ai/%s\n\n' "$relative_path"
+        cat "$source_path"
+    done < <(find "$AI_SOURCE/guidelines/always" -maxdepth 1 -type f -name '*.md' -print | LC_ALL=C sort)
+    printf '\n'
+}
+
 check_bootstrap() {
     local source_path="$1"
     local target_path="$2"
@@ -162,10 +211,10 @@ check_bootstrap() {
         fail "$tool_name bootstrap must be a regular file: $target_path"
     elif [[ ! -f "$target_path" ]]; then
         fail "$tool_name bootstrap is missing: $target_path"
-    elif cmp -s "$source_path" "$target_path"; then
-        pass "$tool_name bootstrap matches the shared template"
+    elif cmp -s <(render_bootstrap "$source_path") "$target_path"; then
+        pass "$tool_name bootstrap matches the generated shared sources"
     else
-        fail "$tool_name bootstrap differs from $source_path"
+        fail "$tool_name bootstrap differs from the generated $source_path"
     fi
 }
 
@@ -353,17 +402,26 @@ install_ai_link() {
 install_bootstrap() {
     local source_path="$1"
     local target_path="$2"
+    local temporary_path
 
-    if [[ -f "$target_path" && ! -L "$target_path" ]] && cmp -s "$source_path" "$target_path"; then
+    if [[ -f "$target_path" && ! -L "$target_path" ]] \
+        && cmp -s <(render_bootstrap "$source_path") "$target_path"; then
         printf 'Already current: %s\n' "$target_path"
         return
     fi
+
+    temporary_path="$(mktemp "${target_path}.ai-config.XXXXXX")"
+    if ! render_bootstrap "$source_path" > "$temporary_path"; then
+        rm -f "$temporary_path"
+        die "failed to generate bootstrap from $source_path"
+    fi
+    chmod 644 "$temporary_path"
 
     if [[ -e "$target_path" || -L "$target_path" ]]; then
         backup_existing "$target_path"
     fi
 
-    install -m 644 "$source_path" "$target_path"
+    mv "$temporary_path" "$target_path"
     printf 'Installed: %s\n' "$target_path"
 }
 

@@ -16,6 +16,7 @@ alias	help	Open the forge command picker for aliases and scripts.
 alias	ai-config	Verify, install, or fast-forward-sync shared AI instructions and tool bootstrap files.
 alias	ai-verify	Run read-only shared AI configuration verification.
 alias	ai-install	Install shared AI configuration with recoverable backups for conflicting local files.
+alias	ai-context	Resolve the current AI station, universe, repository, stack, and instruction context.
 alias	docker-on	Start the Linux Docker Engine on demand and wait until it is ready.
 alias	don	Shortcut for docker-on.
 alias	port-release	Port a commit onto a release branch by creating a local cherry-pick branch.

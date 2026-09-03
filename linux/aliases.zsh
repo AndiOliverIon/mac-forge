@@ -31,6 +31,7 @@ alias codex-local-register="bash ~/mac-forge/linux/scripts/codex-local-register.
 alias ai-config="~/mac-forge/scripts/ai-config.sh"
 alias ai-verify="~/mac-forge/scripts/ai-config.sh verify"
 alias ai-install="~/mac-forge/scripts/ai-config.sh install"
+alias ai-context="~/.config/ai/bin/ai-context.sh"
 alias link-dotfiles="~/mac-forge/linux/scripts/link-dotfiles.sh"
 alias ldf=link-dotfiles
 alias verify-workstation="~/mac-forge/linux/scripts/verify-workstation.sh"

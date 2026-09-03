@@ -4,13 +4,17 @@ This file is the single tool-neutral entry point for deciding which shared guide
 
 ## First Step For Every Task
 
-1. Read every `.md` file directly inside `~/.config/ai/guidelines/always/` in lexical order; the
-   directory may be empty.
-2. Determine the task mode.
-3. Perform only the read-only routing inventory needed to identify owning repositories, affected
-   files, and stacks. Do not assume the initial working directory owns the scope.
-4. Follow the repository-discovery and stack-selection sections below, then load every resulting
-   instruction source before substantive analysis, recommendations, findings, or changes.
+1. The generated global bootstrap embeds `identities.md`, this router, and every direct
+   `always/*.md` file. They are already loaded; do not read them again. Use the resolved context
+   emitted by `~/.config/ai/bin/ai-context.sh` for dynamic routing.
+2. Verify that the resolved station, universe, repository, mode, stacks, and project-instruction
+   paths match the task scope. Perform only the missing read-only inventory when the result is
+   partial, then rerun the resolver with the discovered repository or target files.
+3. Load every path in the resolved context's `NEXT_INSTRUCTION_PATHS` section before substantive
+   analysis, recommendations, findings, or changes.
+4. If the resolver is unavailable or fails, fall back to reading every direct `always/*.md` file in
+   lexical order, determine the task mode, inventory the scope, and follow the manual discovery and
+   stack-selection rules below.
 5. State every `.md` instruction source being used and continue without asking for confirmation. The
    user will interrupt if the source list is wrong.
 
