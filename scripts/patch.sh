@@ -15,7 +15,7 @@ die() { echo "❌ $*" >&2; exit 1; }
 usage() {
   cat <<EOF
 Usage:
-  $0 [--config <path>] [apply|p|-P|remove|r|-R|status|s]
+  $0 [--config <path>] [--old] [apply|p|-P|remove|r|-R|status|s]
 
 Defaults:
   - Config path: \$FORGE_CONFIG_LOCAL_DIR/local-overrides.json
@@ -23,6 +23,7 @@ Defaults:
 
 Notes:
   - Must be run inside a git repo (targets resolved from repo root).
+  - --old uses an intervention's old_file path when provided.
   - Works even if your working tree is dirty.
   - On apply/remove, touched files are UNSTAGED (only those files).
 EOF
@@ -55,17 +56,55 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 #######################################
 CONFIG_FILE_DEFAULT="$FORGE_CONFIG_LOCAL_DIR/local-overrides.json"
 CONFIG_FILE_EXAMPLE="$FORGE_CONFIG_LOCAL_DIR/local-overrides.example.json"
-CONFIG_FILE="$CONFIG_FILE_DEFAULT"
+CONFIG_FILE=""
+COMMAND=""
+USE_OLD=0
 
-if [[ "${1:-}" == "--config" ]]; then
-  [[ -n "${2:-}" ]] || { usage; die "Missing value for --config"; }
-  if [[ "$2" = /* ]]; then
-    CONFIG_FILE="$2"
-  else
-    CONFIG_FILE="$PWD/$2"
-  fi
-  shift 2
-else
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --config)
+      [[ -n "${2:-}" ]] || { usage; die "Missing value for --config"; }
+      if [[ "$2" = /* ]]; then
+        CONFIG_FILE="$2"
+      else
+        CONFIG_FILE="$PWD/$2"
+      fi
+      shift 2
+      ;;
+    --old)
+      USE_OLD=1
+      shift
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    apply|p|-P)
+      [[ -z "$COMMAND" ]] || { usage; die "Only one command may be specified"; }
+      COMMAND="apply"
+      shift
+      ;;
+    remove|r|-R)
+      [[ -z "$COMMAND" ]] || { usage; die "Only one command may be specified"; }
+      COMMAND="remove"
+      shift
+      ;;
+    status|s)
+      [[ -z "$COMMAND" ]] || { usage; die "Only one command may be specified"; }
+      COMMAND="status"
+      shift
+      ;;
+    *)
+      usage
+      die "Unknown argument: $1"
+      ;;
+  esac
+done
+
+COMMAND="${COMMAND:-apply}"
+
+if [[ -z "$CONFIG_FILE" ]]; then
+  CONFIG_FILE="$CONFIG_FILE_DEFAULT"
   if [[ ! -f "$CONFIG_FILE_DEFAULT" && -f "$CONFIG_FILE_EXAMPLE" ]]; then
     CONFIG_FILE="$CONFIG_FILE_EXAMPLE"
   fi
@@ -74,35 +113,22 @@ fi
 [[ -f "$CONFIG_FILE" ]] || die "Config not found. Tried: $CONFIG_FILE_DEFAULT and $CONFIG_FILE_EXAMPLE (or pass --config)."
 
 #######################################
-# Command parsing
-#######################################
-COMMAND="${1:-apply}"
-case "$COMMAND" in
-  p|-P) COMMAND="apply" ;;
-  r|-R) COMMAND="remove" ;;
-  s)    COMMAND="status" ;;
-esac
-
-case "$COMMAND" in
-  apply|remove|status) ;;
-  *) usage; die "Unknown command: $COMMAND" ;;
-esac
-
-#######################################
 # Parse JSON manifest into a simple stream
 # Supports either:
 #   - top-level list: [ {...}, {...} ]
 #   - wrapper: { "interventions": [ {...} ] }
 # Intervention types:
+#   - Optional old_file overrides file when --old is used.
 #   - Inject (default): id,file,anchor,position(before|after),lines(array)
 #   - comment: id,file,comment_prefix,max_matches and either:
 #       * identifier (line mode)
 #       * block_start + block_end (block mode)
 #######################################
 parse_manifest() {
-  node - "$CONFIG_FILE" <<'JS'
+  node - "$CONFIG_FILE" "$USE_OLD" <<'JS'
 const fs = require('fs');
 const path = process.argv[2];
+const useOld = process.argv[3] === '1';
 const data = JSON.parse(fs.readFileSync(path, 'utf8'));
 
 const items = data && !Array.isArray(data) && Array.isArray(data.interventions)
@@ -122,9 +148,16 @@ for (const item of items) {
     throw new Error('Each intervention must include id and file');
   }
 
+  if (typeof item.file !== 'string' || item.file === '') {
+    throw new Error(`Intervention file must be a non-empty string: ${item.id}`);
+  }
+  if ('old_file' in item && (typeof item.old_file !== 'string' || item.old_file === '')) {
+    throw new Error(`Intervention old_file must be a non-empty string: ${item.id}`);
+  }
+
   const type = String(item.type || 'Inject').trim().toLowerCase();
   console.log(`ID|${item.id}`);
-  console.log(`FILE|${item.file}`);
+  console.log(`FILE|${useOld && item.old_file ? item.old_file : item.file}`);
   console.log(`TYPE|${type}`);
 
   if (type === 'inject') {
@@ -654,6 +687,11 @@ cmd_status() {
   echo "Patch status"
   echo "Repo:   $REPO_ROOT"
   echo "Config: $CONFIG_FILE"
+  if [[ "$USE_OLD" -eq 1 ]]; then
+    echo "Paths:  old (--old)"
+  else
+    echo "Paths:  current"
+  fi
   echo
   echo "Interventions: $total (inject: $inject_total, comment: $comment_total)"
   echo "Target files:  $unique_target_count"

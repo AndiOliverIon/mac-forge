@@ -10,7 +10,7 @@ source "${SCRIPT_DIR}/forge.sh"
 usage() {
   cat <<EOF
 Usage:
-  $0 [--config <path>] [apply|p|-P|remove|r|-R|status|s]
+  $0 [--config <path>] [--old] [apply|p|-P|remove|r|-R|status|s]
 
 Defaults:
   - Config path: ${LINUX_ROOT}/../config-local/local-overrides.json
@@ -19,6 +19,7 @@ Defaults:
 
 Notes:
   - Delegates to the shared patch runtime to keep Linux behavior aligned with mac-forge.
+  - --old uses an intervention's old_file path when provided.
 EOF
 }
 
@@ -54,4 +55,4 @@ else
   fi
 fi
 
-exec "${LINUX_ROOT}/../scripts/patch.sh" --config "$CONFIG_FILE" "${@:-}"
+exec "${LINUX_ROOT}/../scripts/patch.sh" --config "$CONFIG_FILE" "$@"

@@ -69,9 +69,9 @@ alias	sim	Cycle focus through the captured desktop apps with mouse movement; use
 alias	present	Set external display presentation resolution/mode.
 alias	prs	Shortcut for present.
 alias	convert-mov	Convert a selected .mov in the current folder to a readable, high-quality GIF (half-res, ffmpeg+gifski); use -n to name output, -o to drop near-duplicate frames (smaller GIF).
-alias	patch	Apply, remove, or inspect intervention patches.
-alias	p	Shortcut for patch.
-alias	pr	Remove an applied patch intervention.
+alias	patch	Apply, remove, or inspect intervention patches; use --old for legacy project paths.
+alias	p	Apply intervention patches; use --old for legacy project paths.
+alias	pr	Remove intervention patches; use --old for legacy project paths.
 alias	stio	Copy or move a selected local file/folder to a station destination, replacing same-name targets.
 alias	sio	Shortcut for stio.
 alias	h2c	Sync Hades changes up to Cerber.
