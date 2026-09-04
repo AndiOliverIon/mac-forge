@@ -17,7 +17,8 @@ does not run a distribution upgrade or remove packages.
 
 The bootstrap preserves Omarchy's Hyprland, Bash, and user configuration. The
 Forge Zsh profile remains available through `exec zsh`; it is not made the
-default shell automatically.
+default shell automatically. The shared Linux aliases are loaded into both
+Omarchy Bash and the Forge Zsh profile.
 
 The bootstrap installs JetBrains Toolbox from JetBrains' current Linux release
 and verifies its published SHA-256 checksum. After bootstrap, open Toolbox and
