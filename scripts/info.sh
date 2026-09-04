@@ -519,8 +519,8 @@ print_mounts() {
 
 # Emits one line per active network interface that has an IPv4 address, as
 # tab-separated fields: identifier (device), type (hardware port), ipaddress,
-# and a trailing '*' marker for the default-route interface. Emits a single
-# empty line when no interface is active.
+# mac address, and a trailing '*' marker for the default-route interface. Emits
+# a single empty line when no interface is active.
 network_info() {
   local default_iface
   default_iface="$(route -n get default 2>/dev/null | awk '/interface:/{print $2; exit}')"
@@ -535,13 +535,15 @@ network_info() {
         if (dev != "") print dev "\t" port
       }' \
     | while IFS=$'\t' read -r dev port; do
-        local ip
+        local ip mac
         ip="$(ipconfig getifaddr "$dev" 2>/dev/null || true)"
         [[ -z "$ip" ]] && continue
+        mac="$(ifconfig "$dev" 2>/dev/null | awk '/[[:space:]]ether /{print $2; exit}')"
+        [[ -z "$mac" ]] && mac="Unknown"
         if [[ "$dev" == "$default_iface" ]]; then
-          printf '%s\t%s\t%s\t*\n' "$dev" "$port" "$ip"
+          printf '%s\t%s\t%s\t%s\t*\n' "$dev" "$port" "$ip" "$mac"
         else
-          printf '%s\t%s\t%s\t\n' "$dev" "$port" "$ip"
+          printf '%s\t%s\t%s\t%s\t\n' "$dev" "$port" "$ip" "$mac"
         fi
       done
 }
@@ -711,15 +713,39 @@ print_info() {
   memory_boot="Boot     ${used_memory:-?} used, ${available_memory:-?} free (cached)"
   storage_row="/      ${filesystem:-unknown} on $disk_name | $(format_size "$disk_used_kib") / $(format_size "$disk_total_kib") ($disk_percent) | $(format_size "$disk_free_kib") free"
 
-  network_rows=()
-  while IFS=$'\t' read -r net_iface net_type net_ip net_default; do
+  local net_ifaces=() net_types=() net_ips=() net_macs=() net_markers=()
+  local net_iface_w=0 net_type_w=0 net_ip_w=0 net_mac_w=0
+  while IFS=$'\t' read -r net_iface net_type net_ip net_mac net_default; do
     [[ -z "$net_iface" ]] && continue
     local marker=""
     [[ -n "$net_default" ]] && marker=" (default)"
-    network_rows+=("${net_iface} | ${net_type:-Unknown} | ${net_ip:-No IP}${marker}")
+    local f_type="${net_type:-Unknown}"
+    local f_ip="${net_ip:-No IP}"
+    local f_mac="${net_mac:-Unknown}"
+    net_ifaces+=("$net_iface")
+    net_types+=("$f_type")
+    net_ips+=("$f_ip")
+    net_macs+=("$f_mac")
+    net_markers+=("$marker")
+    (( ${#net_iface} > net_iface_w )) && net_iface_w=${#net_iface}
+    (( ${#f_type} > net_type_w )) && net_type_w=${#f_type}
+    (( ${#f_ip} > net_ip_w )) && net_ip_w=${#f_ip}
+    (( ${#f_mac} > net_mac_w )) && net_mac_w=${#f_mac}
   done < <(network_info)
-  if (( ${#network_rows[@]} == 0 )); then
+
+  network_rows=()
+  if (( ${#net_ifaces[@]} == 0 )); then
     network_rows+=("No active network interface")
+  else
+    local net_i
+    for (( net_i = 0; net_i < ${#net_ifaces[@]}; net_i++ )); do
+      network_rows+=("$(printf '%-*s | %-*s | %-*s | %-*s%s' \
+        "$net_iface_w" "${net_ifaces[net_i]}" \
+        "$net_type_w" "${net_types[net_i]}" \
+        "$net_ip_w" "${net_ips[net_i]}" \
+        "$net_mac_w" "${net_macs[net_i]}" \
+        "${net_markers[net_i]}")")
+    done
   fi
 
   terminal_width="$(tput cols 2>/dev/null || printf '80')"
