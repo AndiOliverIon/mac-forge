@@ -224,8 +224,8 @@ install_zsh_environment
 "${FORGE_ROOT}/linux/scripts/link-dotfiles.sh"
 echo "Omarchy Bash remains the default shell. Run 'exec zsh' to use the Forge Zsh profile."
 
-step "8/10" "Preparing the work directory and Ghostty configuration..."
-mkdir -p "${HOME}/work"
+step "8/10" "Preparing workspaces and Ghostty configuration..."
+install -d -m 755 "${HOME}/work" "${HOME}/raynor" "${HOME}/zeratul"
 ghostty_config_dir="${HOME}/.config/ghostty"
 ghostty_config="${ghostty_config_dir}/config"
 if [[ -e "${ghostty_config}" || -L "${ghostty_config}" ]]; then
