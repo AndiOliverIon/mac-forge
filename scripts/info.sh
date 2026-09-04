@@ -517,24 +517,33 @@ print_mounts() {
   fi
 }
 
-# Emits the primary network interface details as tab-separated fields:
-# identifier (device), type (hardware port), ipaddress. Missing values are
-# emitted as empty fields so callers can render placeholders.
+# Emits one line per active network interface that has an IPv4 address, as
+# tab-separated fields: identifier (device), type (hardware port), ipaddress,
+# and a trailing '*' marker for the default-route interface. Emits a single
+# empty line when no interface is active.
 network_info() {
-  local iface type ip
-  iface="$(route -n get default 2>/dev/null | awk '/interface:/{print $2; exit}')"
-  if [[ -z "$iface" ]]; then
-    printf '\t\t\n'
-    return
-  fi
-  ip="$(ipconfig getifaddr "$iface" 2>/dev/null || true)"
-  type="$(networksetup -listallhardwareports 2>/dev/null \
-    | awk -v d="$iface" 'BEGIN{RS="";FS="\n"} $0 ~ ("Device: " d) {
-        for (i = 1; i <= NF; i++) if ($i ~ /Hardware Port/) {
-          sub(/Hardware Port: /, "", $i); print $i; exit
+  local default_iface
+  default_iface="$(route -n get default 2>/dev/null | awk '/interface:/{print $2; exit}')"
+
+  networksetup -listallhardwareports 2>/dev/null \
+    | awk 'BEGIN{RS="";FS="\n"} {
+        port=""; dev=""
+        for (i = 1; i <= NF; i++) {
+          if ($i ~ /^Hardware Port: /) { port=$i; sub(/^Hardware Port: /, "", port) }
+          if ($i ~ /^Device: /)        { dev=$i;  sub(/^Device: /, "", dev) }
         }
-      }')"
-  printf '%s\t%s\t%s\n' "$iface" "$type" "$ip"
+        if (dev != "") print dev "\t" port
+      }' \
+    | while IFS=$'\t' read -r dev port; do
+        local ip
+        ip="$(ipconfig getifaddr "$dev" 2>/dev/null || true)"
+        [[ -z "$ip" ]] && continue
+        if [[ "$dev" == "$default_iface" ]]; then
+          printf '%s\t%s\t%s\t*\n' "$dev" "$port" "$ip"
+        else
+          printf '%s\t%s\t%s\t\n' "$dev" "$port" "$ip"
+        fi
+      done
 }
 
 print_info() {
@@ -593,7 +602,8 @@ print_info() {
   local net_iface
   local net_type
   local net_ip
-  local network_row
+  local net_default
+  local network_rows
   local first_used_date
   local first_used_epoch
   local today_date
@@ -701,11 +711,15 @@ print_info() {
   memory_boot="Boot     ${used_memory:-?} used, ${available_memory:-?} free (cached)"
   storage_row="/      ${filesystem:-unknown} on $disk_name | $(format_size "$disk_used_kib") / $(format_size "$disk_total_kib") ($disk_percent) | $(format_size "$disk_free_kib") free"
 
-  IFS=$'\t' read -r net_iface net_type net_ip < <(network_info)
-  if [[ -n "$net_iface" ]]; then
-    network_row="${net_iface} | ${net_type:-Unknown} | ${net_ip:-No IP}"
-  else
-    network_row="No active network interface"
+  network_rows=()
+  while IFS=$'\t' read -r net_iface net_type net_ip net_default; do
+    [[ -z "$net_iface" ]] && continue
+    local marker=""
+    [[ -n "$net_default" ]] && marker=" (default)"
+    network_rows+=("${net_iface} | ${net_type:-Unknown} | ${net_ip:-No IP}${marker}")
+  done < <(network_info)
+  if (( ${#network_rows[@]} == 0 )); then
+    network_rows+=("No active network interface")
   fi
 
   terminal_width="$(tput cols 2>/dev/null || printf '80')"
@@ -728,7 +742,10 @@ print_info() {
   printf '\n%s■ Storage%s\n' "$storage_color" "$RESET"
   printf '%.*s\n' "$terminal_width" "$storage_row"
   printf '\n%s◉ Network%s\n' "$CYAN" "$RESET"
-  printf '%.*s\n' "$terminal_width" "$network_row"
+  local net_row
+  for net_row in "${network_rows[@]}"; do
+    printf '%.*s\n' "$terminal_width" "$net_row"
+  done
   print_mounts
 }
 
