@@ -8,7 +8,7 @@ if docker info >/dev/null 2>&1; then
 fi
 
 echo "Starting Docker Engine..."
-pkexec systemctl start docker.service
+sudo systemctl start docker.service
 
 for attempt in {1..30}; do
     if docker info >/dev/null 2>&1; then

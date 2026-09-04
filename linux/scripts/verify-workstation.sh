@@ -92,11 +92,47 @@ check_command() {
 check_package() {
     local package_name="$1"
 
-    if dpkg-query -W -f='${db:Status-Abbrev}' "$package_name" 2>/dev/null \
-        | grep -qx 'ii '; then
+    if pacman -Q "$package_name" > /dev/null 2>&1; then
         pass "package installed: ${package_name}"
     else
         fail "package missing: ${package_name}"
+    fi
+}
+
+check_optional_package() {
+    local package_name="$1"
+
+    if pacman -Q "$package_name" > /dev/null 2>&1; then
+        pass "optional package installed: ${package_name}"
+    else
+        warn "optional package missing: ${package_name}"
+    fi
+}
+
+check_optional_command() {
+    local command_name="$1"
+
+    if command -v "$command_name" > /dev/null 2>&1; then
+        pass "optional command available: ${command_name}"
+    else
+        warn "optional command missing: ${command_name}"
+    fi
+}
+
+check_optional_service() {
+    local unit_name="$1"
+    local state
+
+    if ! systemctl cat "$unit_name" > /dev/null 2>&1; then
+        skip "optional service is not installed: ${unit_name}"
+        return
+    fi
+
+    state="$(systemctl is-active "$unit_name" 2>/dev/null || true)"
+    if [[ "$state" == "active" ]]; then
+        pass "optional service active: ${unit_name}"
+    else
+        warn "optional service inactive: ${unit_name}"
     fi
 }
 
@@ -215,49 +251,73 @@ check_agent_identity() {
     esac
 }
 
-echo "Plasma workstation verification"
+echo "Omarchy workstation verification"
 echo
 
 if [[ "$remote_mode" -eq 1 ]]; then
-    skip "Plasma Wayland session is not observable accurately over SSH"
-elif [[ "${XDG_CURRENT_DESKTOP:-}" == *KDE* \
+    skip "Hyprland Wayland session is not observable accurately over SSH"
+elif [[ "${XDG_CURRENT_DESKTOP:-}" == *Hyprland* \
     && "${XDG_SESSION_TYPE:-}" == "wayland" ]]; then
-    pass "Plasma Wayland session"
+    pass "Omarchy Hyprland Wayland session"
 else
-    fail "expected Plasma Wayland; found ${XDG_CURRENT_DESKTOP:-unknown}/${XDG_SESSION_TYPE:-unknown}"
+    fail "expected Omarchy Hyprland Wayland; found ${XDG_CURRENT_DESKTOP:-unknown}/${XDG_SESSION_TYPE:-unknown}"
 fi
 
-if [[ "$(readlink -f /etc/systemd/system/display-manager.service 2>/dev/null)" \
-    == "/usr/lib/systemd/system/sddm.service" ]]; then
-    pass "SDDM owns the display-manager service"
+if [[ -r /etc/os-release ]]; then
+    # shellcheck disable=SC1091
+    source /etc/os-release
+fi
+if [[ "${ID:-}" == "omarchy" ]]; then
+    pass "Omarchy distribution"
 else
-    fail "SDDM does not own the display-manager service"
+    fail "expected Omarchy distribution; found ${ID:-unknown}"
 fi
 
 if findmnt -rn --target /data -o OPTIONS 2>/dev/null | tr ',' '\n' | grep -qx rw; then
     pass "/data is mounted read/write"
 else
-    fail "/data is not mounted read/write"
+    warn "/data is not mounted read/write; local Docker storage is expected"
 fi
 
 for package_name in \
-    kde-plasma-desktop \
-    plasma-workspace \
-    sddm \
-    sddm-theme-breeze \
-    xdg-desktop-portal-kde \
+    acl \
+    base-devel \
     bubblewrap \
-    dolphin \
+    docker \
+    docker-compose \
+    dotnet-sdk-8.0 \
+    dotnet-sdk-9.0 \
+    dotnet-sdk-10.0 \
+    ghostty \
+    glib2 \
+    mise \
+    openssh \
+    python \
+    rsync \
+    xdg-desktop-portal-hyprland \
     fzf \
-    plasma-discover \
+    jq \
     tmux; do
     check_package "$package_name"
 done
 
+for package_name in \
+    cifs-utils \
+    openconnect \
+    samba \
+    ydotool \
+    zsh; do
+    check_optional_package "$package_name"
+done
+
 for command_name in \
-    git jq dotnet node npm yarn ng code rider docker sqlcmd openconnect ssh tmux bwrap fzf zsh \
+    git jq dotnet node npm yarn ng code docker ssh tmux bwrap fzf \
     codex claude copilot; do
     check_command "$command_name"
+done
+
+for command_name in rider sqlcmd; do
+    check_optional_command "$command_name"
 done
 
 echo
@@ -300,20 +360,26 @@ check_agent_identity raynor Raynor /home/oliver/raynor
 check_agent_identity zeratul Zeratul /home/oliver/zeratul
 
 check_active_service NetworkManager.service
-check_active_service bluetooth.service
-check_active_service smbd.service
-check_active_service avahi-daemon.service
+check_optional_service bluetooth.service
+check_optional_service avahi-daemon.service
+
+if findmnt -rn --target /data > /dev/null 2>&1; then
+    check_optional_service smb.service
+    check_optional_service nmb.service
+else
+    skip "SMB services are not checked because /data is not mounted"
+fi
 
 if systemctl --user is-active --quiet ydotool.service; then
     pass "user service active: ydotool.service"
 else
-    fail "user service inactive: ydotool.service"
+    warn "user service inactive: ydotool.service"
 fi
 
-if systemctl --user is-active --quiet plasma-xdg-desktop-portal-kde.service; then
-    pass "KDE desktop portal is active"
+if pacman -Q xdg-desktop-portal-hyprland > /dev/null 2>&1; then
+    pass "Hyprland desktop portal is installed"
 else
-    fail "KDE desktop portal is inactive"
+    warn "Hyprland desktop portal is not installed"
 fi
 
 if systemctl is-enabled --quiet docker.service 2>/dev/null; then
@@ -322,13 +388,17 @@ else
     pass "Docker remains disabled at boot"
 fi
 
-if command -v jq > /dev/null 2>&1 \
-    && [[ -r /etc/docker/daemon.json ]] \
-    && jq -e '."data-root" == "/data/docker/engine"' /etc/docker/daemon.json \
-        > /dev/null 2>&1; then
-    pass "Docker data root configured under /data"
+if [[ -r /etc/docker/daemon.json ]] \
+    && command -v jq > /dev/null 2>&1 \
+    && docker_root="$(jq -r '."data-root" // "/var/lib/docker"' /etc/docker/daemon.json 2>/dev/null)" \
+    && [[ -n "$docker_root" && "$docker_root" != "null" ]]; then
+    if [[ "$docker_root" == "/var/lib/docker" ]]; then
+        pass "Docker uses the system storage path"
+    else
+        pass "Docker data root configured: ${docker_root}"
+    fi
 else
-    fail "Docker data root is not configured as /data/docker/engine"
+    warn "Docker daemon configuration is not readable; the default storage path may be in use"
 fi
 
 if [[ "$remote_mode" -eq 1 ]]; then
@@ -341,14 +411,14 @@ fi
 
 if [[ "$remote_mode" -eq 1 ]]; then
     skip "connected displays are not observable accurately over SSH"
-elif command -v kscreen-doctor > /dev/null 2>&1; then
-    connected_outputs="$(kscreen-doctor -o 2>/dev/null | grep -c 'connected')"
+elif command -v hyprctl > /dev/null 2>&1 && command -v jq > /dev/null 2>&1; then
+    connected_outputs="$(hyprctl monitors -j 2>/dev/null | jq 'length' 2>/dev/null || printf '0')"
     if (( connected_outputs >= 2 )); then
         pass "internal and external displays are connected"
     elif (( connected_outputs == 1 )); then
         warn "only one display is currently connected"
     else
-        fail "KScreen reports no connected display"
+        fail "Hyprland reports no connected display"
     fi
 fi
 
