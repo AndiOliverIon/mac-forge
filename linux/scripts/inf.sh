@@ -442,6 +442,58 @@ battery_lines() {
   return 1
 }
 
+network_type() {
+  local dev="$1"
+  local uevent_devtype
+
+  if [[ -d "/sys/class/net/$dev/wireless" ]]; then
+    printf 'Wi-Fi'
+    return
+  fi
+  uevent_devtype="$(awk -F= '/^DEVTYPE=/ {print $2}' "/sys/class/net/$dev/uevent" 2>/dev/null || true)"
+  case "$uevent_devtype" in
+    bridge) printf 'Bridge'; return ;;
+    bond) printf 'Bond'; return ;;
+    vlan) printf 'VLAN'; return ;;
+    wwan) printf 'Cellular'; return ;;
+  esac
+  case "$dev" in
+    docker*|br-*|virbr*) printf 'Bridge' ;;
+    veth*) printf 'Virtual' ;;
+    tun*|tap*|wg*) printf 'VPN' ;;
+    wl*) printf 'Wi-Fi' ;;
+    en*|eth*) printf 'Ethernet' ;;
+    *) printf 'Unknown' ;;
+  esac
+}
+
+# Emits one line per active network interface that has an IPv4 address, as
+# tab-separated fields: identifier (device), type (interface classification),
+# ipaddress, mac address, and a trailing '*' marker for the default-route
+# interface. Emits nothing when no interface is active.
+network_info() {
+  local default_iface
+
+  default_iface="$(ip route show default 2>/dev/null \
+    | awk '/^default/ { for (i = 1; i <= NF; i++) if ($i == "dev") { print $(i + 1); exit } }')"
+
+  ip -o -4 addr show 2>/dev/null | awk '{print $2, $4}' | while read -r dev cidr; do
+    [[ -n "$dev" && "$dev" != "lo" ]] || continue
+    local ip="${cidr%%/*}"
+    [[ -n "$ip" ]] || continue
+    local mac
+    mac="$(cat "/sys/class/net/$dev/address" 2>/dev/null || true)"
+    [[ -z "$mac" ]] && mac="Unknown"
+    local type
+    type="$(network_type "$dev")"
+    if [[ "$dev" == "$default_iface" ]]; then
+      printf '%s\t%s\t%s\t%s\t*\n' "$dev" "$type" "$ip" "$mac"
+    else
+      printf '%s\t%s\t%s\t%s\t\n' "$dev" "$type" "$ip" "$mac"
+    fi
+  done
+}
+
 print_columns() {
   local left_title="$1"
   local left_name="$2"
@@ -566,6 +618,7 @@ print_info() {
   local -a battery_lines
   local -a storage_lines
   local -a data_storage_info
+  local -a network_rows
   local terminal_width
 
   readarray -t storage_info < <(storage_lines /)
@@ -660,6 +713,42 @@ print_info() {
     )
   fi
 
+  local -a net_ifaces=() net_types=() net_ips=() net_macs=() net_markers=()
+  local net_iface_w=0 net_type_w=0 net_ip_w=0 net_mac_w=0
+  local net_iface net_type net_ip net_mac net_default
+  while IFS=$'\t' read -r net_iface net_type net_ip net_mac net_default; do
+    [[ -z "$net_iface" ]] && continue
+    local marker=""
+    [[ -n "$net_default" ]] && marker=" (default)"
+    local f_type="${net_type:-Unknown}"
+    local f_ip="${net_ip:-No IP}"
+    local f_mac="${net_mac:-Unknown}"
+    net_ifaces+=("$net_iface")
+    net_types+=("$f_type")
+    net_ips+=("$f_ip")
+    net_macs+=("$f_mac")
+    net_markers+=("$marker")
+    (( ${#net_iface} > net_iface_w )) && net_iface_w=${#net_iface}
+    (( ${#f_type} > net_type_w )) && net_type_w=${#f_type}
+    (( ${#f_ip} > net_ip_w )) && net_ip_w=${#f_ip}
+    (( ${#f_mac} > net_mac_w )) && net_mac_w=${#f_mac}
+  done < <(network_info)
+
+  network_rows=()
+  if (( ${#net_ifaces[@]} == 0 )); then
+    network_rows+=("No active network interface")
+  else
+    local net_i
+    for (( net_i = 0; net_i < ${#net_ifaces[@]}; net_i++ )); do
+      network_rows+=("$(printf '%-*s | %-*s | %-*s | %-*s%s' \
+        "$net_iface_w" "${net_ifaces[net_i]}" \
+        "$net_type_w" "${net_types[net_i]}" \
+        "$net_ip_w" "${net_ips[net_i]}" \
+        "$net_mac_w" "${net_macs[net_i]}" \
+        "${net_markers[net_i]}")")
+    done
+  fi
+
   terminal_width="$(tput cols 2>/dev/null || printf '80')"
   (( terminal_width < 40 )) && terminal_width=40
 
@@ -672,6 +761,11 @@ print_info() {
   if (( ${#storage_lines[@]} > 1 )); then
     printf '%.*s\n' "$terminal_width" "${storage_lines[1]}"
   fi
+  printf '\n%s◉ Network%s\n' "$CYAN" "$RESET"
+  local net_row
+  for net_row in "${network_rows[@]}"; do
+    printf '%.*s\n' "$terminal_width" "$net_row"
+  done
   print_mounts
 }
 
