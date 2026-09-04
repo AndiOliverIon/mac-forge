@@ -517,6 +517,26 @@ print_mounts() {
   fi
 }
 
+# Emits the primary network interface details as tab-separated fields:
+# identifier (device), type (hardware port), ipaddress. Missing values are
+# emitted as empty fields so callers can render placeholders.
+network_info() {
+  local iface type ip
+  iface="$(route -n get default 2>/dev/null | awk '/interface:/{print $2; exit}')"
+  if [[ -z "$iface" ]]; then
+    printf '\t\t\n'
+    return
+  fi
+  ip="$(ipconfig getifaddr "$iface" 2>/dev/null || true)"
+  type="$(networksetup -listallhardwareports 2>/dev/null \
+    | awk -v d="$iface" 'BEGIN{RS="";FS="\n"} $0 ~ ("Device: " d) {
+        for (i = 1; i <= NF; i++) if ($i ~ /Hardware Port/) {
+          sub(/Hardware Port: /, "", $i); print $i; exit
+        }
+      }')"
+  printf '%s\t%s\t%s\n' "$iface" "$type" "$ip"
+}
+
 print_info() {
   local top_output
   local cpu_effort
@@ -570,6 +590,10 @@ print_info() {
   local battery_charge
   local battery_health
   local storage_row
+  local net_iface
+  local net_type
+  local net_ip
+  local network_row
   local first_used_date
   local first_used_epoch
   local today_date
@@ -677,6 +701,13 @@ print_info() {
   memory_boot="Boot     ${used_memory:-?} used, ${available_memory:-?} free (cached)"
   storage_row="/      ${filesystem:-unknown} on $disk_name | $(format_size "$disk_used_kib") / $(format_size "$disk_total_kib") ($disk_percent) | $(format_size "$disk_free_kib") free"
 
+  IFS=$'\t' read -r net_iface net_type net_ip < <(network_info)
+  if [[ -n "$net_iface" ]]; then
+    network_row="${net_iface} | ${net_type:-Unknown} | ${net_ip:-No IP}"
+  else
+    network_row="No active network interface"
+  fi
+
   terminal_width="$(tput cols 2>/dev/null || printf '80')"
   (( terminal_width < 40 )) && terminal_width=40
 
@@ -696,6 +727,8 @@ print_info() {
     "$memory_boot" ""
   printf '\n%s■ Storage%s\n' "$storage_color" "$RESET"
   printf '%.*s\n' "$terminal_width" "$storage_row"
+  printf '\n%s◉ Network%s\n' "$CYAN" "$RESET"
+  printf '%.*s\n' "$terminal_width" "$network_row"
   print_mounts
 }
 
