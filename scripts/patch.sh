@@ -23,7 +23,7 @@ Defaults:
 
 Notes:
   - Must be run inside a git repo (targets resolved from repo root).
-  - --old uses an intervention's old_file path when provided.
+  - --old uses an intervention's old_file path and old_lines payload when provided.
   - Works even if your working tree is dirty.
   - On apply/remove, touched files are UNSTAGED (only those files).
 EOF
@@ -118,7 +118,7 @@ fi
 #   - top-level list: [ {...}, {...} ]
 #   - wrapper: { "interventions": [ {...} ] }
 # Intervention types:
-#   - Optional old_file overrides file when --old is used.
+#   - Optional old_file and old_lines override file and lines when --old is used.
 #   - Inject (default): id,file,anchor,position(before|after),lines(array)
 #   - comment: id,file,comment_prefix,max_matches and either:
 #       * identifier (line mode)
@@ -172,8 +172,12 @@ for (const item of items) {
     if (!Array.isArray(item.lines)) {
       throw new Error(`lines must be an array for ${item.id}`);
     }
+    if ('old_lines' in item && !Array.isArray(item.old_lines)) {
+      throw new Error(`old_lines must be an array for ${item.id}`);
+    }
 
-    const joined = item.lines.map((line) => String(line)).join('\n');
+    const lines = useOld && item.old_lines ? item.old_lines : item.lines;
+    const joined = lines.map((line) => String(line)).join('\n');
     const encoded = Buffer.from(joined, 'utf8').toString('base64');
     console.log(`ANCHOR|${item.anchor}`);
     console.log(`POSITION|${item.position}`);

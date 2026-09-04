@@ -19,7 +19,7 @@ Defaults:
 
 Notes:
   - Delegates to the shared patch runtime to keep Linux behavior aligned with mac-forge.
-  - --old uses an intervention's old_file path when provided.
+  - --old uses an intervention's old_file path and old_lines payload when provided.
 EOF
 }
 
