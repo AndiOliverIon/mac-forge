@@ -175,42 +175,31 @@ install -d -m 700 "${FORGE_CONFIG_HOME}"
 install -d -m 755 "${HOME}/.local/bin"
 
 step "1/10" "Installing Arch and Omarchy development packages..."
-omarchy pkg add \
-    acl \
-    base-devel \
-    btop \
-    bubblewrap \
-    ca-certificates \
-    cifs-utils \
-    curl \
-    docker \
-    docker-compose \
-    dotnet-sdk-8.0 \
-    dotnet-sdk-9.0 \
-    dotnet-sdk-10.0 \
-    fzf \
-    git \
-    glib2 \
-    gnupg \
-    htop \
-    jq \
-    lsof \
-    mise \
-    openbsd-netcat \
-    openconnect \
-    openssh \
-    python \
-    rsync \
-    tmux \
-    tree \
-    unzip \
-    visual-studio-code-bin \
-    wget \
-    xdg-desktop-portal-hyprland \
-    xdg-utils \
-    yarn \
-    zip \
+arch_packages=(
+    acl
+    bubblewrap
+    ca-certificates
+    cifs-utils
+    curl
+    dotnet-sdk-8.0
+    dotnet-sdk-9.0
+    dotnet-sdk-10.0
+    gnupg
+    htop
+    lsof
+    openbsd-netcat
+    openconnect
+    openssh
+    python
+    rsync
+    visual-studio-code-bin
+    wget
+    yarn
+    zip
     zsh
+)
+
+omarchy pkg add "${arch_packages[@]}"
 
 step "2/10" "Installing sqlcmd when the Arch package is available..."
 install_sqlcmd
