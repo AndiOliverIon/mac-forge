@@ -2,20 +2,34 @@
 set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-PROJDIR="$ROOT/Asms2.Web"
+PROJECT_NAME="Ardis.Perform"
+
+if [[ $# -gt 1 ]]; then
+    echo "Usage: genopenapi [--old]" >&2
+    exit 1
+fi
+
+if [[ ${1:-} == "--old" ]]; then
+    PROJECT_NAME="Asms2.Web"
+elif [[ $# -eq 1 ]]; then
+    echo "Usage: genopenapi [--old]" >&2
+    exit 1
+fi
+
+PROJDIR="$ROOT/$PROJECT_NAME"
 OUTDIR="$ROOT/ardis.perform.client/src/app/shared/api"
 OUTFILE="$OUTDIR/PerformApiClient.ts"
-TARGET_FRAMEWORK="$(dotnet msbuild "$PROJDIR/Asms2.Web.csproj" -getProperty:TargetFramework -property:Configuration=Debug)"
+TARGET_FRAMEWORK="$(dotnet msbuild "$PROJDIR/$PROJECT_NAME.csproj" -getProperty:TargetFramework -property:Configuration=Debug)"
 
 if [[ -z "$TARGET_FRAMEWORK" ]]; then
-    echo "Could not determine the target framework for $PROJDIR/Asms2.Web.csproj" >&2
+    echo "Could not determine the target framework for $PROJDIR/$PROJECT_NAME.csproj" >&2
     exit 1
 fi
 
 cd "$ROOT"
 dotnet tool restore
 
-dotnet build "$PROJDIR/Asms2.Web.csproj" -c Debug
+dotnet build "$PROJDIR/$PROJECT_NAME.csproj" -c Debug
 
 # Generate OpenAPI JSON from the built assembly
 DLL="$PROJDIR/bin/Debug/$TARGET_FRAMEWORK/osx-arm64/Ardis.Perform.dll"

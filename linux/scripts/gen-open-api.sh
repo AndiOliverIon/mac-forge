@@ -3,25 +3,39 @@
 set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-PROJDIR="${ROOT}/Asms2.Web"
+PROJECT_NAME="Ardis.Perform"
+
+if [[ $# -gt 1 ]]; then
+    echo "Usage: genopenapi [--old]" >&2
+    exit 1
+fi
+
+if [[ ${1:-} == "--old" ]]; then
+    PROJECT_NAME="Asms2.Web"
+elif [[ $# -eq 1 ]]; then
+    echo "Usage: genopenapi [--old]" >&2
+    exit 1
+fi
+
+PROJDIR="${ROOT}/${PROJECT_NAME}"
 OUTDIR="${ROOT}/ardis.perform.client/src/app/shared/api"
 OUTFILE="${OUTDIR}/PerformApiClient.ts"
 RUNTIME_ID="linux-x64"
 LOCKFILE="${TMPDIR:-/tmp}/ardis-perform-genopenapi-packages.lock.json"
 TARGET_FRAMEWORK="$(
-    dotnet msbuild "${PROJDIR}/Asms2.Web.csproj" \
+    dotnet msbuild "${PROJDIR}/${PROJECT_NAME}.csproj" \
         -getProperty:TargetFramework \
         -property:Configuration=Debug
 )"
 
 if [[ -z "${TARGET_FRAMEWORK}" ]]; then
-    echo "Could not determine the target framework for ${PROJDIR}/Asms2.Web.csproj" >&2
+    echo "Could not determine the target framework for ${PROJDIR}/${PROJECT_NAME}.csproj" >&2
     exit 1
 fi
 
 cd "${ROOT}"
 dotnet tool restore
-dotnet restore "${PROJDIR}/Asms2.Web.csproj" \
+dotnet restore "${PROJDIR}/${PROJECT_NAME}.csproj" \
     -r "${RUNTIME_ID}" \
     --disable-parallel \
     --verbosity normal \
@@ -29,7 +43,7 @@ dotnet restore "${PROJDIR}/Asms2.Web.csproj" \
     -p:BuildInParallel=false \
     -p:RestorePackagesWithLockFile=false \
     -p:NuGetLockFilePath="${LOCKFILE}"
-dotnet build "${PROJDIR}/Asms2.Web.csproj" \
+dotnet build "${PROJDIR}/${PROJECT_NAME}.csproj" \
     -c Debug \
     -r "${RUNTIME_ID}" \
     -m:1 \
