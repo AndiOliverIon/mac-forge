@@ -1,6 +1,6 @@
-# Linux Fresh Install Checklist
+# Omarchy Linux Workstation
 
-A list of essential tools and configurations for a fresh Linux installation.
+A list of tools and configurations for the Omarchy workstation.
 
 ## Bootstrap
 
@@ -10,17 +10,20 @@ Run the workstation bootstrap from the repository root:
 ./linux/scripts/bootstrap.sh
 ```
 
-The script installs the core development tools, IDEs, terminal, shell, and
-Powerlevel10k setup used on the Plasma workstation. It also installs `fzf` and
-configures native Docker Engine with storage
-under `/data/docker`. It does not
-run `apt autoremove`; review that package list manually because desktop
-metapackage changes can make important system packages appear unused.
+The script targets Omarchy on Arch Linux. It installs missing Arch packages
+through `omarchy pkg add`, configures the mise-managed Node.js toolchain, and
+installs the native versioned .NET SDK packages used by the Ardis projects. It
+does not run a distribution upgrade or remove packages.
+
+The bootstrap preserves Omarchy's Hyprland, Bash, and user configuration. The
+Forge Zsh profile remains available through `exec zsh`; it is not made the
+default shell automatically. The shared Linux aliases are loaded into both
+Omarchy Bash and the Forge Zsh profile.
 
 The bootstrap installs JetBrains Toolbox from JetBrains' current Linux release
 and verifies its published SHA-256 checksum. After bootstrap, open Toolbox and
 install Rider from there. Do not install Rider through Snap; the native Toolbox
-installation integrates with KDE's launcher and existing-window activation.
+installation integrates with the Omarchy application launcher.
 
 Before running the bootstrap, a Telerik license can be staged as
 `.telerik/telerik-license.txt` in the launch directory or under
@@ -29,13 +32,18 @@ Before running the bootstrap, a Telerik license can be staged as
 `TELERIK_LICENSE_SOURCE_DIR` to use another source directory. The source copy
 is deliberately retained for verification and should be removed afterward.
 
-Before running it, the Data SSD must already be formatted and mounted
-read/write at `/data` through `/etc/fstab`. The bootstrap intentionally does
-not partition disks or edit `fstab`.
+If a Data SSD is formatted and mounted read/write at `/data` through
+`/etc/fstab`, the bootstrap prepares its SQL and Docker layout and installs the
+SMB share. The bootstrap intentionally does not partition disks or edit
+`fstab`. Without `/data`, Docker uses the normal system storage path and the
+Data SSD steps are skipped. Linux SQL helpers use `/data/sql/docker` when that
+mount is available and automatically fall back to
+`~/.local/share/forge/sql/docker` on the system disk.
 
-The Linux prompt sources `profiles/p10k.zsh`, which is the macOS master
+The Forge Zsh prompt sources `profiles/p10k.zsh`, which is the macOS master
 Powerlevel10k personalization. Do not run `p10k configure` independently on
-Linux; update the master profile instead.
+Linux; update the master profile instead. Omarchy Bash remains the default
+interactive shell.
 
 Ghostty split shortcuts:
 
@@ -46,9 +54,10 @@ Ghostty split shortcuts:
 
 Focused panels close immediately without a confirmation prompt.
 
-The Ghostty config is shared with macOS from the neutral repo file
-`dotfiles/ghostty.ghostty`; Linux bootstrap symlinks it to
-`~/.config/ghostty/config.ghostty`. Edit the shared file, not a local copy.
+The Ghostty config can be shared with macOS from the neutral repo file
+`dotfiles/ghostty.ghostty`. On a fresh setup, bootstrap links it to Omarchy's
+native `~/.config/ghostty/config` path. An existing Omarchy Ghostty config is
+preserved; merge changes deliberately before replacing it.
 
 ## MasterChief agent workspaces
 
@@ -181,9 +190,11 @@ shared `scripts/db-remote-backup.sh` workflow and requires remote targets in:
 ~/mac-forge/config-local/local-store.json
 ```
 
-The bootstrap installs Microsoft's standalone `sqlcmd` utility required by
-this workflow. Remote SQL credentials remain machine-local and are not created
-or copied by bootstrap.
+The bootstrap attempts to install the `mssql-tools18` AUR package, which
+provides Microsoft's standalone `sqlcmd` utility. If the AUR package is
+unavailable, install it later with `omarchy pkg aur add mssql-tools18`. Remote
+SQL credentials remain machine-local and are not created or copied by
+bootstrap.
 
 Use `rdown` to select a `.bak` or `.bkp` file from the Portainer SMB share and
 download it to one of the destinations configured in
@@ -254,8 +265,9 @@ the configured application is unavailable.
 
 ## Docker
 
-Install native Docker Engine with its daemon and containerd storage under
-`/data/docker`:
+Install native Docker Engine with its daemon and containerd storage. When
+`/data` is mounted read/write, the bootstrap uses `/data/docker`; otherwise it
+uses Docker's normal `/var/lib/docker` path:
 
 ```bash
 sudo ./linux/scripts/install-docker.sh
@@ -264,8 +276,8 @@ sudo ./linux/scripts/install-docker.sh
 Log out and back in after installation so membership in the `docker` group
 takes effect.
 
-Docker Engine is disabled at boot on the secondary Linux station. Start it on
-demand and wait for the daemon to become ready with:
+Docker Engine is disabled at boot on this station. Start it on demand and wait
+for the daemon to become ready with:
 
 ```bash
 docker-on
@@ -305,8 +317,8 @@ configuration to `~/.npmrc`, or authenticate with an Azure DevOps PAT that has
 Packaging Read permission, before running `npm ci`.
 
 Bootstrap installs Angular CLI `20.3.16`, matching
-`ardis-perform/ardis.perform.client`, and activates Yarn `1.22.22` through
-Corepack. The project README mentions
+`ardis-perform/ardis.perform.client`, and installs Arch's Yarn `1.22.22`
+package. The project README mentions
 `vsts-npm-auth`, but that package exposes a Windows executable and is not used
 as the Linux authentication method.
 
@@ -327,11 +339,13 @@ Commercial UI licensing is also intentionally manual:
 
 ## Window Management
 
-The active Linux desktop is KDE Plasma with KWin.
+The active Linux desktop is Omarchy with Hyprland on Wayland. Personal
+Hyprland settings belong in `~/.config/hypr/`; Omarchy's packaged defaults under
+`/usr/share/omarchy/` are read-only.
 
-The bootstrap assigns virtual-desktop navigation to `Meta+Ctrl+Arrow`, leaving
-`Ctrl+Alt+Arrow` available for Ghostty split navigation. It does not write
-GNOME settings.
+The bootstrap does not replace Hyprland or write display settings. Keep
+monitor, keybinding, animation, and appearance changes in the user Hyprland
+configuration.
 
 Use `sim` to cycle focus through the open, non-minimized applications captured
 when the command starts:
@@ -342,16 +356,13 @@ sim --cycle 30
 ```
 
 The second form saves the interval in seconds. `sim` stays in the foreground
-and unloads its temporary KWin script when stopped with `Ctrl+C`. It supports
-Plasma on Wayland and X11. After activating each app, it moves the pointer to
-the focused window, performs a brief 24-pixel horizontal and vertical movement
-without clicking, and restores the original pointer position. Window state and
-application content are not changed.
+and unloads its temporary KWin script when stopped with `Ctrl+C`. It is a
+legacy Plasma/KWin utility and is not part of the Omarchy bootstrap.
 
-The command requires one of `qdbus6`, `qdbus-qt6`, or `qdbus`, plus
-`libglib2.0-bin`, `python3-gi`, and `ydotool` with its user service running and
-`/dev/uinput` access. The bootstrap installs and enables this support. Sign out
-and back in after bootstrap if it adds the user to the `input` group.
+The command requires a Plasma/KWin session, one of `qdbus6`, `qdbus-qt6`, or
+`qdbus`, plus the matching pointer-injection dependencies. It is retained for
+older Plasma installations and is not supported by the current Hyprland
+session.
 
 ## Utilities
 
@@ -364,9 +375,9 @@ verify-workstation
 vw
 ```
 
-It checks Plasma/SDDM, `/data`, core packages and commands, services, portals,
-Docker configuration, SSH agent state, displays, failed units, and the static
-configuration of both MasterChief agent universes. When Raynor or Zeratul is
+It checks the Omarchy/Hyprland session, optional `/data`, core packages and
+commands, services, portals, Docker configuration, SSH agent state, displays,
+failed units, and the static configuration of both MasterChief agent universes. When Raynor or Zeratul is
 running, it also verifies that session's identity variables and pane boundary;
 a stopped agent session is reported as a valid state. The report does not start
 services or sessions, connect the VPN, access secrets, or change machine state.
@@ -388,13 +399,16 @@ show the estimated potential gain and applied runs show the measured reduction.
 
 - `load-workspace.sh` is retained only as a legacy i3 layout reference and
   refuses to run outside i3 because it closes windows on its target workspace.
+- `disp` switches the current Hyprland session between all connected displays,
+  the laptop panel, and external displays. Persist lasting monitor changes in
+  `~/.config/hypr/monitors.lua`.
 - `setup-display.sh` is retained only for its old X11 connector layout and
-  refuses to run on Wayland. Configure the current displays through Plasma
-  System Settings; KScreen preserves their geometry and scaling.
+  refuses to run on Wayland. Configure current displays through Hyprland and
+  the Omarchy monitor configuration.
 
 ## SSH & Shell Configuration
 
-The Linux Zsh configuration sources the shared
+The optional Linux Zsh configuration sources the shared
 `dotfiles/aliases-vps1` file. This provides the same on-demand CodeMeter tunnel
 commands used on macOS:
 
@@ -434,8 +448,8 @@ GnuPG agent socket under `XDG_RUNTIME_DIR`. If none is usable, it starts a
 fallback agent on a stable runtime socket.
 
 When the selected agent has no identities, the shell silently loads the
-existing `~/.ssh/ardis-ed25519` and
-`~/.ssh/id_ed25519_personal_gmail` keys. Missing key files are skipped. A
+existing `~/.ssh/ardis_ed25519` and
+`~/.ssh/andioliverion_ed25519` keys. Missing key files are skipped. A
 running `ssh-agent` process alone is not considered sufficient because the
 current shell must also have its usable socket in `SSH_AUTH_SOCK`.
 

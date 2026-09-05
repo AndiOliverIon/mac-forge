@@ -21,6 +21,20 @@ link_file() {
   echo "Linked $target_path -> $source_path"
 }
 
+ensure_bash_aliases() {
+  local target_path="$HOME/.bashrc"
+  local source_line='[[ -r "$HOME/mac-forge/linux/aliases.zsh" ]] && source "$HOME/mac-forge/linux/aliases.zsh"'
+
+  [[ -f "$target_path" ]] || return
+  grep -Fqx -- "$source_line" "$target_path" && return
+
+  {
+    printf '\n# Load Forge aliases in Omarchy Bash.\n'
+    printf '%s\n' "$source_line"
+  } >> "$target_path"
+  echo "Linked Forge aliases into $target_path"
+}
+
 FORGE_ROOT="${FORGE_ROOT:-$HOME/mac-forge}"
 LINUX_DOTFILES_DIR="${FORGE_ROOT}/linux/dotfiles"
 
@@ -31,3 +45,4 @@ LINUX_DOTFILES_DIR="${FORGE_ROOT}/linux/dotfiles"
 
 link_file "$LINUX_DOTFILES_DIR/zshrc" "$HOME/.zshrc"
 link_file "$LINUX_DOTFILES_DIR/p10k.zsh" "$HOME/.p10k.zsh"
+ensure_bash_aliases

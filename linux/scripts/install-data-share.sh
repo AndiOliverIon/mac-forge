@@ -7,6 +7,11 @@ if [[ "${EUID}" -ne 0 ]]; then
     exit 1
 fi
 
+command -v omarchy > /dev/null 2>&1 || {
+    echo "ERROR: omarchy is required; this installer targets Omarchy/Arch Linux." >&2
+    exit 1
+}
+
 SHARE_USER="${SUDO_USER:-oliver}"
 SHARE_PATH="/data"
 LAN_INTERFACE="${LAN_INTERFACE:-$(ip route show default | awk 'NR == 1 { print $5 }')}"
@@ -34,8 +39,16 @@ getent passwd "${SHARE_USER}" > /dev/null || {
     exit 1
 }
 
-apt-get update
-apt-get install -y samba smbclient
+omarchy pkg add samba smbclient
+
+if [[ ! -f "${SMB_CONFIG}" ]]; then
+    if [[ -f "${SMB_CONFIG}.default" ]]; then
+        cp -a "${SMB_CONFIG}.default" "${SMB_CONFIG}"
+    else
+        install -d -m 0755 "$(dirname -- "${SMB_CONFIG}")"
+        printf '%s\n' '[global]' > "${SMB_CONFIG}"
+    fi
+fi
 
 if [[ ! -f "${SMB_CONFIG}.before-data-share" ]]; then
     cp -a "${SMB_CONFIG}" "${SMB_CONFIG}.before-data-share"
@@ -70,8 +83,8 @@ if command -v ufw > /dev/null 2>&1; then
     ufw allow from "${LAN_SUBNET}" to any app Samba
 fi
 
-systemctl enable --now smbd.service nmbd.service
-systemctl restart smbd.service nmbd.service
+systemctl enable --now smb.service nmb.service
+systemctl restart smb.service nmb.service
 
 echo
 echo "Data share configured."

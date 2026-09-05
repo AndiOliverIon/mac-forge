@@ -187,11 +187,11 @@
       },
       "os": {
         "family": "linux",
-        "name": "Ubuntu",
-        "version": "26.04 LTS",
+        "name": "Omarchy",
+        "version": "4.0.2",
         "architecture": "x86_64",
-        "kernel": "7.0.0-30-generic",
-        "verifiedAt": "2026-08-26"
+        "kernel": "7.1.9-arch1-2",
+        "verifiedAt": "2026-09-04"
       },
       "hardware": {
         "status": "verified",
@@ -360,7 +360,8 @@
         "remote agent-universe directory inventory over SSH",
         "user-confirmed UTP address and MAC address",
         "user-confirmed agent identities, universe boundaries, and two-agent concurrency limit",
-        "user-confirmed display connection path"
+        "user-confirmed display connection path",
+        "live system inventory on 2026-09-04"
       ]
     },
     {

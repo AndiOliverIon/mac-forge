@@ -10,7 +10,11 @@ alias desk="cd ~/Desktop"
 alias dev="cd ~/dev"
 alias down="cd ~/Downloads"
 alias projects="cd ~/projects"
-alias reloadterm="source ~/.zshrc"
+if [[ -n "${BASH_VERSION:-}" ]]; then
+  alias reloadterm="source ~/.bashrc"
+else
+  alias reloadterm="source ~/.zshrc"
+fi
 __kp() {
   if [[ -z "${1:-}" ]]; then
     echo "Usage: kp <port>" >&2
@@ -182,7 +186,13 @@ alias mcbt=mcboot
 # Ensure ~/.local/bin is on PATH first: this file may be sourced before
 # ~/.zshrc adds it, which would otherwise hide the zoxide binary.
 [[ ":$PATH:" == *":$HOME/.local/bin:"* ]] || export PATH="$HOME/.local/bin:$PATH"
-command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
+if command -v zoxide >/dev/null 2>&1; then
+  if [[ -n "${BASH_VERSION:-}" ]]; then
+    eval "$(zoxide init bash)"
+  else
+    eval "$(zoxide init zsh)"
+  fi
+fi
 
 # yazi: `y` opens the file manager and cd's to the last dir on exit
 function y() {

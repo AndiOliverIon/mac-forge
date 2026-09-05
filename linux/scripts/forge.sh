@@ -43,10 +43,19 @@ forge_require_docker_access() {
     }
     END { exit(found ? 0 : 1) }
   '; then
-    forge_die "Docker access is not active in this login session. Sign out of Ubuntu completely, sign back in, then run 'docker ps'."
+    forge_die "Docker access is not active in this login session. Sign out completely, sign back in, then run 'docker ps'."
   fi
 
   forge_die "Docker access is unavailable. Add ${USER} to the docker group, then sign out and back in."
+}
+
+forge_default_sql_storage_root() {
+  if findmnt -rn --target /data > /dev/null 2>&1 \
+    && findmnt -no OPTIONS /data | tr ',' '\n' | grep -qx rw; then
+    printf '%s\n' /data/sql/docker
+  else
+    printf '%s\n' "${XDG_DATA_HOME:-${HOME}/.local/share}/forge/sql/docker"
+  fi
 }
 
 forge_prepare_sql_shared_path() {
@@ -92,6 +101,11 @@ PY
 forge_get() {
   local key_path="$1"
 
+  if [[ "$key_path" == "paths.sql_storage_root" ]]; then
+    printf '%s\n' "${FORGE_SQL_STORAGE_ROOT:-$(forge_default_sql_storage_root)}"
+    return 0
+  fi
+
   if [[ "$key_path" == "sql.sa_password" ]]; then
     [[ -n "${FORGE_SQL_SA_PASSWORD:-}" ]] || forge_die "Missing secret: FORGE_SQL_SA_PASSWORD"
     printf '%s\n' "$FORGE_SQL_SA_PASSWORD"
@@ -103,6 +117,11 @@ forge_get() {
 
 forge_get_optional() {
   local key_path="$1"
+
+  if [[ "$key_path" == "paths.sql_storage_root" ]]; then
+    printf '%s\n' "${FORGE_SQL_STORAGE_ROOT:-$(forge_default_sql_storage_root)}"
+    return 0
+  fi
 
   if [[ "$key_path" == "sql.sa_password" ]]; then
     printf '%s\n' "${FORGE_SQL_SA_PASSWORD:-}"

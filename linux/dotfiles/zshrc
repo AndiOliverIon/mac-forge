@@ -73,9 +73,9 @@ fi
 
 if ! ssh-add -l >/dev/null 2>&1; then
   agent_keys=()
-  [[ -f "$HOME/.ssh/ardis-ed25519" ]] && agent_keys+=("$HOME/.ssh/ardis-ed25519")
-  [[ -f "$HOME/.ssh/id_ed25519_personal_gmail" ]] \
-    && agent_keys+=("$HOME/.ssh/id_ed25519_personal_gmail")
+  [[ -f "$HOME/.ssh/ardis_ed25519" ]] && agent_keys+=("$HOME/.ssh/ardis_ed25519")
+  [[ -f "$HOME/.ssh/andioliverion_ed25519" ]] \
+    && agent_keys+=("$HOME/.ssh/andioliverion_ed25519")
   (( ${#agent_keys[@]} == 0 )) \
     || ssh-add "${agent_keys[@]}" >/dev/null 2>&1 \
     || print -u2 "Warning: SSH keys could not be loaded into the active agent."
