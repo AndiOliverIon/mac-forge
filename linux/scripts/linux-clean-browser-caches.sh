@@ -9,7 +9,7 @@ usage() {
   cat <<'EOF'
 Usage: linux-clean-browser-caches [--dry-run]
 
-Clear Chrome and Brave per-profile disk and compiled-code caches. Profiles,
+Clear Chromium per-profile disk and compiled-code caches. Profiles,
 credentials, cookies, sessions, history, extensions, settings, and browser
 storage are kept.
 EOF
@@ -63,13 +63,9 @@ main() {
   done
 
   clean_browser \
-    "Chrome" \
-    "$HOME/.cache/google-chrome" \
-    '(^|/)(google-chrome|chrome)([[:space:]]|$)'
-  clean_browser \
-    "Brave" \
-    "$HOME/.cache/BraveSoftware/Brave-Browser" \
-    '(^|/)(brave-browser|brave)([[:space:]]|$)'
+    "Chromium" \
+    "$HOME/.cache/chromium" \
+    '(^|/)(chromium)([[:space:]]|$)'
 }
 
 main "$@"

@@ -55,7 +55,7 @@ list_cleaners() {
 # Friendly, human-readable description for each cleaner.
 describe() {
   case "$1" in
-    linux-clean-browser-caches.sh)       echo "Browser caches — Chrome/Brave cache & code cache" ;;
+    linux-clean-browser-caches.sh)       echo "Browser caches — Chromium cache & code cache" ;;
     linux-clean-claude-cache.sh)         echo "Claude cache — staging/temp files" ;;
     linux-clean-copilot-index-cache.sh)  echo "Copilot index cache — project context & index" ;;
     linux-clean-docker-build-cache.sh)   echo "Docker build cache — old buildx layers" ;;
@@ -119,8 +119,7 @@ cleaner_size_kib() {
   case "$cleaner_name" in
     linux-clean-browser-caches.sh)
       for cache_dir in \
-        "$HOME/.cache/google-chrome" \
-        "$HOME/.cache/BraveSoftware/Brave-Browser"; do
+        "$HOME/.cache/chromium"; do
         while IFS= read -r -d '' path; do paths+=("$path"); done < <(
           find "$cache_dir" -mindepth 2 -maxdepth 2 -type d \
             \( -name Cache -o -name 'Code Cache' \) -print0 2>/dev/null

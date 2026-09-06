@@ -38,7 +38,7 @@ main() {
   for target in "${targets[@]}"; do echo "  - $target"; done
   (( LINUX_CLEAN_DRY_RUN )) && { echo "Dry run: nothing was deleted."; exit 0; }
 
-  if linux_clean_process_matches '(^|/)(plasmashell|kwin_wayland|google-chrome|rider)([[:space:]]|$)'; then
+  if linux_clean_process_matches '(^|/)(Hyprland|hyprland|waybar|chromium|rider)([[:space:]]|$)'; then
     echo "The desktop or a GPU-using application is running; skipping desktop caches."
     exit 0
   else
