@@ -54,6 +54,13 @@ Operational consequence:
 
 - `MasterChief` wake attempts originate from the same local network as `Hades`.
 
+The `wake` command (`scripts/wake.sh`) sends a magic packet to **every network
+endpoint that declares a MAC** for the chosen station, each on its own subnet
+broadcast — for `MasterChief` that is both the Wi-Fi and the UTP/LAN card.
+`wake <station> --cycle N` repeats N packets per card, spaced by a hardcoded
+2-second interval (there is deliberately no CLI flag for the interval yet).
+`mcboot` still targets only the MasterChief Wi-Fi card.
+
 ## MasterChief agent runtime
 
 MasterChief supports exactly two concurrent agents and no more, one per execution

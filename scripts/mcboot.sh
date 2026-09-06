@@ -21,7 +21,7 @@ command -v python3 >/dev/null 2>&1 || {
   exit 1
 }
 
-mac_address="$(jq -er '.stations.masterchief.identifiers.macAddresses[0]' "$LOCAL_STATIONS_FILE")"
+mac_address="$(jq -er '.stations.masterchief.identifiers.macAddresses.wifi.mac' "$LOCAL_STATIONS_FILE")"
 wifi_subnet="$(jq -er '.stations.masterchief.network.wifi.subnet' "$LOCAL_STATIONS_FILE")"
 broadcast_address="$(python3 - "$wifi_subnet" <<'PY'
 import ipaddress
