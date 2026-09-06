@@ -32,11 +32,47 @@ require_cmd wakeonlan
 [[ -r "$LOCAL_STATIONS_FILE" ]] || die "Missing local station facts: $LOCAL_STATIONS_FILE"
 
 #######################################
-# Pick a station (all stations, or pass a name)
+# Standard interval (seconds) between magic packets when cycling.
+# Hardcoded on purpose: there is intentionally no CLI flag for this yet.
 #######################################
-if [[ -n "${1:-}" ]]; then
-  station="$1"
-else
+PACKET_INTERVAL_SECONDS=2
+
+#######################################
+# Parse arguments: optional station name + --cycle N
+#   wake                       -> pick a station, send 1 packet per card
+#   wake masterchief           -> send 1 packet per card
+#   wake masterchief --cycle 3 -> send 3 packets per card
+#######################################
+cycle=1
+station=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --cycle)
+      shift
+      [[ $# -gt 0 ]] || die "--cycle requires a count."
+      cycle="$1"
+      ;;
+    --cycle=*)
+      cycle="${1#*=}"
+      ;;
+    -*)
+      die "Unknown option: $1"
+      ;;
+    *)
+      [[ -z "$station" ]] || die "Unexpected argument: $1"
+      station="$1"
+      ;;
+  esac
+  shift
+done
+
+[[ "$cycle" =~ ^[0-9]+$ && "$cycle" -ge 1 ]] || die "--cycle must be a positive integer."
+
+#######################################
+# Pick a station when one was not passed
+#######################################
+if [[ -z "$station" ]]; then
   station="$(
     python3 -c "
 import json
@@ -55,9 +91,11 @@ fi
 [[ -n "${station:-}" ]] || exit 0
 
 #######################################
-# Resolve MAC address + directed broadcast from the inventory + local overlay.
-# Emits: <name>\t<mac>\t<broadcast-or-empty>
-# Exits non-zero with a specific message when the MAC is not configured, so the
+# Resolve every card (network endpoint that declares a MAC) plus its directed
+# broadcast from the inventory + local overlay.
+# Emits: first line = <station-name>; then one line per card:
+#   <card-label>\t<mac>\t<broadcast-or-empty>
+# Exits non-zero with a specific message when no MAC is configured, so the
 # operator knows exactly which station facts to enrich.
 #######################################
 if ! resolution="$(
@@ -84,6 +122,27 @@ def get_by_dotted(root, dotted_key):
     return current
 
 
+def resolve_mac(key):
+    value = get_by_dotted(local, key) if key else None
+    if isinstance(value, list):
+        return value[0] if value else None
+    if isinstance(value, str):
+        return value
+    return None
+
+
+def broadcast_from_localfacts(key):
+    facts = get_by_dotted(local, key) if key else None
+    if isinstance(facts, dict) and facts.get("subnet"):
+        try:
+            return str(
+                ipaddress.ip_network(facts["subnet"], strict=False).broadcast_address
+            )
+        except ValueError:
+            return ""
+    return ""
+
+
 station = None
 for item in tracked.get("stations", []):
     station_id = item.get("id") or item.get("name", "")
@@ -102,73 +161,82 @@ station_id = station.get("id") or station.get("name", "")
 name = station.get("name") or station_id
 endpoints = station.get("network", {}).get("endpoints", [])
 
-# MAC lookup key: prefer access.wake, then any endpoint that declares one.
-mac_key = station.get("access", {}).get("wake", {}).get("macAddressLocalFactsKey")
-if not mac_key:
-    for endpoint in endpoints:
-        if endpoint.get("macAddressLocalFactsKey"):
-            mac_key = endpoint["macAddressLocalFactsKey"]
-            break
+cards = []
+seen = set()
 
-mac = None
-if mac_key:
-    value = get_by_dotted(local, mac_key)
-    if isinstance(value, list):
-        mac = value[0] if value else None
-    elif isinstance(value, str):
-        mac = value
+# One card per network endpoint that declares a MAC, each on its own broadcast.
+for endpoint in endpoints:
+    mac = resolve_mac(endpoint.get("macAddressLocalFactsKey"))
+    if not mac or mac.casefold() in seen:
+        continue
+    seen.add(mac.casefold())
+    label = endpoint.get("name") or endpoint.get("connectionType") or "card"
+    broadcast = broadcast_from_localfacts(endpoint.get("localFactsKey"))
+    cards.append((label, mac, broadcast))
 
-if not mac:
+# Fallback: stations that only declare a wake MAC (no per-endpoint MAC).
+if not cards:
+    mac = resolve_mac(
+        station.get("access", {}).get("wake", {}).get("macAddressLocalFactsKey")
+    )
+    if mac:
+        chosen = None
+        for endpoint in endpoints:
+            if endpoint.get("wakeOnLan"):
+                chosen = endpoint
+                break
+        if chosen is None:
+            for endpoint in endpoints:
+                if endpoint.get("defaultRoute"):
+                    chosen = endpoint
+                    break
+        label = (chosen.get("name") if chosen else None) or "wake"
+        broadcast = broadcast_from_localfacts(chosen.get("localFactsKey")) if chosen else ""
+        cards.append((label, mac, broadcast))
+
+if not cards:
     sys.stderr.write(
         f"{name} has no MAC address configured for Wake-on-LAN.\n"
         f"Enrich your station facts:\n"
         f"  1. configs/stations.json -> station '{station_id}': add "
         f"\"macAddressLocalFactsKey\" (on its wake block or a network endpoint)\n"
         f"  2. config-local/stations.json -> that key, e.g. "
-        f"stations.{station_id}.identifiers.macAddresses\n"
+        f"stations.{station_id}.identifiers.macAddresses.<type>.mac\n"
     )
     sys.exit(3)
 
-# Directed broadcast: prefer a wakeOnLan endpoint, else the default route.
-chosen = None
-for endpoint in endpoints:
-    if endpoint.get("wakeOnLan"):
-        chosen = endpoint
-        break
-if chosen is None:
-    for endpoint in endpoints:
-        if endpoint.get("defaultRoute"):
-            chosen = endpoint
-            break
-
-broadcast = ""
-if chosen and chosen.get("localFactsKey"):
-    facts = get_by_dotted(local, chosen["localFactsKey"])
-    if isinstance(facts, dict) and facts.get("subnet"):
-        try:
-            broadcast = str(
-                ipaddress.ip_network(facts["subnet"], strict=False).broadcast_address
-            )
-        except ValueError:
-            broadcast = ""
-
-print(f"{name}\t{mac}\t{broadcast}")
+print(name)
+for label, mac, broadcast in cards:
+    print(f"{label}\t{mac}\t{broadcast}")
 PY
 )"; then
   exit 1
 fi
 
-name="${resolution%%$'\t'*}"
-rest="${resolution#*$'\t'}"
-mac="${rest%%$'\t'*}"
-broadcast="${rest#*$'\t'}"
+name="$(printf '%s\n' "$resolution" | head -n1)"
+cards="$(printf '%s\n' "$resolution" | tail -n +2)"
+card_count="$(printf '%s\n' "$cards" | grep -c . || true)"
 
 #######################################
-# Send the magic packet
+# Send the magic packet(s): every card, cycle times each, spaced by the
+# standard interval. A single interval separates every packet uniformly.
 #######################################
-echo "Sending Wake-on-LAN to $name ($mac)..."
-if [[ -n "$broadcast" ]]; then
-  wakeonlan -i "$broadcast" "$mac"
-else
-  wakeonlan "$mac"
-fi
+echo "Sending Wake-on-LAN to $name — ${card_count} card(s), cycle=${cycle} (interval ${PACKET_INTERVAL_SECONDS}s)..."
+
+first=1
+while IFS=$'\t' read -r label mac broadcast; do
+  [[ -n "$mac" ]] || continue
+  for ((i = 1; i <= cycle; i++)); do
+    if [[ $first -eq 0 ]]; then
+      sleep "$PACKET_INTERVAL_SECONDS"
+    fi
+    first=0
+    if [[ -n "$broadcast" ]]; then
+      echo "  [$label] packet $i/$cycle -> $mac via $broadcast"
+      wakeonlan -i "$broadcast" "$mac"
+    else
+      echo "  [$label] packet $i/$cycle -> $mac"
+      wakeonlan "$mac"
+    fi
+  done
+done <<<"$cards"
