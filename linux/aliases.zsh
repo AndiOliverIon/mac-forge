@@ -56,6 +56,7 @@ alias convert-mov="~/mac-forge/scripts/convert-mov.sh"
 alias genopenapi="~/mac-forge/linux/scripts/gen-open-api.sh"
 alias goa=genopenapi
 alias genopenapitimetrack="~/mac-forge/scripts/gen-open-api-timetrack.sh"
+alias sp="~/mac-forge/linux/scripts/sudo-session.sh"
 
 # ------------------------------------------------------------------------------
 # Git Shortcuts
