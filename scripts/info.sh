@@ -636,6 +636,7 @@ print_info() {
   local cpu_model_row
   local cpu_load_row
   local cpu_effort_row
+  local cpu_temperature_row
   local cpu_temperature
   local memory_total
   local memory_free
@@ -754,11 +755,12 @@ print_info() {
   system_uptime="Uptime   $uptime_value"
   cpu_model_row="Model    ${cpu_model:-Unavailable}"
   cpu_load_row="Load     $cpu_load"
+  cpu_effort_row="Effort   ${cpu_effort:-Unavailable}"
   cpu_temperature="$(cpu_temperature_c)"
   if [[ "$cpu_temperature" == "Unavailable" ]]; then
-    cpu_effort_row="Effort   ${cpu_effort:-Unavailable} | Temp Unavailable"
+    cpu_temperature_row="Temp     Unavailable"
   else
-    cpu_effort_row="Effort   ${cpu_effort:-Unavailable} | Temp ${cpu_temperature} C"
+    cpu_temperature_row="Temp     ${cpu_temperature} C"
   fi
   memory_total="Total    $(format_size "$total_memory_kib") | Used $(format_size "$mem_used_kib") (${mem_pct}%) now"
   memory_free="Avail    $(format_size "$mem_avail_kib") free | $(format_size "$mem_cached_kib") cached"
@@ -808,7 +810,7 @@ print_info() {
     "$system_os" "$cpu_model_row" \
     "$system_host" "$cpu_load_row" \
     "$system_kernel" "$cpu_effort_row" \
-    "$system_uptime" "" \
+    "$system_uptime" "$cpu_temperature_row" \
     "$system_since" "" \
     "$system_days" "" \
     "$system_age" ""
