@@ -110,16 +110,24 @@ cpu_history_values() {
 # Apple Silicon CPU die temperature in Celsius via smctemp
 # (https://github.com/narugit/smctemp), a no-sudo CLI that reads the HID
 # sensor hub Activity Monitor doesn't expose. Prints "Unavailable" on Intel
-# Macs, when smctemp isn't installed, or when the sensor read fails. Uses a
-# single-shot read (no averaging) so it stays cheap enough to call every
-# --cycle tick; single-shot values can be noisy, so treat isolated spikes with
-# suspicion until we see whether that matters in practice.
+# Macs, when smctemp isn't installed, or when the sensor read fails.
+#
+# A plain single-shot read (`smctemp -c`) is unreliable on Apple Silicon: it
+# frequently returns implausible values (0, 4) from a single failed sensor
+# sample instead of a real temperature. So this averages 180 samples at 25ms
+# apart with fail-soft enabled (~4.5s), matching smctemp's own recommendation
+# for M-series. That's too slow to call on every --cycle tick without
+# stretching the refresh interval by ~4.5s each time, but correctness wins
+# over speed here — revisit with a cross-tick cache if the added latency
+# turns out to be annoying in practice. A sanity range backstops anything
+# that still slips through as implausible.
 cpu_temperature_c() {
   local value
 
   command -v smctemp >/dev/null 2>&1 || { printf 'Unavailable'; return; }
-  value="$(smctemp -c 2>/dev/null)"
-  if [[ "$value" =~ ^-?[0-9]+([.][0-9]+)?$ ]]; then
+  value="$(smctemp -c -i25 -n180 -f 2>/dev/null)"
+  if [[ "$value" =~ ^-?[0-9]+([.][0-9]+)?$ ]] \
+    && awk -v v="$value" 'BEGIN { exit !(v >= 10 && v <= 105) }'; then
     printf '%.1f' "$value"
   else
     printf 'Unavailable'
