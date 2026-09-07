@@ -107,6 +107,15 @@ cpu_history_values() {
   }'
 }
 
+# No CPU temperature/thermal row on purpose (2026-09, see agents/preferences.md
+# for the full writeup) - both options tried turned out unusable:
+#   - smctemp (numeric C°): reproducibly got stuck echoing a flat, wrong
+#     ~40.0 as a valid success after any failed read; uninstalled.
+#   - `sudo powermetrics --samplers thermal` (qualitative level): real
+#     signal, but stayed "Nominal" through 90s of load that pushed the raw
+#     die sensor to 85-92C - only reacts to actual throttling, not heat.
+# Don't re-add either without re-verifying that behavior first.
+
 history_sample() {
   local cpu_user cpu_system
   local memory_used memory_cached memory_free memory_available memory_used_percent
