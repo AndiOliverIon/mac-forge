@@ -78,7 +78,7 @@ create_history_log() {
     history_file="$(printf '%s/inf-history-%s-%02d.tsv' "$downloads_dir" "$today" "$iteration")"
     if (
       set -o noclobber
-      printf 'timestamp\tcpu_user_percent\tcpu_system_percent\tmemory_used_kib\tmemory_total_kib\tmemory_used_percent\ttemperature_c\troot_used_kib\troot_total_kib\troot_used_percent\tdata_used_kib\tdata_total_kib\tdata_used_percent\n' \
+      printf 'timestamp\tcpu_user_percent\tcpu_system_percent\tmemory_used_kib\tmemory_total_kib\tmemory_used_percent\tthermal_pressure\troot_used_kib\troot_total_kib\troot_used_percent\tdata_used_kib\tdata_total_kib\tdata_used_percent\n' \
         > "$history_file"
     ) 2>/dev/null; then
       printf '%s' "$history_file"
@@ -107,48 +107,42 @@ cpu_history_values() {
   }'
 }
 
-# Apple Silicon CPU die temperature in Celsius via smctemp
-# (https://github.com/narugit/smctemp), a no-sudo CLI that reads the HID
-# sensor hub Activity Monitor doesn't expose. Prints "Unavailable" on Intel
-# Macs, when smctemp isn't installed, or when every sample below fails.
+# Apple Silicon thermal pressure level via `powermetrics --samplers thermal`
+# (Apple's own privileged sampler). Replaces an earlier smctemp-based
+# numeric-Celsius reading dropped for two confirmed dead ends:
 #
-# smctemp's own -n/-i/-f flags don't average anything, despite the tool's
-# README suggesting -i25 -n180 -f for M-series: -n is "retry up to N times
-# until one valid read succeeds", not "collect N and average", and -f's
-# fallback when every retry fails is "print the last cached good value" —
-# not an honest failure signal. That lets a stale reading leak into a
-# current report. Confirmed by testing under sustained CPU load: repeated
-# calls to `smctemp -c -i25 -n180 -f` finished in 0ms-2s (nowhere near the
-# ~4.5s that 180 real samples at 25ms would take) and intermittently printed
-# a flat idle temperature mid-load-spike while adjacent calls correctly
-# showed 30+ degrees higher — the fail-soft cache leaking a cold value into
-# a hot reading.
+# - smctemp (a raw SMC/HID sensor query, no sudo needed) reproducibly got
+#   "stuck" echoing a flat ~40.0 as an exit-0, valid-looking success for
+#   several seconds after any failed query — indistinguishable from a real
+#   idle reading by exit code or sanity range. Verified live under sustained
+#   load (load avg ~4-5): a run of correct 80-90C readings, one failed
+#   query, then several seconds of a suspiciously exact, unchanging 40.0
+#   while the machine was still clearly under load. No script-side
+#   retry/averaging strategy — tight loop or spaced out at 0.15s/0.25s/0.4s,
+#   all tried — could tell a genuine idle 40 apart from a stuck one, since
+#   they're bit-identical. smctemp has since been uninstalled.
+# - powermetrics' own `smc` sampler, which exposes numeric SMC temperature
+#   keys, has been removed from this macOS version entirely — confirmed
+#   absent from `sudo powermetrics -h`'s supported-sampler list, root
+#   included, and `--show-all` surfaces no "temp" data anywhere.
 #
-# So this does its own averaging: a tight loop of plain single-shot reads
-# (no -f), discarding invalid/implausible ones (a meaningful fraction of
-# single-shot calls fail outright — exit 1, prints "0.0"), then averaging
-# what's left. Reports "Unavailable" only if every sample failed. In
-# testing this reliably tracked idle/load/cooldown transitions and finished
-# in well under a fifth of a second.
-cpu_temperature_c() {
-  local samples=20 sum=0 count=0 value i
+# `thermal` is what's left: a qualitative level (Nominal, Moderate, Heavy,
+# Trapping, Sleeping) rather than a Celsius number, but it comes from
+# Apple's own privileged accounting rather than a raw sensor query, so it
+# doesn't share smctemp's failure-recovery quirk.
+#
+# Requires a one-time sudoers rule scoped to this exact command (see
+# /etc/sudoers.d/mac-forge-powermetrics-thermal) so it runs without a
+# password prompt. `sudo -n` fails fast instead of hanging if that rule is
+# ever missing or the command line drifts from what it allows.
+cpu_thermal_pressure() {
+  local level
 
-  command -v smctemp >/dev/null 2>&1 || { printf 'Unavailable'; return; }
+  command -v powermetrics >/dev/null 2>&1 || { printf 'Unavailable'; return; }
 
-  for ((i = 0; i < samples; i++)); do
-    value="$(smctemp -c 2>/dev/null)" || continue
-    if [[ "$value" =~ ^-?[0-9]+([.][0-9]+)?$ ]] \
-      && awk -v v="$value" 'BEGIN { exit !(v >= 10 && v <= 105) }'; then
-      sum="$(awk -v s="$sum" -v v="$value" 'BEGIN { print s + v }')"
-      count=$((count + 1))
-    fi
-  done
-
-  if [[ "$count" -gt 0 ]]; then
-    awk -v s="$sum" -v c="$count" 'BEGIN { printf "%.1f", s / c }'
-  else
-    printf 'Unavailable'
-  fi
+  level="$(sudo -n /usr/bin/powermetrics --samplers thermal -i200 -n1 2>/dev/null \
+    | awk -F': ' '/Current pressure level/ { print $2; exit }')"
+  printf '%s' "${level:-Unavailable}"
 }
 
 history_sample() {
@@ -156,7 +150,7 @@ history_sample() {
   local memory_used memory_cached memory_free memory_available memory_used_percent
   local memory_total
   local root_total root_used root_used_percent
-  local temperature_c
+  local thermal_pressure
 
   read -r cpu_user cpu_system < <(cpu_history_values || true)
   memory_total="$(( $(sysctl -n hw.memsize) / 1024 ))"
@@ -164,7 +158,7 @@ history_sample() {
   read -r root_total root_used root_used_percent < <(
     df -k / 2>/dev/null | awk 'NR==2 {percent=$5; sub(/%$/, "", percent); print $2, $3, percent}'
   )
-  temperature_c="$(cpu_temperature_c)"
+  thermal_pressure="$(cpu_thermal_pressure)"
 
   printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' \
     "${cpu_user:-Unavailable}" \
@@ -172,7 +166,7 @@ history_sample() {
     "${memory_used:-Unavailable}" \
     "${memory_total:-Unavailable}" \
     "${memory_used_percent:-Unavailable}" \
-    "${temperature_c:-Unavailable}" \
+    "${thermal_pressure:-Unavailable}" \
     "${root_used:-Unavailable}" \
     "${root_total:-Unavailable}" \
     "${root_used_percent:-Unavailable}" \
@@ -190,7 +184,7 @@ meaningful_history_change() {
     -v current="$current_sample" \
     -v cpu_delta="$HISTORY_CPU_DELTA_PERCENT" \
     -v memory_delta="$HISTORY_MEMORY_DELTA_PERCENT" \
-    -v temperature_delta="$HISTORY_TEMPERATURE_DELTA_C" \
+    -v thermal_delta="$HISTORY_THERMAL_PRESSURE_DELTA" \
     -v storage_delta="$HISTORY_STORAGE_DELTA_KIB" '
     function numeric(value) {
       return value ~ /^-?[0-9]+([.][0-9]+)?$/
@@ -213,7 +207,7 @@ meaningful_history_change() {
         if (difference < 0) difference = -difference
         if (difference >= cpu_delta) exit 0
       }
-      if (changed_by(5, memory_delta) || changed_by(6, temperature_delta)) exit 0
+      if (changed_by(5, memory_delta) || changed_by(6, thermal_delta)) exit 0
       if (changed_by(7, storage_delta) || changed_by(10, storage_delta)) exit 0
       if (before[4] != after[4] || before[8] != after[8] || before[11] != after[11]) exit 0
       exit 1
@@ -636,8 +630,8 @@ print_info() {
   local cpu_model_row
   local cpu_load_row
   local cpu_effort_row
-  local cpu_temperature_row
-  local cpu_temperature
+  local cpu_thermal_row
+  local cpu_thermal_level
   local memory_total
   local memory_free
   local memory_boot
@@ -756,12 +750,8 @@ print_info() {
   cpu_model_row="Model    ${cpu_model:-Unavailable}"
   cpu_load_row="Load     $cpu_load"
   cpu_effort_row="Effort   ${cpu_effort:-Unavailable}"
-  cpu_temperature="$(cpu_temperature_c)"
-  if [[ "$cpu_temperature" == "Unavailable" ]]; then
-    cpu_temperature_row="Temp     Unavailable"
-  else
-    cpu_temperature_row="Temp     ${cpu_temperature} C"
-  fi
+  cpu_thermal_level="$(cpu_thermal_pressure)"
+  cpu_thermal_row="Thermal  ${cpu_thermal_level:-Unavailable}"
   memory_total="Total    $(format_size "$total_memory_kib") | Used $(format_size "$mem_used_kib") (${mem_pct}%) now"
   memory_free="Avail    $(format_size "$mem_avail_kib") free | $(format_size "$mem_cached_kib") cached"
   memory_boot="Boot     ${used_memory:-?} used, ${available_memory:-?} free (cached)"
@@ -810,7 +800,7 @@ print_info() {
     "$system_os" "$cpu_model_row" \
     "$system_host" "$cpu_load_row" \
     "$system_kernel" "$cpu_effort_row" \
-    "$system_uptime" "$cpu_temperature_row" \
+    "$system_uptime" "$cpu_thermal_row" \
     "$system_since" "" \
     "$system_days" "" \
     "$system_age" ""
@@ -853,7 +843,12 @@ fi
 HISTORY_MIN_INTERVAL_SECONDS=60
 HISTORY_CPU_DELTA_PERCENT=5
 HISTORY_MEMORY_DELTA_PERCENT=1
-HISTORY_TEMPERATURE_DELTA_C=1
+# thermal_pressure (column 6) is text (Nominal/Moderate/Heavy/...), so
+# changed_by()'s numeric() check always fails for it and it falls back to
+# a plain equality compare; this delta is unused but kept so the field
+# still lines up positionally with meaningful_history_change's other
+# threshold args.
+HISTORY_THERMAL_PRESSURE_DELTA=1
 HISTORY_STORAGE_DELTA_KIB=102400
 HISTORY_LAST_EPOCH=0
 HISTORY_LAST_SAMPLE=""
