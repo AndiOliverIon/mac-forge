@@ -107,11 +107,31 @@ cpu_history_values() {
   }'
 }
 
+# Apple Silicon CPU die temperature in Celsius via smctemp
+# (https://github.com/narugit/smctemp), a no-sudo CLI that reads the HID
+# sensor hub Activity Monitor doesn't expose. Prints "Unavailable" on Intel
+# Macs, when smctemp isn't installed, or when the sensor read fails. Uses a
+# single-shot read (no averaging) so it stays cheap enough to call every
+# --cycle tick; single-shot values can be noisy, so treat isolated spikes with
+# suspicion until we see whether that matters in practice.
+cpu_temperature_c() {
+  local value
+
+  command -v smctemp >/dev/null 2>&1 || { printf 'Unavailable'; return; }
+  value="$(smctemp -c 2>/dev/null)"
+  if [[ "$value" =~ ^-?[0-9]+([.][0-9]+)?$ ]]; then
+    printf '%.1f' "$value"
+  else
+    printf 'Unavailable'
+  fi
+}
+
 history_sample() {
   local cpu_user cpu_system
   local memory_used memory_cached memory_free memory_available memory_used_percent
   local memory_total
   local root_total root_used root_used_percent
+  local temperature_c
 
   read -r cpu_user cpu_system < <(cpu_history_values || true)
   memory_total="$(( $(sysctl -n hw.memsize) / 1024 ))"
@@ -119,6 +139,7 @@ history_sample() {
   read -r root_total root_used root_used_percent < <(
     df -k / 2>/dev/null | awk 'NR==2 {percent=$5; sub(/%$/, "", percent); print $2, $3, percent}'
   )
+  temperature_c="$(cpu_temperature_c)"
 
   printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' \
     "${cpu_user:-Unavailable}" \
@@ -126,7 +147,7 @@ history_sample() {
     "${memory_used:-Unavailable}" \
     "${memory_total:-Unavailable}" \
     "${memory_used_percent:-Unavailable}" \
-    'Unavailable' \
+    "${temperature_c:-Unavailable}" \
     "${root_used:-Unavailable}" \
     "${root_total:-Unavailable}" \
     "${root_used_percent:-Unavailable}" \
@@ -590,6 +611,7 @@ print_info() {
   local cpu_model_row
   local cpu_load_row
   local cpu_effort_row
+  local cpu_temperature
   local memory_total
   local memory_free
   local memory_boot
@@ -707,7 +729,12 @@ print_info() {
   system_uptime="Uptime   $uptime_value"
   cpu_model_row="Model    ${cpu_model:-Unavailable}"
   cpu_load_row="Load     $cpu_load"
-  cpu_effort_row="Effort   ${cpu_effort:-Unavailable} | Temp Unavailable"
+  cpu_temperature="$(cpu_temperature_c)"
+  if [[ "$cpu_temperature" == "Unavailable" ]]; then
+    cpu_effort_row="Effort   ${cpu_effort:-Unavailable} | Temp Unavailable"
+  else
+    cpu_effort_row="Effort   ${cpu_effort:-Unavailable} | Temp ${cpu_temperature} C"
+  fi
   memory_total="Total    $(format_size "$total_memory_kib") | Used $(format_size "$mem_used_kib") (${mem_pct}%) now"
   memory_free="Avail    $(format_size "$mem_avail_kib") free | $(format_size "$mem_cached_kib") cached"
   memory_boot="Boot     ${used_memory:-?} used, ${available_memory:-?} free (cached)"
