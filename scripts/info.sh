@@ -110,25 +110,42 @@ cpu_history_values() {
 # Apple Silicon CPU die temperature in Celsius via smctemp
 # (https://github.com/narugit/smctemp), a no-sudo CLI that reads the HID
 # sensor hub Activity Monitor doesn't expose. Prints "Unavailable" on Intel
-# Macs, when smctemp isn't installed, or when the sensor read fails.
+# Macs, when smctemp isn't installed, or when every sample below fails.
 #
-# A plain single-shot read (`smctemp -c`) is unreliable on Apple Silicon: it
-# frequently returns implausible values (0, 4) from a single failed sensor
-# sample instead of a real temperature. So this averages 180 samples at 25ms
-# apart with fail-soft enabled (~4.5s), matching smctemp's own recommendation
-# for M-series. That's too slow to call on every --cycle tick without
-# stretching the refresh interval by ~4.5s each time, but correctness wins
-# over speed here — revisit with a cross-tick cache if the added latency
-# turns out to be annoying in practice. A sanity range backstops anything
-# that still slips through as implausible.
+# smctemp's own -n/-i/-f flags don't average anything, despite the tool's
+# README suggesting -i25 -n180 -f for M-series: -n is "retry up to N times
+# until one valid read succeeds", not "collect N and average", and -f's
+# fallback when every retry fails is "print the last cached good value" —
+# not an honest failure signal. That lets a stale reading leak into a
+# current report. Confirmed by testing under sustained CPU load: repeated
+# calls to `smctemp -c -i25 -n180 -f` finished in 0ms-2s (nowhere near the
+# ~4.5s that 180 real samples at 25ms would take) and intermittently printed
+# a flat idle temperature mid-load-spike while adjacent calls correctly
+# showed 30+ degrees higher — the fail-soft cache leaking a cold value into
+# a hot reading.
+#
+# So this does its own averaging: a tight loop of plain single-shot reads
+# (no -f), discarding invalid/implausible ones (a meaningful fraction of
+# single-shot calls fail outright — exit 1, prints "0.0"), then averaging
+# what's left. Reports "Unavailable" only if every sample failed. In
+# testing this reliably tracked idle/load/cooldown transitions and finished
+# in well under a fifth of a second.
 cpu_temperature_c() {
-  local value
+  local samples=20 sum=0 count=0 value i
 
   command -v smctemp >/dev/null 2>&1 || { printf 'Unavailable'; return; }
-  value="$(smctemp -c -i25 -n180 -f 2>/dev/null)"
-  if [[ "$value" =~ ^-?[0-9]+([.][0-9]+)?$ ]] \
-    && awk -v v="$value" 'BEGIN { exit !(v >= 10 && v <= 105) }'; then
-    printf '%.1f' "$value"
+
+  for ((i = 0; i < samples; i++)); do
+    value="$(smctemp -c 2>/dev/null)" || continue
+    if [[ "$value" =~ ^-?[0-9]+([.][0-9]+)?$ ]] \
+      && awk -v v="$value" 'BEGIN { exit !(v >= 10 && v <= 105) }'; then
+      sum="$(awk -v s="$sum" -v v="$value" 'BEGIN { print s + v }')"
+      count=$((count + 1))
+    fi
+  done
+
+  if [[ "$count" -gt 0 ]]; then
+    awk -v s="$sum" -v c="$count" 'BEGIN { printf "%.1f", s / c }'
   else
     printf 'Unavailable'
   fi
