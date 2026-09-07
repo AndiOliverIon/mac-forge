@@ -255,6 +255,7 @@ $sharedCommands = @{
   "port-release" = "scripts/port-release.sh"
   "binclear" = "scripts/bin-clear.sh"
   "dotnet-clean" = "scripts/dotnet-clean.sh"
+  "dotnetbuild" = "scripts/dotnet-build.sh"
   "switch" = "scripts/git-switch.sh"
   "gpo" = "scripts/git-publish-origin.sh"
   "gbd" = "scripts/branch-delete.sh"
@@ -346,6 +347,7 @@ foreach ($tunnelName in @("sql", "license", "bl", "meerkat", "tally")) {
 
 $aliases = @{
   "inf" = "info"; "prl" = "port-release"; "dnc" = "dotnet-clean"
+  "dnb" = "dotnetbuild"
   "a" = "al"; "ejectall" = "eject-all"; "ea" = "eject-all"
   "hc" = "hdd-clean"; "ws" = "workset"; "wi" = "workinfo"
   "am" = "ardis-migrate"; "ap" = "ardis-patch"; "ac" = "ardis-complete"
