@@ -148,6 +148,41 @@ case "${FORGE_AGENT_IDENTITY:-}:${FORGE_UNIVERSE_ROOT:-}" in
     export FORGE_WORK_ROOT="$HOME/work"
     ;;
 esac
+
+# Resolve the project root to use for the current shell: if the shell is
+# physically inside the raynor or zeratul agent universe (regardless of
+# whether FORGE_AGENT_IDENTITY is set), stay inside that universe. Otherwise
+# fall back to FORGE_WORK_ROOT (the general "$HOME/work" universe).
+__forge_lane_root() {
+  case "$PWD" in
+    /home/oliver/raynor | /home/oliver/raynor/*) print -r -- /home/oliver/raynor ;;
+    /home/oliver/zeratul | /home/oliver/zeratul/*) print -r -- /home/oliver/zeratul ;;
+    *) print -r -- "${FORGE_WORK_ROOT:-$HOME/work}" ;;
+  esac
+}
+
+# cd into "<lane-root>/$1". Only when the project is not found inside the
+# active lane does this fall back to "$HOME/work/$1". Agent shells stay
+# confined regardless, since the agent-universe chpwd guard forces the shell
+# back inside its universe if this fallback ever lands outside it.
+__forge_project_cd() {
+  local rel="$1" root target fallback
+  root="$(__forge_lane_root)"
+  target="$root/$rel"
+  if [[ -d "$target" ]]; then
+    cd -- "$target"
+    return
+  fi
+  fallback="$HOME/work/$rel"
+  if [[ "$root" != "$HOME/work" && -d "$fallback" ]]; then
+    print -u2 "forge: '$rel' not found in $root, using $fallback"
+    cd -- "$fallback"
+    return
+  fi
+  print -u2 "forge: project not found: $rel"
+  return 1
+}
+
 alias workspace-primary="~/mac-forge/linux/scripts/load-workspace.sh"
 alias wp=workspace-primary
 alias data="cd /data"
@@ -160,25 +195,25 @@ alias lcsnap=locsnapshots
 alias lcs=locsnapshots
 alias lcsnapdel='cd "$HOME/sql/snapshots" && rm -rf ./*'
 alias work='cd "$FORGE_WORK_ROOT"'
-alias perf='cd "$FORGE_WORK_ROOT/ardis-perform"'
-alias perf230='cd "$FORGE_WORK_ROOT/ardis-perform-230"'
-alias timetrack='cd "$FORGE_WORK_ROOT/ardis.timetrack"'
+alias perf='__forge_project_cd ardis-perform'
+alias perf230='__forge_project_cd ardis-perform-230'
+alias timetrack='__forge_project_cd ardis.timetrack'
 alias tt=timetrack
-alias ttbs='cd "$FORGE_WORK_ROOT/ardis.timetrack" && ./buildsolution.sh'
-alias ttbd='cd "$FORGE_WORK_ROOT/ardis.timetrack" && ./Ardis.Timetrack/build-docker.sh'
-alias ttc='cd "$FORGE_WORK_ROOT/ardis.timetrack/ardis.timetrack.client"'
-alias ttclient='cd "$FORGE_WORK_ROOT/ardis.timetrack/ardis.timetrack.client"'
-alias ttmd='cd "$FORGE_WORK_ROOT/ardis.timetrack/Ardis.Timetrack.Migrations/Database"'
-alias perfclient='cd "$FORGE_WORK_ROOT/ardis-perform/ardis.perform.client"'
-alias perfclient230='cd "$FORGE_WORK_ROOT/ardis-perform-230/ardis.perform.client"'
-alias perfdev='cd "$FORGE_WORK_ROOT/ardis-perform-dev"'
-alias perfold='cd "$FORGE_WORK_ROOT/ardis-perform-older"'
-alias perflog='cd "$FORGE_WORK_ROOT/perform-output/logs/perform"'
-alias perflogclean='cd "$FORGE_WORK_ROOT/perform-output/logs/perform" && rm -rf ./*'
-alias gpt='cd "$FORGE_WORK_ROOT/ardis.tools.extensions"'
-alias gptbin='cd "$FORGE_WORK_ROOT/ardis.tools.extensions/Ardis.Utils/bin/debug/net8.0"'
-alias lc='cd "$FORGE_WORK_ROOT/ardis-local-connector"'
-alias localconnector='cd "$FORGE_WORK_ROOT/ardis-local-connector"'
+ttbs() { __forge_project_cd ardis.timetrack && ./buildsolution.sh; }
+ttbd() { __forge_project_cd ardis.timetrack && ./Ardis.Timetrack/build-docker.sh; }
+alias ttc='__forge_project_cd ardis.timetrack/ardis.timetrack.client'
+alias ttclient='__forge_project_cd ardis.timetrack/ardis.timetrack.client'
+alias ttmd='__forge_project_cd ardis.timetrack/Ardis.Timetrack.Migrations/Database'
+alias perfclient='__forge_project_cd ardis-perform/ardis.perform.client'
+alias perfclient230='__forge_project_cd ardis-perform-230/ardis.perform.client'
+alias perfdev='__forge_project_cd ardis-perform-dev'
+alias perfold='__forge_project_cd ardis-perform-old'
+alias perflog='__forge_project_cd perform-output/logs/perform'
+perflogclean() { __forge_project_cd perform-output/logs/perform && rm -rf ./*; }
+alias gpt='__forge_project_cd ardis.tools.extensions'
+alias gptbin='__forge_project_cd ardis.tools.extensions/Ardis.Utils/bin/debug/net8.0'
+alias lc='__forge_project_cd ardis-local-connector'
+alias localconnector='__forge_project_cd ardis-local-connector'
 alias meerkat="cd ~/projects/meerkat"
 alias rooted="cd ~/projects/rooted"
 alias aiwk="cd /Users/oliver/projects/alice-in-wonderkitchen"
