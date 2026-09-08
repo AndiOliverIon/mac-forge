@@ -209,6 +209,7 @@ alias perfclient230='__forge_project_cd ardis-perform-230/ardis.perform.client'
 alias perfdev='__forge_project_cd ardis-perform-dev'
 alias perfold='__forge_project_cd ardis-perform-old'
 alias perflog='__forge_project_cd perform-output/logs/perform'
+unalias perflogclean 2>/dev/null || true
 perflogclean() { __forge_project_cd perform-output/logs/perform && rm -rf ./*; }
 alias gpt='__forge_project_cd ardis.tools.extensions'
 alias gptbin='__forge_project_cd ardis.tools.extensions/Ardis.Utils/bin/debug/net8.0'
