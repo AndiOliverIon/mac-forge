@@ -111,6 +111,15 @@ alias cerber-tunnel-status="~/mac-forge/scripts/cerber-hades-tunnel.sh status"
 alias cerber-tunnel-down="~/mac-forge/scripts/cerber-hades-tunnel.sh down"
 
 # ------------------------------------------------------------------------------
+# Password Store
+# ------------------------------------------------------------------------------
+alias pw="~/mac-forge/scripts/pw-get.sh"
+alias pwa="~/mac-forge/scripts/pw-add.sh"
+alias pwe="pass edit"
+alias pwrm="pass rm"
+alias pwls="pass ls"
+
+# ------------------------------------------------------------------------------
 # Git Shortcuts
 # ------------------------------------------------------------------------------
 alias gs="git status"

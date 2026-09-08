@@ -59,6 +59,15 @@ alias genopenapitimetrack="~/mac-forge/scripts/gen-open-api-timetrack.sh"
 alias sp="~/mac-forge/linux/scripts/sudo-session.sh"
 
 # ------------------------------------------------------------------------------
+# Password Store
+# ------------------------------------------------------------------------------
+alias pw="~/mac-forge/scripts/pw-get.sh"
+alias pwa="~/mac-forge/scripts/pw-add.sh"
+alias pwe="pass edit"
+alias pwrm="pass rm"
+alias pwls="pass ls"
+
+# ------------------------------------------------------------------------------
 # Git Shortcuts
 # ------------------------------------------------------------------------------
 alias aiusage='~/mac-forge/scripts/agents/usage.sh'

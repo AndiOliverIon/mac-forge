@@ -13,6 +13,11 @@ alias	kp	Kill processes listening on a TCP port, for example kp 8080.
 alias	info	Show system health; --cycle records meaningful changes and configured agent usage once per minute.
 alias	inf	Show system health; --cycle records meaningful changes and configured agent usage once per minute (short for info).
 alias	help	Open the forge command picker for aliases and scripts.
+alias	pw	Fuzzy-search the password store; enter copies the password, ctrl-u the account, ctrl-y shows the entry.
+alias	pwa	Add a new password store entry (prompts for password, generates one if left blank, and an optional account).
+alias	pwe	Edit a password store entry in $EDITOR.
+alias	pwrm	Delete a password store entry.
+alias	pwls	Show the password store as a tree.
 alias	ai-config	Verify, install, or fast-forward-sync shared AI instructions and tool bootstrap files.
 alias	ai-verify	Run read-only shared AI configuration verification.
 alias	ai-install	Install shared AI configuration with recoverable backups for conflicting local files.
