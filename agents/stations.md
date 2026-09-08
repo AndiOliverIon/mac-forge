@@ -63,13 +63,15 @@ broadcast — for `MasterChief` that is both the Wi-Fi and the UTP/LAN card.
 
 ## MasterChief agent runtime
 
-MasterChief supports exactly two concurrent agents and no more, one per execution
-universe:
+MasterChief supports three concurrent agent contexts:
 
+- `Work`, the operator-assisted context at `/home/oliver/work`, where Artanis,
+  Argus, or Aegis may collaborate directly with Oliver.
 - `Raynor`, with its isolated universe at `/home/oliver/raynor`.
 - `Zeratul`, with its isolated universe at `/home/oliver/zeratul`.
 
-Raynor and Zeratul name execution universes, not AI identities; an agent remains
+Raynor and Zeratul are the two isolated worker universes, one agent per universe. Their names refer
+to execution universes, not AI identities; an agent remains
 Artanis, Argus, or Aegis within either universe. Both roots are ordinary
 directories owned by the `oliver` Linux account, not separate user homes or
 accounts. Their isolation is an agent boundary: Raynor permits work only inside

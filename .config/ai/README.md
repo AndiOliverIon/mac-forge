@@ -21,7 +21,9 @@ global instruction chain is loaded.
 `ai-config install` generates each tool's global bootstrap from its tracked template plus the
 canonical identity, router, and direct always-applicable sources. This makes the small, stable base
 set available at session start without duplicating its rules in tracked files or reading it through
-a latency-sensitive tool call.
+a latency-sensitive tool call. On MasterChief it manages Codex, Claude, and Copilot bootstraps and
+the Work, Raynor, and Zeratul review-handoff lanes. Hades retains its existing Codex and Claude
+bootstrap and project-lane layout.
 
 The global bootstrap invokes `bin/ai-context.sh` before task work. The resolver combines the
 canonical `configs/stations.json` inventory with the current hostname, scope path, Git metadata, and
@@ -50,9 +52,9 @@ The shell aliases provide `ai-verify` for `ai-config verify` and `ai-install`
 for `ai-config install`. Reload the shell after pulling an alias change.
 
 - `verify` is read-only. It checks every required shared instruction source, the shared symlink,
-  generated Codex and Claude bootstrap files, station routing, active MasterChief agent context, and
-  local Mac Forge Git state.
+  generated station-appropriate bootstrap files, station routing, all MasterChief handoff lanes,
+  active MasterChief agent context, and local Mac Forge Git state.
 - `install` backs up conflicting config or bootstrap paths before replacement.
-  It never replaces the complete `~/.codex` or `~/.claude` directory.
+  It never replaces a complete tool-owned configuration directory.
 - `sync` refuses a dirty Mac Forge checkout, pulls with `--ff-only`, runs
   verification, and reminds the operator to start fresh agent sessions.

@@ -9,10 +9,13 @@ USER_CONFIG_ROOT="${AI_CONFIG_USER_ROOT:-$HOME}"
 AI_LINK="$USER_CONFIG_ROOT/.config/ai"
 CODEX_DIR="$USER_CONFIG_ROOT/.codex"
 CLAUDE_DIR="$USER_CONFIG_ROOT/.claude"
+COPILOT_DIR="$USER_CONFIG_ROOT/.copilot"
 CODEX_BOOTSTRAP="$CODEX_DIR/AGENTS.md"
 CLAUDE_BOOTSTRAP="$CLAUDE_DIR/CLAUDE.md"
+COPILOT_BOOTSTRAP="$COPILOT_DIR/copilot-instructions.md"
 CODEX_TEMPLATE="$AI_SOURCE/bootstrap/codex-AGENTS.md"
 CLAUDE_TEMPLATE="$AI_SOURCE/bootstrap/claude-CLAUDE.md"
+COPILOT_TEMPLATE="$AI_SOURCE/bootstrap/copilot-instructions.md"
 REQUIRED_SOURCES=(
     identities.md
     guidelines/guidelines.md
@@ -39,8 +42,10 @@ REQUIRED_SOURCES=(
     guidelines/provisional/sql.md
     bin/ai-context.sh
     bin/ai-read-instructions.sh
+    bin/review-handoff-verify.sh
     bootstrap/codex-AGENTS.md
     bootstrap/claude-CLAUDE.md
+    bootstrap/copilot-instructions.md
 )
 failures=0
 warnings=0
@@ -58,8 +63,8 @@ Commands:
   verify  Read-only validation of the shared symlink, bootstrap files, station
           routing, agent-universe context, and local Git state.
   install Back up conflicting local paths, install the shared symlink and
-          canonical Codex/Claude bootstrap files, then verify the result.
-          Complete ~/.codex and ~/.claude directories are never replaced.
+          canonical station-appropriate bootstrap files, then verify the result.
+          Complete tool-owned configuration directories are never replaced.
   sync    Refuse a dirty Mac Forge checkout, pull with --ff-only, install the
           shared symlink and canonical bootstrap files, then verify.
 EOF
@@ -122,6 +127,11 @@ check_required_sources() {
     else
         fail "shared batch reader is not executable: $AI_SOURCE/bin/ai-read-instructions.sh"
     fi
+    if [[ -x "$AI_SOURCE/bin/review-handoff-verify.sh" ]]; then
+        pass "shared executable: bin/review-handoff-verify.sh"
+    else
+        fail "shared handoff validator is not executable: $AI_SOURCE/bin/review-handoff-verify.sh"
+    fi
 
     if command -v jq >/dev/null 2>&1; then
         pass "AI context dependency: jq"
@@ -144,6 +154,70 @@ check_required_sources() {
     else
         fail "AI instruction batch reader has invalid Bash syntax"
     fi
+    if bash -n "$AI_SOURCE/bin/review-handoff-verify.sh"; then
+        pass "AI handoff validator syntax"
+    else
+        fail "AI handoff validator has invalid Bash syntax"
+    fi
+
+    if jq -e '
+        .stations[] | select(.id == "masterchief")
+        | .agentRuntime.operatorContext
+        | .id == "work" and .root == "/home/oliver/work"
+    ' "$FORGE_ROOT/configs/stations.json" >/dev/null 2>&1; then
+        pass "MasterChief Work context is declared"
+    else
+        fail "MasterChief Work context is missing or invalid"
+    fi
+}
+
+context_universe() {
+    local target="$1"
+    shift
+
+    "$@" "$AI_SOURCE/bin/ai-context.sh" --mode handoff --repository "$FORGE_ROOT" --target "$target" \
+        | sed -n 's/^universe=//p' | head -n 1
+}
+
+check_masterchief_lane_resolution() {
+    local work_universe raynor_universe zeratul_universe rejected_cross_lane
+
+    work_universe="$(context_universe /home/oliver/work env \
+        -u FORGE_AGENT_IDENTITY -u FORGE_UNIVERSE_ROOT -u FORGE_WORK_ROOT)"
+    raynor_universe="$(context_universe /home/oliver/raynor env \
+        FORGE_AGENT_IDENTITY=raynor FORGE_UNIVERSE_ROOT=/home/oliver/raynor \
+        FORGE_WORK_ROOT=/home/oliver/raynor)"
+    zeratul_universe="$(context_universe /home/oliver/zeratul env \
+        FORGE_AGENT_IDENTITY=zeratul FORGE_UNIVERSE_ROOT=/home/oliver/zeratul \
+        FORGE_WORK_ROOT=/home/oliver/zeratul)"
+    rejected_cross_lane="$(context_universe /home/oliver/zeratul env \
+        FORGE_AGENT_IDENTITY=raynor FORGE_UNIVERSE_ROOT=/home/oliver/raynor \
+        FORGE_WORK_ROOT=/home/oliver/raynor)"
+
+    [[ "$work_universe" == "work" ]] \
+        && pass "MasterChief handoff route: work" \
+        || fail "MasterChief Work handoff route resolved as ${work_universe:-unset}"
+    [[ "$raynor_universe" == "raynor" ]] \
+        && pass "MasterChief handoff route: raynor" \
+        || fail "MasterChief Raynor handoff route resolved as ${raynor_universe:-unset}"
+    [[ "$zeratul_universe" == "zeratul" ]] \
+        && pass "MasterChief handoff route: zeratul" \
+        || fail "MasterChief Zeratul handoff route resolved as ${zeratul_universe:-unset}"
+    [[ "$rejected_cross_lane" == "unresolved" ]] \
+        && pass "MasterChief cross-lane route is rejected" \
+        || fail "MasterChief cross-lane route resolved as ${rejected_cross_lane:-unset}"
+}
+
+check_masterchief_handoff_lanes() {
+    local lane
+
+    for lane in work raynor zeratul; do
+        if "$AI_SOURCE/bin/review-handoff-verify.sh" "$lane" >/dev/null; then
+            pass "MasterChief handoff lane is valid: $lane"
+        else
+            fail "MasterChief handoff lane is invalid: $lane"
+        fi
+    done
 }
 
 check_instruction_batching() {
@@ -412,6 +486,8 @@ check_station_context() {
         masterchief)
             pass "station route: masterchief"
             check_masterchief_context
+            check_masterchief_lane_resolution
+            check_masterchief_handoff_lanes
             ;;
         *)
             fail "unsupported station hostname: ${station:-unknown}"
@@ -420,8 +496,11 @@ check_station_context() {
 }
 
 verify_config() {
+    local station
+
     failures=0
     warnings=0
+    station="$(detect_station)"
 
     printf 'AI configuration verification\n\n'
     check_required_sources
@@ -431,6 +510,10 @@ verify_config() {
     check_tool_directory "$CLAUDE_DIR" "Claude"
     check_bootstrap "$CODEX_TEMPLATE" "$CODEX_BOOTSTRAP" "Codex"
     check_bootstrap "$CLAUDE_TEMPLATE" "$CLAUDE_BOOTSTRAP" "Claude"
+    if [[ "$station" == "masterchief" ]]; then
+        check_tool_directory "$COPILOT_DIR" "Copilot"
+        check_bootstrap "$COPILOT_TEMPLATE" "$COPILOT_BOOTSTRAP" "Copilot"
+    fi
     check_station_context
     check_git_state
 
@@ -520,14 +603,31 @@ install_bootstrap() {
 }
 
 install_config() {
+    local station lane handoff_directory
+
     [[ -d "$AI_SOURCE" ]] || die "shared AI source is missing: $AI_SOURCE"
     require_source_layout
+    station="$(detect_station)"
 
     ensure_tool_directory "$CODEX_DIR" "Codex"
     ensure_tool_directory "$CLAUDE_DIR" "Claude"
+    if [[ "$station" == "masterchief" ]]; then
+        ensure_tool_directory "$COPILOT_DIR" "Copilot"
+        for lane in work raynor zeratul; do
+            handoff_directory="/home/oliver/$lane/.ai/review-handoff"
+            if [[ -L "$handoff_directory" ]]; then
+                die "handoff lane must not be a symlink: $handoff_directory"
+            fi
+            mkdir -p "$handoff_directory"
+            chmod 700 "/home/oliver/$lane/.ai" "$handoff_directory"
+        done
+    fi
     install_ai_link
     install_bootstrap "$CODEX_TEMPLATE" "$CODEX_BOOTSTRAP"
     install_bootstrap "$CLAUDE_TEMPLATE" "$CLAUDE_BOOTSTRAP"
+    if [[ "$station" == "masterchief" ]]; then
+        install_bootstrap "$COPILOT_TEMPLATE" "$COPILOT_BOOTSTRAP"
+    fi
 
     printf '\n'
     verify_config
@@ -550,7 +650,11 @@ sync_config() {
     git -C "$FORGE_ROOT" pull --ff-only
     printf '\n'
     install_config
-    printf '\nStart new Codex and Claude sessions after instruction changes.\n'
+    if [[ "$(detect_station)" == "masterchief" ]]; then
+        printf '\nStart new Codex, Claude, and Copilot sessions after instruction changes.\n'
+    else
+        printf '\nStart new Codex and Claude sessions after instruction changes.\n'
+    fi
 }
 
 case "${1:-}" in

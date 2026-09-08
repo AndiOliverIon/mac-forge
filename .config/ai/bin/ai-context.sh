@@ -192,7 +192,7 @@ discover_station() {
 discover_universe() {
     local station="$1"
     local scope_path="$2"
-    local configured_count universe
+    local configured_count scope_universe active_universe
 
     [[ "$station" != "unresolved" ]] || {
         printf '%s\n' "unresolved"
@@ -211,24 +211,37 @@ discover_universe() {
         return
     fi
 
+    scope_universe="$(jq -r --arg station "$station" --arg path "$scope_path" '
+        .stations[] | select(.id == $station)
+        | (
+            ((.agentRuntime.identities // [])[] | { id: .id, root: .universeRoot }),
+            ((.agentRuntime.operatorContext // empty) | { id: .id, root: .root })
+          )
+        | .root as $root
+        | select(($path == $root) or ($path | startswith($root + "/")))
+        | .id
+    ' "$STATIONS_FILE" | head -n 1)"
+
     if [[ -n "${FORGE_UNIVERSE_ROOT:-}" ]]; then
-        universe="$(jq -r --arg station "$station" --arg root "$FORGE_UNIVERSE_ROOT" '
+        active_universe="$(jq -r --arg station "$station" --arg root "$FORGE_UNIVERSE_ROOT" '
             .stations[] | select(.id == $station)
             | (.agentRuntime.identities // [])[]
             | select(.universeRoot == $root)
             | .id
         ' "$STATIONS_FILE" | head -n 1)"
-    else
-        universe="$(jq -r --arg station "$station" --arg path "$scope_path" '
-            .stations[] | select(.id == $station)
-            | (.agentRuntime.identities // [])[]
-            | .universeRoot as $root
-            | select(($path == $root) or ($path | startswith($root + "/")))
-            | .id
-        ' "$STATIONS_FILE" | head -n 1)"
+        if [[ -n "$active_universe" && "$scope_universe" == "$active_universe" ]]; then
+            printf '%s\n' "$active_universe"
+        else
+            printf '%s\n' "unresolved"
+        fi
+        return
     fi
 
-    printf '%s\n' "${universe:-unresolved}"
+    if [[ "$scope_universe" == "work" ]]; then
+        printf '%s\n' "work"
+    else
+        printf '%s\n' "unresolved"
+    fi
 }
 
 collect_review_targets() {

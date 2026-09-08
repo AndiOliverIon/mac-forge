@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-31",
+  "updatedAt": "2026-09-08",
   "description": "Canonical non-secret inventory of physical machines, virtual machines, and servers used by mac-forge.",
   "stations": [
     {
@@ -315,9 +315,15 @@
         "lanReachability": "same personal Wi-Fi and ISP wired LANs as Hades"
       },
       "agentRuntime": {
-        "maxConcurrentAgents": 2,
+        "maxConcurrentAgents": 3,
         "directoryOwner": "oliver",
         "isolation": "agent-enforced-universe-boundary",
+        "operatorContext": {
+          "id": "work",
+          "name": "Work",
+          "root": "/home/oliver/work",
+          "mode": "operator-assisted"
+        },
         "identities": [
           {
             "id": "raynor",
@@ -340,7 +346,7 @@
             "attachCommand": "zeratul"
           }
         ],
-        "verifiedAt": "2026-08-31"
+        "verifiedAt": "2026-09-08"
       },
       "relationships": {
         "onDemandDisplays": [
@@ -359,7 +365,7 @@
         "remote network inventory and reachability check on 2026-08-31",
         "remote agent-universe directory inventory over SSH",
         "user-confirmed UTP address and MAC address",
-        "user-confirmed agent identities, universe boundaries, and two-agent concurrency limit",
+        "user-confirmed Work, Raynor, and Zeratul execution contexts and three-agent concurrency limit",
         "user-confirmed display connection path",
         "live system inventory on 2026-09-04"
       ]
