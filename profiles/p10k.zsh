@@ -391,7 +391,9 @@
 
     local res
 
-    if [[ -n $VCS_STATUS_LOCAL_BRANCH ]]; then
+    # Inside tmux the status bar already shows the branch name (top right), so skip it here
+    # to avoid duplicating it at the cursor; keep it for plain terminals without that status bar.
+    if [[ -z $TMUX && -n $VCS_STATUS_LOCAL_BRANCH ]]; then
       local branch=${(V)VCS_STATUS_LOCAL_BRANCH}
       # Keep local branch names visible; directory shortening absorbs prompt pressure first.
       res+="${clean}${(g::)POWERLEVEL9K_VCS_BRANCH_ICON}${branch//\%/%%}"
