@@ -155,9 +155,9 @@ esac
 # fall back to FORGE_WORK_ROOT (the general "$HOME/work" universe).
 __forge_lane_root() {
   case "$PWD" in
-    /home/oliver/raynor | /home/oliver/raynor/*) print -r -- /home/oliver/raynor ;;
-    /home/oliver/zeratul | /home/oliver/zeratul/*) print -r -- /home/oliver/zeratul ;;
-    *) print -r -- "${FORGE_WORK_ROOT:-$HOME/work}" ;;
+    /home/oliver/raynor | /home/oliver/raynor/*) printf '%s\n' /home/oliver/raynor ;;
+    /home/oliver/zeratul | /home/oliver/zeratul/*) printf '%s\n' /home/oliver/zeratul ;;
+    *) printf '%s\n' "${FORGE_WORK_ROOT:-$HOME/work}" ;;
   esac
 }
 
@@ -175,11 +175,11 @@ __forge_project_cd() {
   fi
   fallback="$HOME/work/$rel"
   if [[ "$root" != "$HOME/work" && -d "$fallback" ]]; then
-    print -u2 "forge: '$rel' not found in $root, using $fallback"
+    echo "forge: '$rel' not found in $root, using $fallback" >&2
     cd -- "$fallback"
     return
   fi
-  print -u2 "forge: project not found: $rel"
+  echo "forge: project not found: $rel" >&2
   return 1
 }
 
