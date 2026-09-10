@@ -117,6 +117,7 @@ alias binclear="~/mac-forge/scripts/bin-clear.sh"
 alias port-release="~/mac-forge/scripts/port-release.sh"
 alias prl=port-release
 alias sshc="~/mac-forge/scripts/sshc.sh"
+alias show="~/mac-forge/scripts/show.sh"
 alias ardis-complete="~/mac-forge/scripts/ardis-complete.sh"
 alias ac=ardis-complete
 alias perf-cache-reset="~/mac-forge/scripts/perform-cache-reset.sh"

@@ -30,6 +30,7 @@ alias	web	Open a configured web entry in the preferred browser; use web change t
 alias	ftp	Pick an ftp-connection via fzf and open a dual-pane browser (remote left, local right); type to filter fzf-style, F5 download, F6 upload.
 alias	sshc	Pick a station via fzf (or pass a name) and open a dual-pane SSH/SFTP browser (remote left, local right); same keys as ftp.
 alias	net	List active network connections by friendly name via fzf, pick one, and run an Apple networkQuality speed test bound to that interface.
+alias	show	Pick an informational section via fzf (or pass its id, e.g. 'show hosts') and print it; sections are data-driven from configs/show-info.json.
 alias	fixdns	Repair stale manual macOS DNS only when normal resolution and every configured resolver fail but 1.1.1.1 works.
 alias	winappclean	Delete Parallels Windows app shortcuts except Visual Studio.app.
 alias	vpn	Start a configured VPN connection from forge state/secrets.
@@ -308,6 +309,7 @@ script	web	Open a configured web entry in the preferred browser; use web change 
 script	ftp	Pick an ftp-connection via fzf and open a dual-pane browser (remote left, local right); type to filter fzf-style, F5 download, F6 upload.
 script	sshc	Pick a station via fzf (or pass a name) and open a dual-pane SSH/SFTP browser (remote left, local right); same keys as ftp.
 script	net	List active network connections by friendly name via fzf, pick one, and run an Apple networkQuality speed test bound to that interface.
+script	show	Pick an informational section via fzf (or pass its id, e.g. 'show hosts') and print it; sections are data-driven from configs/show-info.json.
 script	fix-dns	Repair stale manual macOS DNS only when normal resolution and every configured resolver fail but 1.1.1.1 works.
 script	win-shortcut-clean	Delete Parallels Windows app shortcuts except Visual Studio.app.
 script	work	Switch or inspect the active SQL Docker data and snapshot storage paths.

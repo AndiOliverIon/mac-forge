@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "description": "Sections for the 'show' command. Each entry is picked via fzf and its command's output is printed in the terminal. Add new entries here to extend 'show' without touching scripts/show.sh.",
+  "sections": [
+    {
+      "id": "hosts",
+      "label": "hosts",
+      "description": "List /etc/hosts entries",
+      "command": "cat /etc/hosts"
+    }
+  ]
+}
