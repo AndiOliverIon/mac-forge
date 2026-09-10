@@ -5,8 +5,8 @@
     {
       "id": "hosts",
       "label": "hosts",
-      "description": "List /etc/hosts entries",
-      "command": "cat /etc/hosts"
+      "description": "List /etc/hosts entries (alias, then IP address; column-aligned)",
+      "command": "awk '{ if ($0 ~ /^#/ || NF==0) { lines[NR]=$0; type[NR]=\"c\"; next } ip=$1; rest=$0; sub($1 FS,\"\",rest); gsub(/^[ \\t]+/,\"\",rest); lines[NR]=rest; ips[NR]=ip; type[NR]=\"d\"; if (length(rest)>w) w=length(rest) } END{ for (i=1;i<=NR;i++) { if (type[i]==\"c\") print lines[i]; else printf \"%-*s  %s\\n\", w, lines[i], ips[i] } }' /etc/hosts"
     }
   ]
 }
