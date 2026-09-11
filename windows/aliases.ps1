@@ -288,6 +288,7 @@ $sharedCommands = @{
   "dbsn" = "scripts/db-snapshot.sh"
   "rdbsn" = "scripts/db-remote-backup.sh"
   "rdbr" = "scripts/db-remote-restore.sh"
+  "rdbsndrop" = "scripts/db-remote-snapshot-drop.sh"
   "rdown" = "scripts/db-remote-download.sh"
   "rup" = "scripts/db-remote-upload.sh"
   "dbc" = "scripts/db-clear.sh"
