@@ -63,6 +63,9 @@ development database—may still run locally and is not redirected to VPS1 by th
 - `scripts/vps1/vps1.sh`: shared VPS1 connection and operation helpers.
 - `scripts/vps1/vps1-db-*`: list, migrate, restore, snapshot, upload/download, optimize, index,
   state, and destructive database workflows on VPS1.
+- `scripts/forge-lane.sh`: shared Bash helper sourced by migration scripts (`v1am`, `am`) so they
+  discover the migrations project inside the active Raynor/Zeratul agent universe before falling
+  back to the shared `$HOME/work` lane, mirroring `linux/aliases.zsh`'s `__forge_project_cd`.
 - `scripts/vps1/vps1-sql-tunnel.sh`: private local-to-VPS1 SQL tunnel.
 - `scripts/forge.sh`, `scripts/work.sh`, and `scripts/db-*`: local operational and fallback helpers.
 - `scripts/organizer.sh`: organizes configured folders by extension rules.

@@ -4,6 +4,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/forge.sh"
 
+# forge-lane.sh provides forge_lane_root / forge_resolve_lane_path, used to
+# prefer a Raynor/Zeratul agent-universe clone over the shared work lane.
+# shellcheck disable=SC1091
+source "$(cd -- "${SCRIPT_DIR}/../.." && pwd)/scripts/forge-lane.sh"
+
 if [[ -t 1 ]]; then
   C_RESET=$'\033[0m'
   C_BLUE=$'\033[1;34m'
@@ -130,7 +135,7 @@ PY
   ((${#paths[@]} > 0)) || die "No Ardis migration paths configured."
 
   if ((${#paths[@]} == 1)); then
-    printf '%s\n' "${paths[0]}"
+    apply_lane_discovery "${paths[0]}"
     return 0
   fi
 
@@ -142,11 +147,23 @@ PY
   )" || true
 
   if [[ -n "$selection" ]]; then
-    printf '%s\n' "$selection"
+    apply_lane_discovery "$selection"
     return 0
   fi
 
-  printf '%s\n' "${paths[0]}"
+  apply_lane_discovery "${paths[0]}"
+}
+
+# Prefer a Raynor/Zeratul agent-universe clone over the shared "$HOME/work"
+# lane, when the configured path is inside "$HOME/work" and the active
+# universe has the same project.
+apply_lane_discovery() {
+  local resolved="$1" lane_resolved
+  lane_resolved="$(forge_resolve_lane_path "$resolved" "$HOME/work")"
+  if [[ "$lane_resolved" != "$resolved" ]]; then
+    log_info "Using in-universe clone at $lane_resolved (lane: $(forge_lane_root))" >&2
+  fi
+  printf '%s\n' "$lane_resolved"
 }
 
 main() {

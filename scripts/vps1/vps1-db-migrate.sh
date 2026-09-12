@@ -17,6 +17,11 @@ if [[ -f "$VPS1_REPO_ROOT/scripts/forge.sh" ]]; then
   source "$VPS1_REPO_ROOT/scripts/forge.sh"
 fi
 
+# forge-lane.sh provides forge_lane_root / forge_resolve_lane_path, used to
+# prefer a Raynor/Zeratul agent-universe clone over the shared work lane.
+# shellcheck disable=SC1091
+source "$VPS1_REPO_ROOT/scripts/forge-lane.sh"
+
 #######################################
 # Required variables
 #######################################
@@ -73,11 +78,31 @@ for entry in state.get("ardis-migration-paths", []):
         print(f"{title}\t{path}")
 PY
     )" || { echo "No migrations path selected. Aborting." >&2; return 1; }
-    if [[ -n "${selected:-}" ]]; then resolve_local_path "${selected#*$'\t'}"; return 0; fi
+    if [[ -n "${selected:-}" ]]; then
+      apply_lane_discovery "$(resolve_local_path "${selected#*$'\t'}")"
+      return 0
+    fi
   fi
-  if [[ -n "${ARDIS_MIGRATIONS_PATH:-}" ]]; then resolve_local_path "$ARDIS_MIGRATIONS_PATH"; return 0; fi
+  if [[ -n "${ARDIS_MIGRATIONS_PATH:-}" ]]; then
+    apply_lane_discovery "$(resolve_local_path "$ARDIS_MIGRATIONS_PATH")"
+    return 0
+  fi
   echo "No migrations paths configured. Add 'ardis-migration-paths' to ${FORGE_WORK_STATE_FILE:-configs/work-state.json}." >&2
   return 1
+}
+
+#######################################
+# Helper: prefer a Raynor/Zeratul agent-universe clone over the shared
+# "$HOME/work" lane, when the resolved path is inside "$HOME/work" and the
+# active universe has the same project.
+#######################################
+apply_lane_discovery() {
+  local resolved="$1" lane_resolved
+  lane_resolved="$(forge_resolve_lane_path "$resolved" "$HOME/work")"
+  if [[ "$lane_resolved" != "$resolved" ]]; then
+    echo "vps1-db-migrate: using in-universe clone at $lane_resolved (lane: $(forge_lane_root))" >&2
+  fi
+  printf '%s\n' "$lane_resolved"
 }
 
 #######################################
