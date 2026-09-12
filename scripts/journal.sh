@@ -195,6 +195,11 @@ render_journal() {
 	JOURNAL_MODE="$mode" "$py" - "$JOURNAL_FILE" <<'PY'
 import json, os, sys
 
+# Force UTF-8 stdout so tree-drawing characters don't crash on Windows,
+# where Python's default console encoding is often cp1252/cp850.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 try:
     with open(sys.argv[1], "r", encoding="utf-8") as handle:
         data = json.load(handle)
