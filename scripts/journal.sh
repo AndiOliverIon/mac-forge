@@ -174,10 +174,25 @@ copy_to_clipboard() {
 	fi
 }
 
+resolve_python() {
+	# Echo a working Python 3 interpreter, skipping the Windows Store alias stub.
+	local cand
+	for cand in "${FORGE_PYTHON:-}" python3 python; do
+		[[ -n "$cand" ]] || continue
+		command -v "$cand" >/dev/null 2>&1 || continue
+		[[ "$("$cand" -c 'print(1)' 2>/dev/null)" == "1" ]] || continue
+		printf '%s' "$cand"
+		return 0
+	done
+	return 1
+}
+
 render_journal() {
 	# mode: tree | rows ; JOURNAL_COLOR: 1|0
 	local mode="$1"
-	JOURNAL_MODE="$mode" python3 - "$JOURNAL_FILE" <<'PY'
+	local py
+	py="$(resolve_python)" || die "Python 3 is required for 'jls' but was not found (tried python3, python). Install Python 3 or set FORGE_PYTHON."
+	JOURNAL_MODE="$mode" "$py" - "$JOURNAL_FILE" <<'PY'
 import json, os, sys
 
 try:
@@ -293,7 +308,6 @@ journal_ls() {
 		echo "(journal is empty)"
 		return 0
 	fi
-	require_cmd python3
 
 	# Optional positional filters: <chapter> [entry].
 	export JOURNAL_FILTER_CHAPTER="${1:-}"
