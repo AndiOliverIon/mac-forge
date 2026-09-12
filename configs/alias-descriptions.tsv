@@ -13,6 +13,14 @@ alias	kp	Kill processes listening on a TCP port, for example kp 8080.
 alias	info	Show system health; --cycle records meaningful changes and configured agent usage once per minute.
 alias	inf	Show system health; --cycle records meaningful changes and configured agent usage once per minute (short for info).
 alias	help	Open the forge command picker for aliases and scripts.
+alias	jadd	Add a journal entry to config-local/journal.json; prompts for title/value/description, where a slash-separated title like personal/general/wifi nests the entry under folders/chapters.
+alias	jrm	Fuzzy-search journal entries (Tab to multi-select across chapters) and delete them after typing 'delete' to confirm.
+alias	jls	Browse journal entries in a colored fzf tree; press Enter on an entry to copy its value/title/description/all to the clipboard. Optional args narrow it: 'jls <chapter>' keeps entries under matching chapters, 'jls <chapter> <entry>' also filters the entries. Prints a plain tree when not interactive.
+alias	jedit	Pick a journal entry via fzf and edit its title/value/description; changing the title moves the entry (Enter keeps current, '-' clears the description).
+alias	encrypt	fzf multi-select files in the current directory and encrypt them in place using config-local/encrypt.key (auto-generated on first use); rewrites each file as a marker line plus base64 AES-256-CBC ciphertext.
+alias	e	Encrypt selected files in the current directory in place (short for encrypt).
+alias	decrypt	fzf multi-select previously encrypted files in the current directory and decrypt them in place using config-local/encrypt.key.
+alias	de	Decrypt selected files in the current directory in place (short for decrypt).
 alias	ai-config	Verify, install, or fast-forward-sync shared AI instructions and tool bootstrap files.
 alias	ai-verify	Run read-only shared AI configuration verification.
 alias	ai-install	Install shared AI configuration with recoverable backups for conflicting local files.

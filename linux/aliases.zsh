@@ -59,6 +59,22 @@ alias genopenapitimetrack="~/mac-forge/scripts/gen-open-api-timetrack.sh"
 alias sp="~/mac-forge/linux/scripts/sudo-session.sh"
 
 # ------------------------------------------------------------------------------
+# Journal
+# ------------------------------------------------------------------------------
+alias jadd="~/mac-forge/scripts/journal.sh add"
+alias jrm="~/mac-forge/scripts/journal.sh rm"
+alias jls="~/mac-forge/scripts/journal.sh ls"
+alias jedit="~/mac-forge/scripts/journal.sh edit"
+
+# ------------------------------------------------------------------------------
+# Crypto
+# ------------------------------------------------------------------------------
+alias encrypt="~/mac-forge/scripts/crypt.sh encrypt"
+alias e="~/mac-forge/scripts/crypt.sh encrypt"
+alias decrypt="~/mac-forge/scripts/crypt.sh decrypt"
+alias de="~/mac-forge/scripts/crypt.sh decrypt"
+
+# ------------------------------------------------------------------------------
 # Git Shortcuts
 # ------------------------------------------------------------------------------
 alias aiusage='~/mac-forge/scripts/agents/usage.sh'
