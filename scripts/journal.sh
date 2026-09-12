@@ -165,8 +165,12 @@ copy_to_clipboard() {
 		printf '%s' "$data" | xclip -selection clipboard
 	elif command -v xsel >/dev/null 2>&1; then
 		printf '%s' "$data" | xsel --clipboard --input
+	elif command -v clip.exe >/dev/null 2>&1; then
+		printf '%s' "$data" | clip.exe
+	elif command -v clip >/dev/null 2>&1; then
+		printf '%s' "$data" | clip
 	else
-		die "No clipboard tool found (need pbcopy, wl-copy, xclip or xsel)."
+		die "No clipboard tool found (need pbcopy, wl-copy, xclip, xsel or clip)."
 	fi
 }
 

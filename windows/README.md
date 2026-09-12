@@ -73,6 +73,20 @@ Use `ftp` to open the `ftp-connections` entry from
 implementation uses the local PowerShell/.NET FTP stack and supports two
 panels, navigation, refresh, F5 download, and F6 upload.
 
+### Journal and file encryption
+
+`jadd`, `jrm`, `jls`, and `jedit` manage the nested journal stored in
+`config-local\journal.json`, and `encrypt`/`e` and `decrypt`/`de` encrypt or
+decrypt files in the current directory using the key in
+`config-local\encrypt.key`. These forward to the shared `scripts\journal.sh`
+and `scripts\crypt.sh` through Git Bash, so they rely on the same Git Bash
+tools already used by `sr`/`ftp` (`jq`, `fzf`, `python3`, `openssl`). `jls`
+clipboard copy uses Windows `clip`.
+
+Both features read their data from the ignored `config-local` folder. To share
+the same journal and decrypt files across stations, copy `encrypt.key` and
+`journal.json` into `config-local` on each station; they are never committed.
+
 ## Local LAN Codex profile
 
 Copy the secure `llm cli deploy` bundle to a station, open PowerShell in that

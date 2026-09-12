@@ -322,6 +322,18 @@ Register-ForgeBashCommand -Name "workinfo" -Script "scripts/work.sh" -PrefixArgu
 Register-ForgeBashCommand -Name "v1-sql-up" -Script "scripts/vps1/vps1-db-state.sh" -PrefixArguments @("online")
 Register-ForgeBashCommand -Name "v1-sql-down" -Script "scripts/vps1/vps1-db-state.sh" -PrefixArguments @("offline")
 
+# Journal (nested key/value store in config-local/journal.json)
+Register-ForgeBashCommand -Name "jadd" -Script "scripts/journal.sh" -PrefixArguments @("add")
+Register-ForgeBashCommand -Name "jrm" -Script "scripts/journal.sh" -PrefixArguments @("rm")
+Register-ForgeBashCommand -Name "jls" -Script "scripts/journal.sh" -PrefixArguments @("ls")
+Register-ForgeBashCommand -Name "jedit" -Script "scripts/journal.sh" -PrefixArguments @("edit")
+
+# File encryption (symmetric key in config-local/encrypt.key)
+Register-ForgeBashCommand -Name "encrypt" -Script "scripts/crypt.sh" -PrefixArguments @("encrypt")
+Register-ForgeBashCommand -Name "e" -Script "scripts/crypt.sh" -PrefixArguments @("encrypt")
+Register-ForgeBashCommand -Name "decrypt" -Script "scripts/crypt.sh" -PrefixArguments @("decrypt")
+Register-ForgeBashCommand -Name "de" -Script "scripts/crypt.sh" -PrefixArguments @("decrypt")
+
 function global:hades-tunnel-up {
   & (Join-Path $script:ForgeWindowsRoot "scripts\hades-tunnel.ps1") -Action up
 }
