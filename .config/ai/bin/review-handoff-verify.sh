@@ -103,13 +103,15 @@ else
     date -d "$request_created" +%s >/dev/null 2>&1 \
         || fail "request Created timestamp is missing or invalid"
 
+    coworker="$(field "$request" Coworker)"
     if [[ "$lane" == "work" ]]; then
-        coworker="$(field "$request" Coworker)"
         reviewer="$(field "$request" Reviewer)"
-        case "$coworker" in Artanis | Argus | Aegis) ;; *) fail "invalid Work coworker: ${coworker:-missing}" ;; esac
-        case "$reviewer" in Artanis | Argus | Aegis) ;; *) fail "invalid Work reviewer: ${reviewer:-missing}" ;; esac
+        case "$coworker" in Artanis | Karax | Argus | Aegis) ;; *) fail "invalid Work coworker: ${coworker:-missing}" ;; esac
+        case "$reviewer" in Artanis | Karax | Argus | Aegis) ;; *) fail "invalid Work reviewer: ${reviewer:-missing}" ;; esac
         [[ -z "$coworker" || -z "$reviewer" || "$coworker" != "$reviewer" ]] \
             || fail "Work coworker and reviewer must differ"
+    else
+        case "$coworker" in Artanis | Karax) ;; *) fail "invalid coworker: ${coworker:-missing}" ;; esac
     fi
 
     if [[ ! -e "$findings" ]]; then
@@ -142,9 +144,9 @@ else
                         || "$findings_value" == "$request_value "*) ]] \
                     || fail "$name differs for handoff $request_id"
             done
+            [[ "$(field "$findings" Coworker)" == "$coworker" ]] \
+                || fail "coworker differs between request and findings"
             if [[ "$lane" == "work" ]]; then
-                [[ "$(field "$findings" Coworker)" == "$coworker" ]] \
-                    || fail "Work coworker differs between request and findings"
                 [[ "$(field "$findings" Reviewer)" == "$reviewer" ]] \
                     || fail "Work reviewer differs between request and findings"
             fi

@@ -21,14 +21,14 @@ never read or write another context's transporter files.
 
 ## Linux Role Assignment
 
-For Raynor and Zeratul, the common Artanis-to-Argus ownership applies unchanged: Artanis owns
-`request.md` and Argus owns `findings.md`.
+For Raynor and Zeratul, the common coworker-to-Argus ownership applies: Artanis or Karax owns
+`request.md` and Argus owns `findings.md`. Both files include `Coworker`.
 
 For Work only, this section supersedes the common protocol's fixed identity names while retaining
 all of its safety and file-ownership rules:
 
-- The active coworker may be Artanis, Argus, or Aegis and owns `request.md` for that cycle.
-- The reviewer may be Artanis, Argus, or Aegis, must be explicitly named by Oliver, must differ from
+- The active coworker may be Artanis, Karax, Argus, or Aegis and owns `request.md` for that cycle.
+- The reviewer may be Artanis, Karax, Argus, or Aegis, must be explicitly named by Oliver, must differ from
   the coworker, and owns `findings.md` for that cycle.
 - Work handoff commands may name the selected reviewer, such as `Prep for Aegis takeoff` or
   `Process Aegis's findings`; these are unambiguous equivalents of the common triggers.

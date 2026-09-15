@@ -5,23 +5,24 @@ decision-maker.
 
 ## Invariants
 
-- Artanis is the coworker and implementation partner: Artanis prepares requests and evaluates
-  findings. Argus independently reviews actual repository state and writes findings; Argus does not
-  implement changes through this protocol.
+- The coworker is Artanis or Karax: that agent prepares requests and evaluates findings. Argus
+  independently reviews actual repository state and writes findings; Argus does not implement changes
+  through this protocol.
 - Transporter files are the exclusive handoff channel. Do not search for handoff state in other AI
   sessions or contact another session to locate or exchange it.
-- Findings authorize analysis only. Artanis may implement only after Oliver explicitly confirms the
-  accepted scope.
+- Findings authorize analysis only. The coworker may implement only after Oliver explicitly confirms
+  the accepted scope.
 - A handoff concerns exactly one repository. For multiple repositories, stop and ask Oliver to pick
   one or authorize separate handoffs.
 - The station flow owns lane discovery, exact paths, metadata values, handoff-ID format, and whether
-  Artanis may create a lane.
+  the coworker may create a lane.
 - Each lane has only `request.md` and `findings.md`; a file may be absent until its owner first writes
   it. Multiple lanes may run concurrently, but never inspect, read, create, edit, clear, or replace
   transporter files outside the active lane.
-- Only Artanis writes `request.md`; only Argus writes `findings.md`. For each cycle, the owner fully
-  replaces its file—never append or create per-task transporter files. Neither agent modifies the
-  other's file.
+- Only the active coworker writes `request.md`; only Argus writes `findings.md`. For each cycle, the
+  owner fully replaces its file—never append or create per-task transporter files. Neither agent
+  modifies the other's file. The request must name the coworker as `Artanis` or `Karax` so Argus
+  always knows who pushed the review.
 - Before reading or writing a present transporter file, reject it if it is a symlink or not a regular
   file. Create a missing owned file only when the active trigger and station flow allow it.
 - Replace a present owned transporter file with one update operation. When using `apply_patch`, use
@@ -33,15 +34,16 @@ decision-maker.
 ## Identity and Safety Checks
 
 - Every request receives a new handoff ID. Argus copies it exactly into `findings.md`.
-- Before Argus reviews or Artanis analyzes findings, verify station, lane, canonical absolute
-  repository path, handoff ID, and exact review target against the active session and lane.
+- Before Argus reviews or the coworker analyzes findings, verify station, lane, coworker, canonical
+  absolute repository path, handoff ID, and exact review target against the active session and lane.
 - On any mismatch, report stale or ambiguous state and stop without modifying repository or
   transporter files. The previous `findings.md` intentionally remains while a newer request awaits
   review; the handoff ID distinguishes cycles.
 
-## Artanis: Prepare for Argus Takeoff
+## Coworker: Prepare for Argus Takeoff
 
-Trigger: Oliver says **“Prep for Argus takeoff”** or an unambiguous equivalent.
+Trigger: Oliver says **“Prep for Argus takeoff”** or an unambiguous equivalent. Artanis or Karax
+executes this trigger as the coworker for that cycle.
 
 1. Resolve and verify the routed lane and canonical repository root. Create a lane only when the
    station flow permits it for this trigger.
@@ -49,8 +51,10 @@ Trigger: Oliver says **“Prep for Argus takeoff”** or an unambiguous equivale
    user changes outside scope unless Oliver includes them.
 3. Define an exact review target—a commit, diff range, or explicitly bounded working-tree change.
 4. Generate a new handoff ID and completely replace only the active lane's `request.md` using the
-   structure below. Leave `findings.md` unchanged.
-5. Tell Oliver the request path and handoff ID. Say it is ready; do not imply Argus reviewed it.
+   structure below. Set `Coworker` to the preparing agent's own identity, `Artanis` or `Karax`. Leave
+   `findings.md` unchanged.
+5. Tell Oliver the request path, handoff ID, and coworker name. Say it is ready; do not imply Argus
+   reviewed it.
 
 ### Required `request.md` Structure
 
@@ -62,6 +66,7 @@ Trigger: Oliver says **“Prep for Argus takeoff”** or an unambiguous equivale
 - Lane: <station-flow lane value>
 - Handoff ID: <exact ID>
 - Created: <ISO-8601 timestamp>
+- Coworker: <Artanis|Karax>
 - Repository: <canonical absolute path>
 - Branch: <branch>
 - Review target: <commit, diff range, or bounded working-tree scope>
@@ -94,21 +99,24 @@ Trigger: Oliver says **“Prep for Argus takeoff”** or an unambiguous equivale
 
 The request is a navigation aid, not evidence. Argus verifies it against the repository.
 
-## Argus: Process Artanis's Review Handoff
+## Argus: Process Review Handoff
 
-Trigger: Oliver says **“Process Artanis's review handoff”**, **“Argus takeoff”**, or an unambiguous
-equivalent.
+Trigger: Oliver says **“Process Artanis's review handoff”**, **“Process Karax's review handoff”**,
+**“Argus takeoff”**, or an unambiguous equivalent.
 
 1. Resolve the routed lane and read only its `request.md`. Argus must not create a missing handoff
    root, lane, or request.
 2. Complete the identity and safety checks, then load the shared router, selected review-mode stack
-   guidelines, and applicable project instructions.
-3. Independently inspect the actual review target; Artanis's summary is not proof.
+   guidelines, and applicable project instructions. Read `Coworker` from the request. On Hades,
+   Raynor, and Zeratul it must be `Artanis` or `Karax`. If it is missing, invalid, or does not match
+   the named trigger when Oliver named a coworker, report the mismatch and stop.
+3. Independently inspect the actual review target; the coworker's summary is not proof.
 4. Review only the defined scope. Label an out-of-scope issue only when it directly affects scoped
    correctness.
-5. Completely replace only the active lane's `findings.md` using the structure below and exact
-   handoff ID. Leave `request.md` and repository files unchanged.
-6. Tell Oliver the findings path, handoff ID, and verdict.
+5. Completely replace only the active lane's `findings.md` using the structure below, the exact
+   handoff ID, and the request's `Coworker` value copied exactly. Leave `request.md` and repository
+   files unchanged.
+6. Tell Oliver the findings path, handoff ID, verdict, and which coworker requested the review.
 
 Findings must be specific, evidence-backed, actionable, and ordered by severity. If none exist, say
 so and record residual risks or verification limitations.
@@ -123,6 +131,7 @@ so and record residual risks or verification limitations.
 - Lane: <station-flow lane value>
 - Handoff ID: <copied exactly from request.md>
 - Reviewed: <ISO-8601 timestamp>
+- Coworker: <copied exactly from request.md>
 - Repository: <canonical absolute path>
 - Branch: <branch reviewed>
 - Review target: <actual target reviewed>
@@ -152,27 +161,28 @@ so and record residual risks or verification limitations.
 
 <Optional improvements that are not required for approval, or “None”.>
 
-## Questions for Oliver and Artanis
+## Questions for Oliver and the coworker
 
 <Decisions or missing context, or “None”.>
 ```
 
-## Artanis: Process Argus's Findings
+## Coworker: Process Argus's Findings
 
 Trigger: Oliver says **“Process Argus's findings”** or an unambiguous equivalent. This authorizes
-analysis only.
+analysis only. The named `Coworker` evaluates the findings unless Oliver names the other coworker.
 
 1. Resolve the routed lane, read only its two transporter files, and complete the identity and safety
-   checks.
+   checks. Confirm `Coworker` in both files matches, and that it is `Artanis` or `Karax`.
 2. Independently inspect the relevant code and evidence for every finding using read-only actions.
 3. Classify each finding as `confirmed`, `partially valid`, `rejected`, or `uncertain`.
 4. Immediately present Argus's verdict, the overall assessment, each classification and its evidence,
-   recommended actions and tradeoffs, and every decision Oliver and Artanis must make together.
+   recommended actions and tradeoffs, and every decision Oliver and the named coworker must make
+   together. State that coworker name.
 5. Stop for discussion and confirmation. Do not implement, edit code or configuration, or modify
    either transporter file merely because findings exist.
 
 ## Subsequent Cycles
 
-After Oliver confirms actions, Artanis may implement only that scope. A later **“Prep for Argus
-takeoff”** starts a new cycle by replacing `request.md` with a new handoff ID and exact target; Argus
-then replaces `findings.md` for that ID.
+After Oliver confirms actions, the named coworker may implement only that scope. A later **“Prep for
+Argus takeoff”** starts a new cycle by replacing `request.md` with a new handoff ID, exact target, and
+`Coworker` identity; Argus then replaces `findings.md` for that ID.

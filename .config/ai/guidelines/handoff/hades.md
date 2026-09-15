@@ -16,7 +16,7 @@ If the repository is not a Git repository, its root is ambiguous, multiple repos
 
 ## Lane Creation and Isolation
 
-Only Artanis may create the handoff root or a missing project lane, and only while processing **“Prep for Argus takeoff”**. Create directories with owner-only access. Each agent must create its owned transporter file with owner-only access; Artanis then creates or completely replaces only `request.md`.
+Only the active coworker (Artanis or Karax) may create the handoff root or a missing project lane, and only while processing **“Prep for Argus takeoff”**. Create directories with owner-only access. Each agent must create its owned transporter file with owner-only access; the coworker then creates or completely replaces only `request.md`.
 
 Argus must not create a missing handoff root, lane, or `request.md`. When processing a handoff, a missing or unsafe path is a configuration error: report it and stop.
 
