@@ -16,16 +16,18 @@ If the repository is not a Git repository, its root is ambiguous, multiple repos
 
 ## Lane Creation and Isolation
 
-Only the active coworker (Artanis or Karax) may create the handoff root or a missing project lane, and only while processing **“Prep for Argus takeoff”**. Create directories with owner-only access. Each agent must create its owned transporter file with owner-only access; the coworker then creates or completely replaces only `request.md`.
+Only the active coworker (Artanis or Karax) may create the handoff root or a missing project lane, and only while processing **“Prep for Argus takeoff”**. Create directories with owner-only access. Each agent must create its owned transporter file with owner-only access; the coworker then creates or completely replaces only `request-<coworker>.md`.
 
-Argus must not create a missing handoff root, lane, or `request.md`. When processing a handoff, a missing or unsafe path is a configuration error: report it and stop.
+Argus must not create a missing handoff root, lane, or request file. When processing a handoff, a missing or unsafe path is a configuration error: report it and stop.
 
-The active lane uses exactly:
+The active lane uses distinct coworker pairs:
 
-- Request: `/Users/oliver/handoffserver/<project-key>/request.md`
-- Findings: `/Users/oliver/handoffserver/<project-key>/findings.md`
+- Artanis request: `/Users/oliver/handoffserver/<project-key>/request-artanis.md`
+- Artanis findings: `/Users/oliver/handoffserver/<project-key>/findings-artanis.md`
+- Karax request: `/Users/oliver/handoffserver/<project-key>/request-karax.md`
+- Karax findings: `/Users/oliver/handoffserver/<project-key>/findings-karax.md`
 
-Different project lanes may operate concurrently. While operating in one project lane, never enumerate, inspect, read, or modify another project lane. One project lane has only one active handoff cycle; a new request replaces the prior request according to the common protocol.
+Different project lanes may operate concurrently, and both coworker pairs in one project lane may be active at once. While operating in one project lane, never enumerate, inspect, read, or modify another project lane. While operating one coworker's pair, never read or write the other coworker's files except as the common protocol allows to detect an ambiguous **“Argus takeoff”**. A new request replaces only that coworker's prior request.
 
 ## Metadata and Handoff ID
 
@@ -33,6 +35,8 @@ Use:
 
 - `Station: hades`
 - `Lane: <project-key>`
-- Handoff ID: `hades:<project-key>:<ISO-8601 timestamp>`
+- Handoff ID: `hades:<project-key>:<coworker>:<ISO-8601 timestamp>`
 
-The project key in the lane path, metadata, and handoff ID must agree. The canonical absolute repository path recorded in both transporter files must match the active repository before review or findings analysis proceeds.
+The coworker token is `artanis` or `karax` and must match the transporter filenames.
+
+The project key in the lane path, metadata, and handoff ID must agree, and the coworker token must match the filenames. The canonical absolute repository path recorded in both transporter files of a pair must match the active repository before review or findings analysis proceeds.
