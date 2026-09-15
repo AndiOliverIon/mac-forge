@@ -117,6 +117,11 @@ function global:cdp { (Get-Location).Path | Set-Clipboard }
 function global:fixdock { Stop-Process -Name explorer -Force }
 function global:rider { Start-Process "rider64.exe" -ArgumentList $args }
 function global:copilot { & copilot.exe @args }
+# AI team members (name-based launch)
+function global:artanis { & codex @args }
+function global:argus { & claude @args }
+function global:aegis { copilot @args }
+function global:karax { & grok @args }
 function global:ftp {
   & (Join-Path $script:ForgeWindowsRoot "scripts\ftp.ps1") @args
 }
