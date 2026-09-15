@@ -1,6 +1,6 @@
 # Shared AI Instructions
 
-This directory is the Git-tracked source of truth for shared Artanis, Argus,
+This directory is the Git-tracked source of truth for shared Artanis, Karax, Argus,
 and Aegis instructions.
 
 On Unix stations, expose it through the conventional path:
