@@ -1,4 +1,4 @@
-# Artanis–Argus Review Handoff Router
+# Artanis/Karax–Argus Review Handoff Router
 
 The protocol is dormant unless Oliver invokes a handoff command or an unambiguous equivalent.
 

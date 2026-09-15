@@ -1,4 +1,4 @@
-# Artanis–Argus Review Handoff — MasterChief Flow
+# Artanis/Karax–Argus Review Handoff — MasterChief Flow
 
 Use this flow only when the handoff router identifies the local station as `masterchief`.
 
@@ -21,21 +21,10 @@ never read or write another context's transporter files.
 
 ## Linux Role Assignment
 
-For Raynor and Zeratul, the common coworker-to-Argus ownership applies: Artanis or Karax owns
-`request-<coworker>.md` and Argus owns the matching `findings-<coworker>.md`. Both files include
-`Coworker`, which must match the filename.
-
-For Work only, this section supersedes the common protocol's fixed identity names while retaining
-all of its safety and file-ownership rules:
-
-- The active coworker may be Artanis, Karax, Argus, or Aegis and owns `request-<coworker>.md` for that cycle.
-- The reviewer may be Artanis, Karax, Argus, or Aegis, must be explicitly named by Oliver, must differ from
-  the coworker, and owns the matching `findings-<coworker>.md` for that cycle.
-- Work handoff commands may name the selected reviewer, such as `Prep for Aegis takeoff` or
-  `Process Aegis's findings`; these are unambiguous equivalents of the common triggers.
-- Work requests and findings add `Coworker` and `Reviewer` metadata fields. Both files must contain
-  the same two names, the current agent must match the role that owns the file it writes, and the
-  filenames must use the coworker's lowercase identity.
+The common coworker-to-Argus ownership applies in all three lanes. Artanis or Karax owns
+`request-<coworker>.md`, and Argus owns the matching `findings-<coworker>.md`. Both files include
+`Coworker`, which must match the filename. Aegis may assist with bounded lower-complexity tasks but
+does not replace the active coworker or Argus in this protocol.
 
 ## Fixed Paths
 
@@ -54,7 +43,7 @@ all of its safety and file-ownership rules:
 - Request: `/home/oliver/raynor/.ai/review-handoff/request-<coworker>.md`
 - Findings: `/home/oliver/raynor/.ai/review-handoff/findings-<coworker>.md`
 
-`<coworker>` is the lowercase identity (`artanis`, `karax`, and on Work also `argus` or `aegis`).
+`<coworker>` is the lowercase identity (`artanis` or `karax`).
 
 These lane directories are created and validated by `ai-config install`. Do not create or relocate
 them as part of a handoff. If the selected lane directory is missing, stop and report the

@@ -10,12 +10,16 @@ AI_LINK="$USER_CONFIG_ROOT/.config/ai"
 CODEX_DIR="$USER_CONFIG_ROOT/.codex"
 CLAUDE_DIR="$USER_CONFIG_ROOT/.claude"
 COPILOT_DIR="$USER_CONFIG_ROOT/.copilot"
+GROK_DIR="$USER_CONFIG_ROOT/.grok"
 CODEX_BOOTSTRAP="$CODEX_DIR/AGENTS.md"
 CLAUDE_BOOTSTRAP="$CLAUDE_DIR/CLAUDE.md"
 COPILOT_BOOTSTRAP="$COPILOT_DIR/copilot-instructions.md"
+GROK_BOOTSTRAP="$GROK_DIR/AGENTS.md"
+GROK_CONFIG="$GROK_DIR/config.toml"
 CODEX_TEMPLATE="$AI_SOURCE/bootstrap/codex-AGENTS.md"
 CLAUDE_TEMPLATE="$AI_SOURCE/bootstrap/claude-CLAUDE.md"
 COPILOT_TEMPLATE="$AI_SOURCE/bootstrap/copilot-instructions.md"
+GROK_TEMPLATE="$AI_SOURCE/bootstrap/grok-AGENTS.md"
 REQUIRED_SOURCES=(
     identities.md
     guidelines/guidelines.md
@@ -46,6 +50,7 @@ REQUIRED_SOURCES=(
     bootstrap/codex-AGENTS.md
     bootstrap/claude-CLAUDE.md
     bootstrap/copilot-instructions.md
+    bootstrap/grok-AGENTS.md
 )
 failures=0
 warnings=0
@@ -131,6 +136,12 @@ check_required_sources() {
         pass "shared executable: bin/review-handoff-verify.sh"
     else
         fail "shared handoff validator is not executable: $AI_SOURCE/bin/review-handoff-verify.sh"
+    fi
+
+    if (( $(wc -c < "$GROK_TEMPLATE") <= 10000 )); then
+        pass "Grok bootstrap respects the 10,000-character rules limit"
+    else
+        fail "Grok bootstrap exceeds the 10,000-character rules limit"
     fi
 
     if command -v jq >/dev/null 2>&1; then
@@ -341,6 +352,26 @@ check_tool_directory() {
     fi
 }
 
+grok_claude_agents_disabled() {
+    [[ -f "$GROK_CONFIG" && ! -L "$GROK_CONFIG" ]] || return 1
+    awk '
+        /^\[compat\.claude\][[:space:]]*$/ { in_section = 1; next }
+        /^\[/ { in_section = 0 }
+        in_section && /^[[:space:]]*agents[[:space:]]*=[[:space:]]*false([[:space:]]*(#.*)?)?$/ {
+            found = 1
+        }
+        END { exit !found }
+    ' "$GROK_CONFIG"
+}
+
+check_grok_compat_config() {
+    if grok_claude_agents_disabled; then
+        pass "Grok ignores Claude's global agent identity"
+    else
+        fail "Grok must set compat.claude.agents=false to keep Karax distinct from Argus"
+    fi
+}
+
 render_bootstrap() {
     local template_path="$1"
     local relative_path source_path
@@ -362,24 +393,30 @@ render_bootstrap() {
 bootstrap_matches() {
     local source_path="$1"
     local target_path="$2"
+    local renderer="${3:-render_bootstrap}"
     local rendered_checksum target_checksum
 
     [[ -f "$target_path" && ! -L "$target_path" ]] || return 1
-    rendered_checksum="$(render_bootstrap "$source_path" | cksum)"
+    rendered_checksum="$("$renderer" "$source_path" | cksum)"
     target_checksum="$(cksum < "$target_path")"
     [[ "$rendered_checksum" == "$target_checksum" ]]
+}
+
+render_grok_bootstrap() {
+    cat "$1"
 }
 
 check_bootstrap() {
     local source_path="$1"
     local target_path="$2"
     local tool_name="$3"
+    local renderer="${4:-render_bootstrap}"
 
     if [[ -L "$target_path" ]]; then
         fail "$tool_name bootstrap must be a regular file: $target_path"
     elif [[ ! -f "$target_path" ]]; then
         fail "$tool_name bootstrap is missing: $target_path"
-    elif bootstrap_matches "$source_path" "$target_path"; then
+    elif bootstrap_matches "$source_path" "$target_path" "$renderer"; then
         pass "$tool_name bootstrap matches the generated shared sources"
     else
         fail "$tool_name bootstrap differs from the generated $source_path"
@@ -508,8 +545,11 @@ verify_config() {
     check_ai_link
     check_tool_directory "$CODEX_DIR" "Codex"
     check_tool_directory "$CLAUDE_DIR" "Claude"
+    check_tool_directory "$GROK_DIR" "Grok"
+    check_grok_compat_config
     check_bootstrap "$CODEX_TEMPLATE" "$CODEX_BOOTSTRAP" "Codex"
     check_bootstrap "$CLAUDE_TEMPLATE" "$CLAUDE_BOOTSTRAP" "Claude"
+    check_bootstrap "$GROK_TEMPLATE" "$GROK_BOOTSTRAP" "Grok" render_grok_bootstrap
     if [[ "$station" == "masterchief" ]]; then
         check_tool_directory "$COPILOT_DIR" "Copilot"
         check_bootstrap "$COPILOT_TEMPLATE" "$COPILOT_BOOTSTRAP" "Copilot"
@@ -577,18 +617,49 @@ install_ai_link() {
     printf 'Linked: %s -> %s\n' "$AI_LINK" "$expected_source"
 }
 
+install_grok_compat_config() {
+    local temporary_path
+
+    if grok_claude_agents_disabled; then
+        printf 'Already current: %s disables Claude agent compatibility\n' "$GROK_CONFIG"
+        return
+    fi
+    if [[ -L "$GROK_CONFIG" ]]; then
+        die "Grok config must be a regular file: $GROK_CONFIG"
+    fi
+    if [[ -f "$GROK_CONFIG" ]] && grep -q '^\[compat\.claude\][[:space:]]*$' "$GROK_CONFIG"; then
+        die "existing [compat.claude] must set agents = false: $GROK_CONFIG"
+    fi
+
+    temporary_path="$(mktemp "${GROK_CONFIG}.ai-config.XXXXXX")"
+    if [[ -f "$GROK_CONFIG" ]]; then
+        cp "$GROK_CONFIG" "$temporary_path"
+        printf '\n[compat.claude]\nagents = false\n' >> "$temporary_path"
+    else
+        printf '[compat.claude]\nagents = false\n' > "$temporary_path"
+    fi
+    chmod 600 "$temporary_path"
+
+    if [[ -e "$GROK_CONFIG" ]]; then
+        backup_existing "$GROK_CONFIG"
+    fi
+    mv "$temporary_path" "$GROK_CONFIG"
+    printf 'Installed: %s disables Claude agent compatibility\n' "$GROK_CONFIG"
+}
+
 install_bootstrap() {
     local source_path="$1"
     local target_path="$2"
+    local renderer="${3:-render_bootstrap}"
     local temporary_path
 
-    if bootstrap_matches "$source_path" "$target_path"; then
+    if bootstrap_matches "$source_path" "$target_path" "$renderer"; then
         printf 'Already current: %s\n' "$target_path"
         return
     fi
 
     temporary_path="$(mktemp "${target_path}.ai-config.XXXXXX")"
-    if ! render_bootstrap "$source_path" > "$temporary_path"; then
+    if ! "$renderer" "$source_path" > "$temporary_path"; then
         rm -f "$temporary_path"
         die "failed to generate bootstrap from $source_path"
     fi
@@ -611,6 +682,7 @@ install_config() {
 
     ensure_tool_directory "$CODEX_DIR" "Codex"
     ensure_tool_directory "$CLAUDE_DIR" "Claude"
+    ensure_tool_directory "$GROK_DIR" "Grok"
     if [[ "$station" == "masterchief" ]]; then
         ensure_tool_directory "$COPILOT_DIR" "Copilot"
         for lane in work raynor zeratul; do
@@ -623,8 +695,10 @@ install_config() {
         done
     fi
     install_ai_link
+    install_grok_compat_config
     install_bootstrap "$CODEX_TEMPLATE" "$CODEX_BOOTSTRAP"
     install_bootstrap "$CLAUDE_TEMPLATE" "$CLAUDE_BOOTSTRAP"
+    install_bootstrap "$GROK_TEMPLATE" "$GROK_BOOTSTRAP" render_grok_bootstrap
     if [[ "$station" == "masterchief" ]]; then
         install_bootstrap "$COPILOT_TEMPLATE" "$COPILOT_BOOTSTRAP"
     fi
@@ -651,9 +725,9 @@ sync_config() {
     printf '\n'
     install_config
     if [[ "$(detect_station)" == "masterchief" ]]; then
-        printf '\nStart new Codex, Claude, and Copilot sessions after instruction changes.\n'
+        printf '\nStart new Codex, Grok, Claude, and Copilot sessions after instruction changes.\n'
     else
-        printf '\nStart new Codex and Claude sessions after instruction changes.\n'
+        printf '\nStart new Codex, Grok, and Claude sessions after instruction changes.\n'
     fi
 }
 

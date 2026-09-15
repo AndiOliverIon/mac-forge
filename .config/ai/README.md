@@ -9,7 +9,7 @@ On Unix stations, expose it through the conventional path:
 ln -s "$HOME/mac-forge/.config/ai" "$HOME/.config/ai"
 ```
 
-Do not replace the complete `~/.codex` or `~/.claude` directories. They contain
+Do not replace the complete `~/.codex`, `~/.grok`, or `~/.claude` directories. They contain
 tool-owned local state. Their global instruction bootstrap files should load
 the generated canonical base instruction set from `~/.config/ai`.
 
@@ -18,12 +18,15 @@ global instruction chain is loaded.
 
 ## Context resolution
 
-`ai-config install` generates each tool's global bootstrap from its tracked template plus the
-canonical identity, router, and direct always-applicable sources. This makes the small, stable base
-set available at session start without duplicating its rules in tracked files or reading it through
-a latency-sensitive tool call. On MasterChief it manages Codex, Claude, and Copilot bootstraps and
-the Work, Raynor, and Zeratul review-handoff lanes. Hades retains its existing Codex and Claude
-bootstrap and project-lane layout.
+`ai-config install` generates each tool's global bootstrap from its tracked template and canonical
+shared sources. Codex, Claude, and Copilot embed the small, stable base set so it is available at
+session start. Grok's 10,000-character project-rules limit requires a compact native
+`~/.grok/AGENTS.md`; Karax uses it to load the canonical base sources through the resolver before
+task work. The installer also sets `[compat.claude] agents = false` in Grok's user configuration so
+Grok does not import Argus's global Claude identity; Claude-compatible skills, rules, and MCP
+settings remain available. On MasterChief the installer manages Codex, Grok, Claude, and Copilot bootstraps and the
+Work, Raynor, and Zeratul review-handoff lanes. Hades retains its Codex, Grok, and Claude bootstrap
+and project-lane layout.
 
 The global bootstrap invokes `bin/ai-context.sh` before task work. The resolver combines the
 canonical `configs/stations.json` inventory with the current hostname, scope path, Git metadata, and

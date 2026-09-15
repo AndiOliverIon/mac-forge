@@ -1,6 +1,6 @@
 # Unit-Test Execution Requires Oliver's Approval
 
-- Artanis, Karax, and Argus must not run frontend or backend unit tests—targeted or full suites, coverage,
+- Artanis, Karax, Argus, and Aegis must not run frontend or backend unit tests—targeted or full suites, coverage,
   watch mode, or tests invoked by IDEs, build scripts, or wrappers—unless Oliver explicitly
   authorizes that specific run.
 - Implementing, reviewing, validating, checking a commit, or preparing/processing a handoff does not

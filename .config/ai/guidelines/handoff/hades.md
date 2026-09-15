@@ -1,4 +1,4 @@
-# Artanis–Argus Review Handoff — Hades Flow
+# Artanis/Karax–Argus Review Handoff — Hades Flow
 
 Use this flow only when the handoff router identifies the local station as `hades`.
 

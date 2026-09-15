@@ -1,4 +1,4 @@
-# Artanis–Argus Review Handoff — Common Protocol
+# Artanis/Karax–Argus Review Handoff — Common Protocol
 
 This file applies only after the handoff router selects a station flow. Oliver remains the
 decision-maker.
@@ -117,14 +117,14 @@ Trigger: Oliver says **“Process Artanis's review handoff”**, **“Process Ka
 
 1. Resolve the routed lane. Select the coworker pair from Oliver's named trigger, or from `Coworker`
    if already known. If Oliver said **“Argus takeoff”** without naming a coworker, use the sole
-   ready `request-<coworker>.md` in that lane; if more than one coworker has a ready request, stop
-   and ask which job to review. Argus must not create a missing handoff root, lane, or request, and
-   must not read the other coworker's pair except to detect that ambiguity.
+   pending `request-<coworker>.md` in that lane; a request is pending when no `review-complete`
+   findings file has the same handoff ID. If more than one coworker has a pending request, stop and
+   ask which job to review. Argus must not create a missing handoff root, lane, or request, and must
+   not read the other coworker's pair except to detect that ambiguity.
 2. Complete the identity and safety checks, then load the shared router, selected review-mode stack
-   guidelines, and applicable project instructions. Read `Coworker` from the selected request. On
-   Hades, Raynor, and Zeratul it must be `Artanis` or `Karax` and must match the filename. If it is
-   missing, invalid, or does not match the named trigger when Oliver named a coworker, report the
-   mismatch and stop.
+   guidelines, and applicable project instructions. Read `Coworker` from the selected request. It
+   must be `Artanis` or `Karax` and must match the filename. If it is missing, invalid, or does not
+   match the named trigger when Oliver named a coworker, report the mismatch and stop.
 3. Independently inspect the actual review target; the coworker's summary is not proof.
 4. Review only the defined scope. Label an out-of-scope issue only when it directly affects scoped
    correctness.
