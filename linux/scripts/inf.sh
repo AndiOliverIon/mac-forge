@@ -411,13 +411,21 @@ battery_lines() {
   local full_capacity
   local design_capacity
   local health_state
+  local cycle_count
 
   for battery in /sys/class/power_supply/BAT*; do
     [[ -d "$battery" ]] || continue
     printf '%s\n' "$(cat "$battery/capacity" 2>/dev/null || printf 'unknown')"
     printf '%s\n' "$(cat "$battery/status" 2>/dev/null || printf 'unknown')"
     if [[ -r "$battery/cycle_count" ]]; then
-      cat "$battery/cycle_count" 2>/dev/null || printf 'unknown\n'
+      cycle_count="$(cat "$battery/cycle_count" 2>/dev/null || true)"
+      # Some ACPI _BIF interfaces never populate this and always report 0;
+      # upower treats that the same way, so mirror it as unavailable.
+      if [[ "$cycle_count" =~ ^[0-9]+$ && "$cycle_count" != "0" ]]; then
+        printf '%s\n' "$cycle_count"
+      else
+        printf 'Unavailable\n'
+      fi
     else
       printf 'Unavailable\n'
     fi
