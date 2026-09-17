@@ -164,9 +164,13 @@ confirm_hard_clear() {
 
 usage() {
     cat <<'USAGE'
-Usage: db-clear.sh [--soft]
+Usage: db-clear.sh [--soft] [--version VERSION_OR_TAG]
   (no flag) : Drop all user databases, remove container, clear data directory.
   --soft    : Drop user databases only (container stays).
+  --version : Target a parallel SQL container (e.g. --version 2025).
+  --server  : Alias of --version.
+
+Default behavior uses the existing forge-sql container.
 
 Hard clear uses:
   - FORGE_SQL_DATA_BIND_PATH as the delete root
@@ -175,24 +179,43 @@ USAGE
     exit 1
 }
 
+parse_args() {
+    MODE="hard"
+
+    while (($# > 0)); do
+        case "$1" in
+            --soft)
+                MODE="soft"
+                ;;
+            --version|--server)
+                shift
+                forge_sql_apply_version "${1:-}" || die "--version requires a version or tag."
+                ;;
+            --version=*|--server=*)
+                forge_sql_apply_version "${1#*=}" || die "--version requires a version or tag."
+                ;;
+            -h|--help)
+                usage
+                ;;
+            *)
+                usage
+                ;;
+        esac
+        shift
+    done
+}
+
 #######################################
 # Main
 #######################################
 main() {
-    local mode="hard"
-
-    if (( $# == 0 )); then
-        mode="hard"
-    elif (( $# == 1 )) && [[ "$1" == "--soft" ]]; then
-        mode="soft"
-    else
-        usage
-    fi
+    parse_args "$@"
 
     require_cmd docker
     load_secrets
+    forge_sql_announce_target
 
-    if [[ "$mode" == "soft" ]]; then
+    if [[ "$MODE" == "soft" ]]; then
         [[ -n "${FORGE_SQL_SA_PASSWORD:-}" ]] || die "FORGE_SQL_SA_PASSWORD is required for soft clear."
 
         container_running || die "Container '$FORGE_SQL_DOCKER_CONTAINER' is not running. Start it and retry (or run hard clear)."

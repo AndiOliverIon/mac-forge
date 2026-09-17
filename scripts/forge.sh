@@ -143,6 +143,153 @@ forge__apply_work_state() {
 # Apply the state immediately on source so every script gets consistent vars.
 forge__apply_work_state
 
+# Snapshot defaults after work-state so --version can retarget without losing
+# the no-arg forge-sql / 2022 flow.
+FORGE_SQL_DEFAULT_DOCKER_IMAGE="$FORGE_SQL_DOCKER_IMAGE"
+FORGE_SQL_DEFAULT_DOCKER_CONTAINER="$FORGE_SQL_DOCKER_CONTAINER"
+FORGE_SQL_DEFAULT_PORT="$FORGE_SQL_PORT"
+FORGE_SQL_DEFAULT_DATA_BIND_PATH="$FORGE_SQL_DATA_BIND_PATH"
+FORGE_SQL_DEFAULT_DATA_VOLUME_NAME="$FORGE_SQL_DATA_VOLUME_NAME"
+FORGE_SQL_VERSION_REQUESTED=0
+FORGE_SQL_VERSION_SPEC=""
+
+forge_sql_known_versions() {
+  cat <<'EOF'
+Common SQL Server Docker versions:
+  --version 2025
+  --version 2022
+  --version 2019
+  --version 2017
+
+You can also pass a full mssql/server tag, for example:
+  --version 2019-latest
+  --version 2022-CU14-ubuntu-22.04
+
+--server is accepted as an alias of --version.
+
+Full tag list:
+  https://mcr.microsoft.com/v2/mssql/server/tags/list
+EOF
+}
+
+forge_sql_resolve_image() {
+  local spec="$1"
+
+  case "$spec" in
+    mcr.microsoft.com/mssql/server:*)
+      printf '%s\n' "$spec"
+      ;;
+    *:*)
+      printf '%s\n' "$spec"
+      ;;
+    20[0-9][0-9])
+      printf 'mcr.microsoft.com/mssql/server:%s-latest\n' "$spec"
+      ;;
+    *)
+      printf 'mcr.microsoft.com/mssql/server:%s\n' "$spec"
+      ;;
+  esac
+}
+
+forge_sql_image_tag() {
+  local image="$1"
+  printf '%s\n' "${image##*:}"
+}
+
+forge_sql_target_suffix() {
+  local image="$1"
+  local tag suffix
+
+  tag="$(forge_sql_image_tag "$image")"
+
+  case "$tag" in
+    20[0-9][0-9]-latest)
+      printf '%s\n' "${tag%%-*}"
+      ;;
+    *)
+      suffix="$(printf '%s\n' "$tag" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9][^a-z0-9]*/-/g; s/^-//; s/-$//')"
+      [[ -n "$suffix" ]] || suffix="custom"
+      printf '%s\n' "$suffix"
+      ;;
+  esac
+}
+
+forge_sql_host_port() {
+  local suffix="$1"
+  local checksum
+
+  if [[ "$suffix" =~ ^20[0-9][0-9]$ ]]; then
+    printf '%s\n' "$suffix"
+    return 0
+  fi
+
+  checksum="$(printf '%s\n' "$suffix" | cksum | awk '{print $1}')"
+  printf '%s\n' "$((21000 + (checksum % 1000)))"
+}
+
+forge_sql_configure_target() {
+  local image="$1"
+  local suffix
+
+  FORGE_SQL_DOCKER_IMAGE="$image"
+  FORGE_SQL_DOCKER_CONTAINER="$FORGE_SQL_DEFAULT_DOCKER_CONTAINER"
+  FORGE_SQL_PORT="$FORGE_SQL_DEFAULT_PORT"
+  FORGE_SQL_DATA_BIND_PATH="$FORGE_SQL_DEFAULT_DATA_BIND_PATH"
+  FORGE_SQL_DATA_VOLUME_NAME="$FORGE_SQL_DEFAULT_DATA_VOLUME_NAME"
+
+  if [[ "$image" == "$FORGE_SQL_DEFAULT_DOCKER_IMAGE" ]]; then
+    return 0
+  fi
+
+  suffix="$(forge_sql_target_suffix "$image")"
+  FORGE_SQL_DOCKER_CONTAINER="${FORGE_SQL_DEFAULT_DOCKER_CONTAINER}-${suffix}"
+  if [[ -n "$FORGE_SQL_DEFAULT_DATA_BIND_PATH" ]]; then
+    FORGE_SQL_DATA_BIND_PATH="${FORGE_SQL_DEFAULT_DATA_BIND_PATH}-${suffix}"
+  fi
+  FORGE_SQL_DATA_VOLUME_NAME="${FORGE_SQL_DEFAULT_DATA_VOLUME_NAME}-${suffix}"
+  FORGE_SQL_PORT="$(forge_sql_host_port "$suffix")"
+}
+
+forge_sql_apply_version() {
+  local spec="${1:-}"
+  local image
+
+  if [[ -z "$spec" ]]; then
+    echo "ERROR: --version requires a version or tag." >&2
+    return 1
+  fi
+
+  image="$(forge_sql_resolve_image "$spec")"
+  forge_sql_configure_target "$image"
+  FORGE_SQL_VERSION_REQUESTED=1
+  FORGE_SQL_VERSION_SPEC="$spec"
+}
+
+forge_sql_verify_image() {
+  local image="$1"
+
+  if docker image inspect "$image" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if docker manifest inspect "$image" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  echo "ERROR: SQL Server Docker image was not found or could not be verified: $image" >&2
+  echo >&2
+  forge_sql_known_versions >&2
+  return 1
+}
+
+forge_sql_announce_target() {
+  if [[ "${FORGE_SQL_VERSION_REQUESTED:-0}" != "1" ]]; then
+    return 0
+  fi
+
+  echo "SQL target: container=${FORGE_SQL_DOCKER_CONTAINER} image=${FORGE_SQL_DOCKER_IMAGE} port=${FORGE_SQL_PORT}"
+}
+
 #######################################
 # Ardis migrations
 #######################################
@@ -181,6 +328,13 @@ export \
   FORGE_SQL_USER \
   FORGE_SQL_PORT \
   FORGE_SQL_DOCKER_IMAGE \
+  FORGE_SQL_DEFAULT_DOCKER_IMAGE \
+  FORGE_SQL_DEFAULT_DOCKER_CONTAINER \
+  FORGE_SQL_DEFAULT_PORT \
+  FORGE_SQL_DEFAULT_DATA_BIND_PATH \
+  FORGE_SQL_DEFAULT_DATA_VOLUME_NAME \
+  FORGE_SQL_VERSION_REQUESTED \
+  FORGE_SQL_VERSION_SPEC \
   FORGE_BROWSER \
   ARDIS_MIGRATIONS_PATH \
   ARDIS_MIGRATIONS_LIBRARY

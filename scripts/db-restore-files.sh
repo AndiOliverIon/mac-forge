@@ -40,17 +40,18 @@ log_step() { echo "-> $*"; }
 
 usage() {
   cat <<'USAGE'
-Usage: db-restore-files.sh [--server VERSION_OR_TAG]
+Usage: db-restore-files.sh [--version VERSION_OR_TAG]
 
 Attach a database from an .mdf (+ optional matching .ldf) file.
 
 Options:
-  --server 2022        Use mcr.microsoft.com/mssql/server:2022-latest.
-  --server 2019        Use mcr.microsoft.com/mssql/server:2019-latest.
-  --server 2019-latest Use a specific mssql/server tag.
+  --version 2025       Use mcr.microsoft.com/mssql/server:2025-latest.
+  --version 2022       Use mcr.microsoft.com/mssql/server:2022-latest.
+  --version 2019-latest Use a specific mssql/server tag.
+  --server             Alias of --version.
 
 Default behavior keeps using the existing forge-sql container.
-Non-default server versions use a parallel container and data path.
+Non-default versions use a parallel container, data path, and host port.
 
 Common SQL Server Docker versions:
   2025, 2022, 2019, 2017
@@ -60,133 +61,15 @@ Full tag list:
 USAGE
 }
 
-known_sql_server_versions() {
-  cat <<'EOF'
-Common SQL Server Docker versions:
-  --server 2025
-  --server 2022
-  --server 2019
-  --server 2017
-
-You can also pass a full mssql/server tag, for example:
-  --server 2019-latest
-  --server 2022-CU14-ubuntu-22.04
-
-Full tag list:
-  https://mcr.microsoft.com/v2/mssql/server/tags/list
-EOF
-}
-
-sql_server_image_tag() {
-  local image="$1"
-  printf '%s\n' "${image##*:}"
-}
-
-sql_server_target_suffix() {
-  local image="$1"
-  local tag suffix
-
-  tag="$(sql_server_image_tag "$image")"
-
-  case "$tag" in
-    2017-latest|2019-latest|2022-latest|2025-latest)
-      printf '%s\n' "${tag%%-*}"
-      ;;
-    *)
-      suffix="$(printf '%s\n' "$tag" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9][^a-z0-9]*/-/g; s/^-//; s/-$//')"
-      [[ -n "$suffix" ]] || suffix="custom"
-      printf '%s\n' "$suffix"
-      ;;
-  esac
-}
-
-sql_server_host_port() {
-  local suffix="$1"
-  local checksum
-
-  if [[ "$suffix" =~ ^(2017|2019|2022|2025)$ ]]; then
-    printf '%s\n' "$suffix"
-    return 0
-  fi
-
-  checksum="$(printf '%s\n' "$suffix" | cksum | awk '{print $1}')"
-  printf '%s\n' "$((21000 + (checksum % 1000)))"
-}
-
-resolve_sql_server_image() {
-  local server="$1"
-
-  case "$server" in
-    mcr.microsoft.com/mssql/server:*)
-      printf '%s\n' "$server"
-      ;;
-    *:*)
-      printf '%s\n' "$server"
-      ;;
-    2017|2019|2022|2025)
-      printf 'mcr.microsoft.com/mssql/server:%s-latest\n' "$server"
-      ;;
-    *)
-      printf 'mcr.microsoft.com/mssql/server:%s\n' "$server"
-      ;;
-  esac
-}
-
-configure_restore_target() {
-  local image="$1"
-  local suffix
-
-  FORGE_RESTORE_SQL_CONTAINER="$FORGE_SQL_DOCKER_CONTAINER"
-  FORGE_RESTORE_SQL_DATA_BIND_PATH="$FORGE_SQL_DATA_BIND_PATH"
-  FORGE_RESTORE_SQL_DATA_VOLUME_NAME="$FORGE_SQL_DATA_VOLUME_NAME"
-  FORGE_RESTORE_SQL_PORT="${FORGE_SQL_PORT:-1433}"
-
-  if [[ "$image" == "$FORGE_SQL_DOCKER_IMAGE" ]]; then
-    return 0
-  fi
-
-  suffix="$(sql_server_target_suffix "$image")"
-  FORGE_RESTORE_SQL_CONTAINER="${FORGE_SQL_DOCKER_CONTAINER}-${suffix}"
-  FORGE_RESTORE_SQL_DATA_BIND_PATH="${FORGE_SQL_DATA_BIND_PATH}-${suffix}"
-  FORGE_RESTORE_SQL_DATA_VOLUME_NAME="${FORGE_SQL_DATA_VOLUME_NAME}-${suffix}"
-  FORGE_RESTORE_SQL_PORT="$(sql_server_host_port "$suffix")"
-}
-
-verify_sql_server_image() {
-  local image="$1"
-
-  if docker image inspect "$image" >/dev/null 2>&1; then
-    return 0
-  fi
-
-  if docker manifest inspect "$image" >/dev/null 2>&1; then
-    return 0
-  fi
-
-  echo "ERROR: SQL Server Docker image was not found or could not be verified: $image" >&2
-  echo >&2
-  known_sql_server_versions >&2
-  exit 1
-}
-
 parse_args() {
-  FORGE_RESTORE_SQL_IMAGE="$FORGE_SQL_DOCKER_IMAGE"
-  FORGE_RESTORE_SQL_SERVER_REQUESTED=0
-
   while (($# > 0)); do
     case "$1" in
-      --server)
+      --version|--server)
         shift
-        [[ $# -gt 0 ]] || die "--server requires a version or tag."
-        [[ -n "$1" ]] || die "--server requires a version or tag."
-        FORGE_RESTORE_SQL_IMAGE="$(resolve_sql_server_image "$1")"
-        FORGE_RESTORE_SQL_SERVER_REQUESTED=1
+        forge_sql_apply_version "${1:-}" || die "--version requires a version or tag."
         ;;
-      --server=*)
-        local server="${1#--server=}"
-        [[ -n "$server" ]] || die "--server requires a version or tag."
-        FORGE_RESTORE_SQL_IMAGE="$(resolve_sql_server_image "$server")"
-        FORGE_RESTORE_SQL_SERVER_REQUESTED=1
+      --version=*|--server=*)
+        forge_sql_apply_version "${1#*=}" || die "--version requires a version or tag."
         ;;
       -h|--help)
         usage
@@ -199,14 +82,6 @@ parse_args() {
     esac
     shift
   done
-
-  configure_restore_target "$FORGE_RESTORE_SQL_IMAGE"
-
-  FORGE_SQL_DOCKER_IMAGE="$FORGE_RESTORE_SQL_IMAGE"
-  FORGE_SQL_DOCKER_CONTAINER="$FORGE_RESTORE_SQL_CONTAINER"
-  FORGE_SQL_DATA_BIND_PATH="$FORGE_RESTORE_SQL_DATA_BIND_PATH"
-  FORGE_SQL_DATA_VOLUME_NAME="$FORGE_RESTORE_SQL_DATA_VOLUME_NAME"
-  FORGE_SQL_PORT="$FORGE_RESTORE_SQL_PORT"
 }
 
 #######################################
@@ -247,10 +122,10 @@ ensure_sql_container() {
   : "${FORGE_SQL_DATA_VOLUME_NAME:?FORGE_SQL_DATA_VOLUME_NAME must be set in forge.sh}"
   : "${FORGE_SQL_DATA_MOUNT_KIND:?FORGE_SQL_DATA_MOUNT_KIND must be set in forge.sh}"
 
-  local name="${FORGE_RESTORE_SQL_CONTAINER:-$FORGE_SQL_DOCKER_CONTAINER}"
-  local image="${FORGE_RESTORE_SQL_IMAGE:-$FORGE_SQL_DOCKER_IMAGE}"
-  local host_port="${FORGE_RESTORE_SQL_PORT:-${FORGE_SQL_PORT:-1433}}"
-  local data_bind_path="${FORGE_RESTORE_SQL_DATA_BIND_PATH:-$FORGE_SQL_DATA_BIND_PATH}"
+  local name="$FORGE_SQL_DOCKER_CONTAINER"
+  local image="$FORGE_SQL_DOCKER_IMAGE"
+  local host_port="${FORGE_SQL_PORT:-1433}"
+  local data_bind_path="$FORGE_SQL_DATA_BIND_PATH"
   local existing_image
 
   # Snapshots dir must exist on host
@@ -272,10 +147,10 @@ ensure_sql_container() {
   fi
 
   if docker ps -a --format '{{.Names}}' | grep -q "^${name}$"; then
-    if [[ "${FORGE_RESTORE_SQL_SERVER_REQUESTED:-0}" == "1" ]]; then
+    if [[ "${FORGE_SQL_VERSION_REQUESTED:-0}" == "1" ]]; then
       existing_image="$(docker inspect --format '{{.Config.Image}}' "$name" 2>/dev/null || true)"
       if [[ "$existing_image" != "$image" ]]; then
-        die "Container '$name' already exists with image '$existing_image', but --server requested '$image'. Remove that container to recreate it, or choose the existing server version."
+        die "Container '$name' already exists with image '$existing_image', but --version requested '$image'. Remove that container to recreate it, or choose the existing version."
       fi
     fi
 
@@ -352,9 +227,10 @@ parse_args "$@"
 require_cmd docker
 require_cmd fzf
 load_secrets
+forge_sql_announce_target
 
-if [[ "${FORGE_RESTORE_SQL_SERVER_REQUESTED:-0}" == "1" ]]; then
-  verify_sql_server_image "$FORGE_RESTORE_SQL_IMAGE"
+if [[ "${FORGE_SQL_VERSION_REQUESTED:-0}" == "1" ]]; then
+  forge_sql_verify_image "$FORGE_SQL_DOCKER_IMAGE" || exit 1
 fi
 
 ensure_sql_container

@@ -37,6 +37,43 @@ die() {
 }
 require_cmd() { command -v "$1" >/dev/null 2>&1 || die "Required command '$1' not found."; }
 
+usage() {
+	cat <<'USAGE'
+Usage: db-admin.sh [--version VERSION_OR_TAG]
+
+Administer a local SQL database: offline/online, drop, recovery, shrink.
+
+Options:
+  --version 2025  Use the parallel forge-sql-2025 container.
+  --server        Alias of --version.
+
+Default behavior uses the existing forge-sql container.
+USAGE
+}
+
+parse_args() {
+	while (($# > 0)); do
+		case "$1" in
+			--version|--server)
+				shift
+				forge_sql_apply_version "${1:-}" || die "--version requires a version or tag."
+				;;
+			--version=*|--server=*)
+				forge_sql_apply_version "${1#*=}" || die "--version requires a version or tag."
+				;;
+			-h|--help)
+				usage
+				exit 0
+				;;
+			*)
+				usage >&2
+				die "Unknown argument: $1"
+				;;
+		esac
+		shift
+	done
+}
+
 ensure_container_running() {
 	if ! docker ps --format '{{.Names}}' | grep -q "^${FORGE_SQL_DOCKER_CONTAINER}\$"; then
 		die "SQL container '$FORGE_SQL_DOCKER_CONTAINER' is not running. Start it and retry."
@@ -155,9 +192,11 @@ SELECT TOP(1) name FROM sys.database_files WHERE type_desc='LOG' ORDER BY name;
 #######################################
 # Main
 #######################################
+parse_args "$@"
 require_cmd docker
 require_cmd sqlcmd
 require_cmd fzf
+forge_sql_announce_target
 
 ensure_container_running
 

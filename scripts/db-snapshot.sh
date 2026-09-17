@@ -33,11 +33,55 @@ load_secrets() {
 	fi
 }
 
-#######################################
-# Validate input argument
-#######################################
-[[ $# -eq 1 ]] || die "Usage: ./db-snapshot.sh <snapshotName>"
-SNAPSHOT_SUFFIX="$1"
+usage() {
+	cat <<'USAGE'
+Usage: db-snapshot.sh [--version VERSION_OR_TAG] <snapshotName>
+
+Create a SQL backup snapshot from a selected database.
+
+Options:
+  --version 2025  Use the parallel forge-sql-2025 container.
+  --server        Alias of --version.
+
+Default behavior uses the existing forge-sql container.
+USAGE
+}
+
+parse_args() {
+	SNAPSHOT_SUFFIX=""
+
+	while (($# > 0)); do
+		case "$1" in
+			--version|--server)
+				shift
+				forge_sql_apply_version "${1:-}" || die "--version requires a version or tag."
+				;;
+			--version=*|--server=*)
+				forge_sql_apply_version "${1#*=}" || die "--version requires a version or tag."
+				;;
+			-h|--help)
+				usage
+				exit 0
+				;;
+			-*)
+				usage >&2
+				die "Unknown argument: $1"
+				;;
+			*)
+				[[ -z "$SNAPSHOT_SUFFIX" ]] || die "Unexpected extra argument: $1"
+				SNAPSHOT_SUFFIX="$1"
+				;;
+		esac
+		shift
+	done
+
+	[[ -n "$SNAPSHOT_SUFFIX" ]] || {
+		usage >&2
+		die "Missing snapshot name."
+	}
+}
+
+parse_args "$@"
 
 #######################################
 # Preconditions
@@ -45,6 +89,7 @@ SNAPSHOT_SUFFIX="$1"
 require_cmd docker
 require_cmd fzf
 load_secrets
+forge_sql_announce_target
 
 : "${FORGE_SQL_DOCKER_CONTAINER:?FORGE_SQL_DOCKER_CONTAINER must be set in forge.sh}"
 : "${FORGE_SQL_SNAPSHOTS_PATH:?FORGE_SQL_SNAPSHOTS_PATH must be set in forge.sh}"

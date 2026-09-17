@@ -41,6 +41,50 @@ FORGE_SQL_USER="${FORGE_SQL_USER:-sa}"
 FORGE_SQL_HOST="${FORGE_SQL_HOST:-localhost}"
 FORGE_SQL_PORT="${FORGE_SQL_PORT:-2022}"
 
+die() {
+	echo "✖ $*" >&2
+	exit 1
+}
+
+usage() {
+	cat <<'USAGE'
+Usage: ardis-migrate.sh [--version VERSION_OR_TAG]
+
+Run Ardis migrations against a selected local SQL database.
+
+Options:
+  --version 2025  Use the parallel forge-sql-2025 container / host port.
+  --server        Alias of --version.
+
+Default behavior uses the existing forge-sql container.
+USAGE
+}
+
+parse_args() {
+	while (($# > 0)); do
+		case "$1" in
+			--version|--server)
+				shift
+				forge_sql_apply_version "${1:-}" || die "--version requires a version or tag."
+				;;
+			--version=*|--server=*)
+				forge_sql_apply_version "${1#*=}" || die "--version requires a version or tag."
+				;;
+			-h|--help)
+				usage
+				exit 0
+				;;
+			*)
+				usage >&2
+				die "Unknown argument: $1"
+				;;
+		esac
+		shift
+	done
+}
+
+parse_args "$@"
+
 #######################################
 # Tooling checks
 #######################################
@@ -202,6 +246,8 @@ choose_database() {
 #######################################
 main() {
 	local migrations_path csproj tfm bin_dir db conn_str
+
+	forge_sql_announce_target
 
 	migrations_path="$(choose_migrations_path)" || exit 1
 

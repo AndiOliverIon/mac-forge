@@ -39,6 +39,46 @@ require_cmd find
 require_cmd sed
 require_cmd sort
 
+usage() {
+	cat <<'USAGE'
+Usage: db-upload-bak.sh [--version VERSION_OR_TAG]
+
+Upload a selected .bak from the current folder into the SQL container.
+
+Options:
+  --version 2025  Use the parallel forge-sql-2025 container.
+  --server        Alias of --version.
+
+Default behavior uses the existing forge-sql container.
+USAGE
+}
+
+parse_args() {
+	while (($# > 0)); do
+		case "$1" in
+			--version|--server)
+				shift
+				forge_sql_apply_version "${1:-}" || die "--version requires a version or tag."
+				;;
+			--version=*|--server=*)
+				forge_sql_apply_version "${1#*=}" || die "--version requires a version or tag."
+				;;
+			-h|--help)
+				usage
+				exit 0
+				;;
+			*)
+				usage >&2
+				die "Unknown argument: $1"
+				;;
+		esac
+		shift
+	done
+}
+
+parse_args "$@"
+forge_sql_announce_target
+
 #######################################
 # Config
 #######################################

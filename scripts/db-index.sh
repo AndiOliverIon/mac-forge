@@ -29,89 +29,29 @@ load_secrets() {
 
 usage() {
   cat <<'USAGE'
-Usage: db-index.sh [--server VERSION_OR_TAG]
+Usage: db-index.sh [--version VERSION_OR_TAG]
 
 Rebuild all indexes in a selected ONLINE local Docker SQL database.
 
 Options:
-  --server 2022        Use the forge-sql-2022 target.
-  --server 2019        Use the forge-sql-2019 target.
-  --server 2019-latest Use a specific mssql/server tag target suffix.
+  --version 2025       Use the forge-sql-2025 target.
+  --version 2019       Use the forge-sql-2019 target.
+  --version 2019-latest Use a specific mssql/server tag target suffix.
+  --server             Alias of --version.
 
 Default behavior uses the existing forge-sql container.
 USAGE
 }
 
-sql_server_image_tag() {
-  local image="$1"
-  printf '%s\n' "${image##*:}"
-}
-
-sql_server_target_suffix() {
-  local image="$1"
-  local tag suffix
-
-  tag="$(sql_server_image_tag "$image")"
-
-  case "$tag" in
-    2017-latest|2019-latest|2022-latest|2025-latest)
-      printf '%s\n' "${tag%%-*}"
-      ;;
-    *)
-      suffix="$(printf '%s\n' "$tag" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9][^a-z0-9]*/-/g; s/^-//; s/-$//')"
-      [[ -n "$suffix" ]] || suffix="custom"
-      printf '%s\n' "$suffix"
-      ;;
-  esac
-}
-
-resolve_sql_server_image() {
-  local server="$1"
-
-  case "$server" in
-    mcr.microsoft.com/mssql/server:*)
-      printf '%s\n' "$server"
-      ;;
-    *:*)
-      printf '%s\n' "$server"
-      ;;
-    2017|2019|2022|2025)
-      printf 'mcr.microsoft.com/mssql/server:%s-latest\n' "$server"
-      ;;
-    *)
-      printf 'mcr.microsoft.com/mssql/server:%s\n' "$server"
-      ;;
-  esac
-}
-
-configure_index_target() {
-  local image="$1"
-  local suffix
-
-  FORGE_INDEX_SQL_CONTAINER="$FORGE_SQL_DOCKER_CONTAINER"
-
-  if [[ "$image" == "$FORGE_SQL_DOCKER_IMAGE" ]]; then
-    return 0
-  fi
-
-  suffix="$(sql_server_target_suffix "$image")"
-  FORGE_INDEX_SQL_CONTAINER="${FORGE_SQL_DOCKER_CONTAINER}-${suffix}"
-}
-
 parse_args() {
-  local index_image="$FORGE_SQL_DOCKER_IMAGE"
-
   while (($# > 0)); do
     case "$1" in
-      --server)
+      --version|--server)
         shift
-        [[ $# -gt 0 && -n "$1" ]] || die "--server requires a version or tag."
-        index_image="$(resolve_sql_server_image "$1")"
+        forge_sql_apply_version "${1:-}" || die "--version requires a version or tag."
         ;;
-      --server=*)
-        local server="${1#--server=}"
-        [[ -n "$server" ]] || die "--server requires a version or tag."
-        index_image="$(resolve_sql_server_image "$server")"
+      --version=*|--server=*)
+        forge_sql_apply_version "${1#*=}" || die "--version requires a version or tag."
         ;;
       -h|--help)
         usage
@@ -124,22 +64,20 @@ parse_args() {
     esac
     shift
   done
-
-  configure_index_target "$index_image"
 }
 
 ensure_sql_container_running() {
-  : "${FORGE_INDEX_SQL_CONTAINER:?FORGE_INDEX_SQL_CONTAINER must be set}"
+  : "${FORGE_SQL_DOCKER_CONTAINER:?FORGE_SQL_DOCKER_CONTAINER must be set}"
 
-  if ! docker ps -a --format '{{.Names}}' | grep -q "^${FORGE_INDEX_SQL_CONTAINER}$"; then
-    die "SQL container '$FORGE_INDEX_SQL_CONTAINER' does not exist. Restore/start that server target first."
+  if ! docker ps -a --format '{{.Names}}' | grep -q "^${FORGE_SQL_DOCKER_CONTAINER}$"; then
+    die "SQL container '$FORGE_SQL_DOCKER_CONTAINER' does not exist. Restore/start that version target first."
   fi
 
-  if docker ps --format '{{.Names}}' | grep -q "^${FORGE_INDEX_SQL_CONTAINER}$"; then
-    log_step "Container '$FORGE_INDEX_SQL_CONTAINER' is already running."
+  if docker ps --format '{{.Names}}' | grep -q "^${FORGE_SQL_DOCKER_CONTAINER}$"; then
+    log_step "Container '$FORGE_SQL_DOCKER_CONTAINER' is already running."
   else
-    log_step "Starting container '$FORGE_INDEX_SQL_CONTAINER'..."
-    docker start "$FORGE_INDEX_SQL_CONTAINER" >/dev/null
+    log_step "Starting container '$FORGE_SQL_DOCKER_CONTAINER'..."
+    docker start "$FORGE_SQL_DOCKER_CONTAINER" >/dev/null
   fi
 }
 
@@ -147,9 +85,9 @@ wait_for_sql_ready() {
   local max_tries=30
   local i
 
-  log_step "Waiting for SQL Server in container '$FORGE_INDEX_SQL_CONTAINER'..."
+  log_step "Waiting for SQL Server in container '$FORGE_SQL_DOCKER_CONTAINER'..."
   for ((i = 1; i <= max_tries; i++)); do
-    if docker exec "$FORGE_INDEX_SQL_CONTAINER" \
+    if docker exec "$FORGE_SQL_DOCKER_CONTAINER" \
       /opt/mssql-tools18/bin/sqlcmd \
       -S localhost -U "$FORGE_SQL_USER" -P "$FORGE_SQL_SA_PASSWORD" -C -d master \
       -Q "SELECT 1" >/dev/null 2>&1; then
@@ -163,7 +101,7 @@ wait_for_sql_ready() {
 }
 
 sqlcmd_container() {
-  docker exec -i "$FORGE_INDEX_SQL_CONTAINER" \
+  docker exec -i "$FORGE_SQL_DOCKER_CONTAINER" \
     /opt/mssql-tools18/bin/sqlcmd \
     -S localhost -U "$FORGE_SQL_USER" -P "$FORGE_SQL_SA_PASSWORD" -C "$@"
 }
@@ -182,7 +120,7 @@ ORDER BY name;
 choose_database() {
   local dbs selected
 
-  log_step "Retrieving ONLINE user databases from '$FORGE_INDEX_SQL_CONTAINER'..." >&2
+  log_step "Retrieving ONLINE user databases from '$FORGE_SQL_DOCKER_CONTAINER'..." >&2
   dbs="$(list_databases || true)"
   [[ -n "${dbs// /}" ]] || die "No ONLINE user databases found."
 
@@ -259,13 +197,14 @@ load_secrets
 : "${FORGE_SQL_SA_PASSWORD:?FORGE_SQL_SA_PASSWORD must be set (probably in forge-secrets.sh)}"
 
 parse_args "$@"
+forge_sql_announce_target
 ensure_sql_container_running
 wait_for_sql_ready
 
 DB_NAME="$(choose_database)"
 
 echo
-echo "Container: $FORGE_INDEX_SQL_CONTAINER"
+echo "Container: $FORGE_SQL_DOCKER_CONTAINER"
 echo "Database : $DB_NAME"
 echo "Action   : rebuild all indexes on indexed tables/views"
 echo

@@ -14,6 +14,50 @@ fi
 FORGE_SQL_HOST="${FORGE_SQL_HOST:-localhost}"
 FORGE_SQL_USER="${FORGE_SQL_USER:-sa}"
 
+die() {
+	echo "✖ $*" >&2
+	exit 1
+}
+
+usage() {
+	cat <<'USAGE'
+Usage: db-list.sh [--version VERSION_OR_TAG]
+
+List local SQL databases with friendly total, data, and log sizes.
+
+Options:
+  --version 2025  Use the parallel forge-sql-2025 container / host port.
+  --server        Alias of --version.
+
+Default behavior uses the existing forge-sql container.
+USAGE
+}
+
+parse_args() {
+	while (($# > 0)); do
+		case "$1" in
+			--version|--server)
+				shift
+				forge_sql_apply_version "${1:-}" || die "--version requires a version or tag."
+				;;
+			--version=*|--server=*)
+				forge_sql_apply_version "${1#*=}" || die "--version requires a version or tag."
+				;;
+			-h|--help)
+				usage
+				exit 0
+				;;
+			*)
+				usage >&2
+				die "Unknown argument: $1"
+				;;
+		esac
+		shift
+	done
+}
+
+parse_args "$@"
+
 command -v sqlcmd >/dev/null 2>&1 || {
 	echo "Required command 'sqlcmd' not found." >&2
 	exit 1
@@ -21,6 +65,8 @@ command -v sqlcmd >/dev/null 2>&1 || {
 
 : "${FORGE_SQL_PORT:?FORGE_SQL_PORT must be set in forge.sh}"
 : "${FORGE_SQL_SA_PASSWORD:?FORGE_SQL_SA_PASSWORD must be set in forge-secrets.sh}"
+
+forge_sql_announce_target
 
 query="
 SET NOCOUNT ON;
@@ -45,7 +91,7 @@ ORDER BY
     d.name;
 "
 
-echo "Local SQL databases (${FORGE_SQL_HOST},${FORGE_SQL_PORT})"
+echo "Local SQL databases (${FORGE_SQL_HOST},${FORGE_SQL_PORT} · ${FORGE_SQL_DOCKER_CONTAINER})"
 echo
 
 sqlcmd \

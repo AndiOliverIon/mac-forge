@@ -51,8 +51,8 @@ alias	workset	Switch the active SQL Docker data and snapshot storage paths.
 alias	ws	Switch the active SQL Docker data and snapshot storage paths (short for workset).
 alias	workinfo	Show the current active SQL Docker and snapshot storage paths.
 alias	wi	Show the current active SQL Docker and snapshot storage paths (short for workinfo).
-alias	ardis-migrate	Run Ardis migrations against a selected local SQL database.
-alias	am	Run Ardis migrations against a selected local SQL database (short for ardis-migrate).
+alias	ardis-migrate	Run Ardis migrations against a selected local SQL database. Optional --version YEAR selects a parallel SQL container.
+alias	am	Run Ardis migrations against a selected local SQL database (short for ardis-migrate). Optional --version YEAR selects a parallel SQL container.
 alias	ram	Run Ardis migrations against a database on a configured remote SQL Server target.
 alias	ardis-patch	Apply, remove, or inspect configured Ardis code patches.
 alias	ap	Apply, remove, or inspect configured Ardis code patches (short for ardis-patch).
@@ -114,20 +114,20 @@ alias	bc	Preview or delete local branches by safe prefix (short for branch-clean
 alias	dps	List running Docker containers.
 alias	dcu	Start the current docker compose stack.
 alias	dcd	Stop and remove the current docker compose stack.
-alias	dba	Administer a local SQL database: offline/online, drop, recovery, shrink.
-alias	dblist	List local SQL databases with friendly total, data, and log sizes.
+alias	dba	Administer a local SQL database: offline/online, drop, recovery, shrink. Optional --version YEAR selects a parallel SQL container.
+alias	dblist	List local SQL databases with friendly total, data, and log sizes. Optional --version YEAR selects a parallel SQL container.
 alias	dbs	Start stopped Docker containers, launching Docker Desktop if needed.
-alias	dbu	Upload a selected .bak from the current folder into the SQL container.
-alias	dbr	Restore a selected .bak into the forge SQL Server container.
-alias	dbrf	Attach a database from a selected .mdf (+ optional matching .ldf) into the forge SQL Server container, proposing a name extracted from the file.
-alias	db-index	Rebuild all indexes in a selected local Docker SQL database.
-alias	dbsn	Create a SQL backup snapshot from a selected database.
+alias	dbu	Upload a selected .bak from the current folder into the SQL container. Optional --version YEAR selects a parallel SQL container.
+alias	dbr	Restore a selected .bak into the forge SQL Server container. Optional --version YEAR creates/uses a parallel SQL container.
+alias	dbrf	Attach a database from a selected .mdf (+ optional matching .ldf) into the forge SQL Server container, proposing a name extracted from the file. Optional --version YEAR creates/uses a parallel SQL container.
+alias	db-index	Rebuild all indexes in a selected local Docker SQL database. Optional --version YEAR selects a parallel SQL container.
+alias	dbsn	Create a SQL backup snapshot from a selected database. Optional --version YEAR selects a parallel SQL container.
 alias	rdbsn	Create a backup from a configured remote SQL Server target.
 alias	rdbr	Restore a snapshot back into a remote SQL Server, overriding an existing database or cloning into a new one with mdf/ldf collision protection.
 alias	rdbsndrop	Delete .bak snapshot file(s) from a remote SQL Server target's backup path (multi-select, with size shown and space freed reported).
 alias	rdown	Choose a remote .bak with its size shown, then download it to a selected local destination.
 alias	rup	Upload a local .bak backup to a selected remote destination.
-alias	dbc	Clear SQL databases; default hard mode removes container/data after typed confirmation.
+alias	dbc	Clear SQL databases; default hard mode removes container/data after typed confirmation. Optional --version YEAR targets a parallel SQL container.
 alias	dbo	Run configured SQL table cleanup and shrink; data loss is possible.
 alias	dbfix	Run SQL fix scripts from the repo sqls folder against a chosen database.
 alias	sdb	Switch the active appsettings connection string for a configured project.
@@ -230,7 +230,7 @@ alias	cerber-tunnel-down	Close Cerber's tunnel to Hades from macOS.
 script	aliases	Open the alias finder and copy the selected shortcut.
 script	ai-config	Verify, install, or fast-forward-sync shared AI instructions and tool bootstrap files.
 script	ardis-complete	Complete Ardis planning/activity data over a selected date range.
-script	ardis-migrate	Run Ardis migrations against a selected local SQL database.
+script	ardis-migrate	Run Ardis migrations against a selected local SQL database. Optional --version YEAR selects a parallel SQL container.
 script	bin-clear	Remove bin and debug directories from the current tree.
 script	branch-delete	Delete local git branches matching a pattern.
 script	branch-local-clean	Preview or delete local branches by safe prefix.
@@ -264,18 +264,18 @@ script	linux-clean-stale-temp	Delete stale current-user temporary entries while 
 script	linux-clean-desktop-caches	Clear reconstructible thumbnail and shader caches as a full-only cleanup.
 script	sim	Cycle focus through the desktop apps captured at startup until Ctrl+C, with mouse movement and no clicks.
 script	convert-mov	Convert a selected .mov in the current folder to a readable, high-quality GIF (half-res, ffmpeg+gifski); use -n to name output, -o to drop near-duplicate frames (smaller GIF).
-script	db-admin	Administer a local SQL database: offline/online, drop, recovery, shrink.
-script	db-clear	Clear SQL databases; default hard mode removes container/data after typed confirmation.
+script	db-admin	Administer a local SQL database: offline/online, drop, recovery, shrink. Optional --version YEAR selects a parallel SQL container.
+script	db-clear	Clear SQL databases; default hard mode removes container/data after typed confirmation. Optional --version YEAR targets a parallel SQL container.
 script	db-fix	Run SQL fix scripts from the repo sqls folder against a chosen database.
-script	db-index	Rebuild all indexes in a selected local Docker SQL database.
+script	db-index	Rebuild all indexes in a selected local Docker SQL database. Optional --version YEAR selects a parallel SQL container.
 script	db-optimize	Run configured SQL table cleanup and shrink; data loss is possible.
 script	db-remote-backup	Create a backup from a configured remote SQL Server target.
 script	db-remote-download	Choose a remote .bak with its size shown, then download it to a selected local destination.
 script	db-remote-upload	Upload a local .bak backup to a selected remote destination.
-script	db-restore	Restore a selected .bak into the forge SQL Server container.
-script	db-restore-files	Attach a database from a selected .mdf (+ optional matching .ldf) into the forge SQL Server container, proposing a name extracted from the file.
-script	db-snapshot	Create a SQL backup snapshot from a selected database.
-script	db-upload-bak	Upload a selected .bak from the current folder into the SQL container.
+script	db-restore	Restore a selected .bak into the forge SQL Server container. Optional --version YEAR creates/uses a parallel SQL container.
+script	db-restore-files	Attach a database from a selected .mdf (+ optional matching .ldf) into the forge SQL Server container, proposing a name extracted from the file. Optional --version YEAR creates/uses a parallel SQL container.
+script	db-snapshot	Create a SQL backup snapshot from a selected database. Optional --version YEAR selects a parallel SQL container.
+script	db-upload-bak	Upload a selected .bak from the current folder into the SQL container. Optional --version YEAR selects a parallel SQL container.
 script	docker-start	Start stopped Docker containers, launching Docker Desktop if needed.
 script	dotnet-clean	Remove generated build output and caches from the current tree; pass --node_modules to include dependencies.
 script	dvpn	Disconnect the active VPN connection.
@@ -320,7 +320,7 @@ script	work	Switch or inspect the active SQL Docker data and snapshot storage pa
 script	ardis-migrate-remote	Run Ardis migrations locally against a configured remote SQL Server target instead of the local database.
 script	configure-ghostty	Symlink the shared Ghostty terminal config into place on macOS.
 script	convert-heic	Convert HEIC images in the current directory to JPG via an fzf multi-select picker.
-script	db-list	List local SQL Server databases with state, recovery model, and data/log/total size.
+script	db-list	List local SQL Server databases with state, recovery model, and data/log/total size. Optional --version YEAR selects a parallel SQL container.
 script	db-remote-restore	Restore a .bak from a configured remote SQL Server's backup path back into that same server, remapping files with WITH MOVE.
 script	deploy-meerkat-site	Upload and switch the live release of the meerkat.tnisoft.ro marketing site on vps1 (dry-run by default; --apply to go live).
 script	deploy-tnisoft-site	Upload and switch the live release of the tnisoft.ro marketing site on vps1 (dry-run by default; --apply to go live).
