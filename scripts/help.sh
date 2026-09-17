@@ -88,9 +88,9 @@ selection="$({ printf '%b\n' "${entries[@]}"; } \
       --layout=reverse \
       --border \
       --prompt='forge-help> ' \
-      --header='Type to filter, Enter to execute, Esc to cancel' \
+      --header='Type to filter (name, description, command), Enter to execute, Esc to cancel' \
       --delimiter=$'\t' \
-      --with-nth=1,2 \
+      --with-nth=1,2,3 \
       --nth=2,3,4 \
       --preview='printf "Type: %s\nName: %s\nDescription: %s\n\nCommand:\n%s\n" {1} {2} {3} {4}')"
 
