@@ -316,6 +316,7 @@ $sharedCommands = @{
   "v1am" = "scripts/vps1/vps1-db-migrate.sh"
   "v1list" = "scripts/vps1/vps1-db-list.sh"
   "v1opt" = "scripts/vps1/vps1-db-optimize.sh"
+  "v1attr" = "scripts/vps1/vps1-db-attr.sh"
   "v1-bl-publish" = "scripts/vps1/vps1-bl-publish.sh"
 }
 $sharedCommands.GetEnumerator() | ForEach-Object {
@@ -384,6 +385,7 @@ $aliases = @{
   "vps1-drop" = "v1drop"
   "vps1-snapshot-drop" = "v1sndrop"; "vps1-migrate" = "v1am"
   "vps1-list" = "v1list"; "vps1-optimize" = "v1opt"
+  "vps1-attr" = "v1attr"
   "vps1-sql-up" = "v1-sql-up"; "vps1-sql-down" = "v1-sql-down"
   "vps1-bl-publish" = "v1-bl-publish"
 }
