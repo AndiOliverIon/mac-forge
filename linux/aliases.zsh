@@ -58,6 +58,12 @@ alias goa=genopenapi
 alias genopenapitimetrack="~/mac-forge/scripts/gen-open-api-timetrack.sh"
 alias sp="~/mac-forge/linux/scripts/sudo-session.sh"
 
+# AI team members (name-based launch)
+alias artanis="codex"
+alias argus="claude"
+alias aegis="copilot"
+alias karax="grok"
+
 # ------------------------------------------------------------------------------
 # Journal
 # ------------------------------------------------------------------------------
