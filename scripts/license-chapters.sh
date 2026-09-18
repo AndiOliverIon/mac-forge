@@ -309,8 +309,7 @@ pick_amount() {
     --height=40% \
     --reverse \
     --delimiter=$'\t' \
-    --with-nth=1,2 \
-    </dev/tty)" || return 1
+    --with-nth=1,2)" || return 1
 
   local choice="${selected%%$'\t'*}"
   if [[ "$choice" == "CUSTOM" ]]; then
@@ -348,8 +347,7 @@ while true; do
     --height=80% \
     --reverse \
     --delimiter=$'\t' \
-    --with-nth=1,2,3 \
-    </dev/tty)" || {
+    --with-nth=1,2,3)" || {
     echo "Cancelled. No changes written."
     exit 0
   }
