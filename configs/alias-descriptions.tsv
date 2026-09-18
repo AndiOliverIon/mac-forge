@@ -78,9 +78,9 @@ alias	sim	Cycle focus through the captured desktop apps with mouse movement; use
 alias	present	Set external display presentation resolution/mode.
 alias	prs	Set external display presentation resolution/mode (short for present).
 alias	convert-mov	Convert a selected .mov in the current folder to a readable, high-quality GIF (half-res, ffmpeg+gifski); use -n to name output, -o to drop near-duplicate frames (smaller GIF).
-alias	patch	Apply, remove, or inspect intervention patches; use --old for legacy project paths.
-alias	p	Apply intervention patches; use --old for legacy project paths.
-alias	pr	Remove intervention patches; use --old for legacy project paths.
+alias	patch	Apply, remove, or inspect intervention patches; use --old for legacy project paths; use --custom to edit mock license chapters.
+alias	p	Apply intervention patches; use --old for legacy project paths; use --custom to edit mock license chapters.
+alias	pr	Remove intervention patches and restore the original mock license chapter list.
 alias	stio	Copy or move a selected local file/folder to a station destination, replacing same-name targets.
 alias	sio	Copy or move a selected local file/folder to a station destination, replacing same-name targets (short for stio).
 alias	h2c	Sync Hades changes up to Cerber.
@@ -296,7 +296,8 @@ script	wake	Pick any station via fzf (or pass a name) and send it a Wake-on-LAN 
 script	mcsleep	Suspend Ubuntu on MasterChief over SSH.
 script	masterchief-agent-session	Attach to or create Raynor's or Zeratul's isolated persistent tmux session, preferring MasterChief UTP with Wi-Fi fallback.
 script	organizer	Organize configured folders by extension rules from work-state.
-script	patch	Apply, remove, or inspect intervention patches.
+script	patch	Apply, remove, or inspect intervention patches; --custom edits mock license chapters, pr restores the original list.
+script	license-chapters	Edit, snapshot, or restore local mock license chapter amounts.
 script	perform-cache-reset	Clear Perform client cache artifacts.
 script	perform-cerber-sync	Sync configured work profiles between Hades and Cerber.
 script	cerber-hades-tunnel	Control and verify Cerber's Hades development tunnel through Parallels.

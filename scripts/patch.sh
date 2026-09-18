@@ -15,7 +15,7 @@ die() { echo "❌ $*" >&2; exit 1; }
 usage() {
   cat <<EOF
 Usage:
-  $0 [--config <path>] [--old] [apply|p|-P|remove|r|-R|status|s]
+  $0 [--config <path>] [--old] [apply|p|-P|remove|r|-R|status|s|--custom]
 
 Defaults:
   - Config path: \$FORGE_CONFIG_LOCAL_DIR/local-overrides.json
@@ -26,6 +26,8 @@ Notes:
   - --old uses an intervention's old_file path and old_lines payload when provided.
   - Works even if your working tree is dirty.
   - On apply/remove, touched files are UNSTAGED (only those files).
+  - --custom edits local mock license chapter amounts with fzf.
+  - remove/pr restores the original chapter list.
 EOF
 }
 
@@ -92,6 +94,11 @@ while [[ $# -gt 0 ]]; do
     status|s)
       [[ -z "$COMMAND" ]] || { usage; die "Only one command may be specified"; }
       COMMAND="status"
+      shift
+      ;;
+    --custom|custom)
+      [[ -z "$COMMAND" ]] || { usage; die "Only one command may be specified"; }
+      COMMAND="custom"
       shift
       ;;
     *)
@@ -719,7 +726,14 @@ cmd_status() {
 #######################################
 # apply (works in dirty tree; transaction + rollback)
 #######################################
+license_chapters() {
+  local extra=()
+  [[ "$USE_OLD" -eq 1 ]] && extra+=(--old)
+  "$SCRIPT_DIR/license-chapters.sh" "$@" "${extra[@]}"
+}
+
 cmd_apply() {
+  license_chapters --snapshot
   load_interventions
   TEMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/local-patch.XXXXXX")"
   local backup_dir="$TEMP_DIR/backup"
@@ -876,6 +890,7 @@ cmd_remove() {
   fi
 
   echo "✅ Local overrides removed."
+  license_chapters --restore
 }
 
 #######################################
@@ -885,4 +900,5 @@ case "$COMMAND" in
   status) cmd_status ;;
   apply)  cmd_apply ;;
   remove) cmd_remove ;;
+  custom) license_chapters --edit ;;
 esac
