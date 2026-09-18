@@ -93,7 +93,38 @@ if [[ -z "$WEB_DIR" ]]; then
   exit 0
 fi
 
-JSON_DIR="$REPO_ROOT/$WEB_DIR/wwwroot/license/offline"
+# At runtime the app reroutes its license folder to Ardis:ExternalFolder when
+# configured (see ContentRootPath.Determine()), so the mock reads/writes the
+# offline list under <ExternalFolder>/wwwroot/license. Mirror that resolution so
+# the editor targets the file the running bypass actually uses; fall back to the
+# in-repo copy only when no external folder is configured.
+resolve_external_folder() {
+  if [[ -n "${PERFORM_ExternalFolder:-}" ]]; then
+    printf '%s\n' "$PERFORM_ExternalFolder"
+    return 0
+  fi
+  local settings="$REPO_ROOT/$WEB_DIR/appsettings.json"
+  [[ -f "$settings" ]] || return 0
+  python3 - "$settings" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8-sig")
+match = re.search(r'"ExternalFolder"\s*:\s*"([^"]*)"', text)
+if match and match.group(1).strip():
+    print(match.group(1))
+PY
+}
+
+EXTERNAL_FOLDER="$(resolve_external_folder)"
+if [[ -n "$EXTERNAL_FOLDER" ]]; then
+  LICENSE_ROOT="$EXTERNAL_FOLDER/wwwroot/license"
+else
+  LICENSE_ROOT="$REPO_ROOT/$WEB_DIR/wwwroot/license"
+fi
+
+JSON_DIR="$LICENSE_ROOT/offline"
 JSON_PATH="$JSON_DIR/currentModuleRestrictionList.json"
 ORIGINAL_PATH="$JSON_DIR/currentModuleRestrictionList.original.json"
 LICENSE_CS=""
@@ -103,6 +134,17 @@ for candidate in \
 do
   if [[ -f "$candidate" ]]; then
     LICENSE_CS="$candidate"
+    break
+  fi
+done
+
+MOCK_CS=""
+for candidate in \
+  "$REPO_ROOT/local-overrides/MockLicenseService.cs" \
+  "$REPO_ROOT/$WEB_DIR/local-overrides/MockLicenseService.cs"
+do
+  if [[ -f "$candidate" ]]; then
+    MOCK_CS="$candidate"
     break
   fi
 done
@@ -172,23 +214,44 @@ STATE_FILE="$(mktemp "${TMPDIR:-/tmp}/license-chapters.XXXXXX.json")"
 cleanup() { rm -f "$STATE_FILE"; }
 trap cleanup EXIT
 
-python3 - "$LICENSE_CS" "$JSON_PATH" "$STATE_FILE" <<'PY'
+python3 - "$LICENSE_CS" "$JSON_PATH" "$STATE_FILE" "$MOCK_CS" <<'PY'
 import json
 import re
 import sys
 from pathlib import Path
 
 license_cs, json_path, state_path = sys.argv[1], sys.argv[2], sys.argv[3]
+mock_cs = sys.argv[4] if len(sys.argv) > 4 else ""
 text = Path(license_cs).read_text(encoding="utf-8-sig")
-names = set()
+
+const_values = {}
 for match in re.finditer(
-    r'public const string\s+(PERF_|PLAN_)[A-Za-z0-9_]+\s*=\s*(?:"([^"]+)"|nameof\(([A-Za-z0-9_]+)\))',
+    r'public const string\s+([A-Za-z0-9_]+)\s*=\s*(?:"([^"]+)"|nameof\(([A-Za-z0-9_]+)\))',
     text,
 ):
-    names.add(match.group(2) or match.group(3))
+    const_values[match.group(1)] = match.group(2) or match.group(3)
+
+names = {
+    value
+    for name, value in const_values.items()
+    if name.startswith(("PERF_", "PLAN_"))
+}
+
+# The mock forces a baseline amount for modules it EnsureModule()s when they are
+# absent from the file, so mirror those defaults instead of showing 0.
+forced = {}
+if mock_cs and Path(mock_cs).is_file():
+    mock_text = Path(mock_cs).read_text(encoding="utf-8-sig")
+    for match in re.finditer(
+        r'EnsureModule\(\s*(?:CLI\.)?([A-Za-z0-9_]+)\s*,\s*(\d+)\s*\)',
+        mock_text,
+    ):
+        module_id = const_values.get(match.group(1), match.group(1))
+        forced[module_id] = int(match.group(2))
 
 current = {}
 records = []
+file_ids = set()
 src = Path(json_path)
 if src.is_file():
     raw = json.loads(src.read_text(encoding="utf-8") or "[]")
@@ -202,6 +265,11 @@ if src.is_file():
                 continue
             amount = item.get("Amount")
             current[str(module_id)] = 0 if amount is None else int(amount)
+            file_ids.add(str(module_id))
+
+for module_id, amount in forced.items():
+    if module_id not in file_ids:
+        current[module_id] = amount
 
 for name in names:
     current.setdefault(name, 0)
@@ -330,6 +398,9 @@ pick_amount() {
 
 echo "Local mock license chapters"
 echo "Repo: $REPO_ROOT"
+if [[ -n "$EXTERNAL_FOLDER" ]]; then
+  echo "External folder: $EXTERNAL_FOLDER"
+fi
 echo "Working:  $JSON_PATH"
 echo "Original: $ORIGINAL_PATH"
 if [[ "$MOCK_APPLIED" -eq 1 ]]; then
