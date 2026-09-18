@@ -19,7 +19,10 @@ opens a picker: choose "All" to run the standard cleanup, or select specific
 segments with TAB and clean only those.
 
 Options:
-  --full      Run standard and full-only cleanup scripts (non-interactive).
+  --full      Run standard cleanup plus full-only chapters (Xcode iPhone/iPad
+              simulators and real-device symbol packs). Skip those chapters
+              during an Xcode work stretch; pick them when you will be away
+              for days or weeks.
   --list      Show all approved cleanup scripts and their classification.
   -v, --verbose  Stream each cleaner's full output live (default: quiet, with
                  output shown only when a cleaner fails).
@@ -63,17 +66,21 @@ describe() {
     mac-clean-copilot-index-cache.sh)  echo "Copilot index cache — project context & index" ;;
     mac-clean-docker-build-cache.sh)   echo "Docker build cache — old buildx layers" ;;
     mac-clean-nuget-transient.sh)      echo "NuGet transient — http-cache, scratch & plugin cache" ;;
-    mac-clean-npm-cache.sh)            echo "npm cache — global download cache" ;;
+    mac-clean-npm-cache.sh)            echo "npm cache — global download cache and old npx installs" ;;
     mac-clean-pip-cache.sh)            echo "pip cache — download & wheel cache" ;;
+    mac-clean-uv-cache.sh)             echo "uv cache — prune unused wheels and archives" ;;
+    mac-clean-uv-cache-all.sh)         echo "uv cache full — delete entire uv cache (full-only)" ;;
     mac-clean-rider-caches.sh)         echo "JetBrains Rider — caches, indexes & host temp" ;;
+    mac-clean-rider-logs.sh)           echo "Rider logs — log files older than 7 days" ;;
     mac-clean-yarn-cache.sh)           echo "Yarn cache — global package cache" ;;
     mac-clean-swiftpm-cache.sh)        echo "Swift Package Manager — package cache" ;;
     mac-clean-go-build-cache.sh)       echo "Go build cache — compiled build artifacts (GOCACHE)" ;;
-    mac-clean-vscode-caches.sh)        echo "VS Code — reconstructable Cache/CachedData/GPUCache" ;;
+    mac-clean-vscode-caches.sh)        echo "VS Code — Cache, CachedData, VSIX downloads, GPUCache" ;;
+    mac-clean-playwright-browsers.sh)  echo "Playwright — downloaded browser binaries" ;;
     mac-clean-stale-temp.sh)           echo "Stale temp — old /tmp & TMPDIR entries" ;;
     mac-clean-xcode-derived-data.sh)   echo "Xcode DerivedData — build products & indexes" ;;
-    mac-clean-xcode-device-support.sh) echo "Xcode iOS DeviceSupport — old symbol bundles (>30d)" ;;
-    mac-clean-xcode-simulators.sh)     echo "Xcode simulators — remove unavailable devices" ;;
+    mac-clean-xcode-simulators.sh)     echo "Xcode simulators — iPhone/iPad devices, clones & runtimes (full-only)" ;;
+    mac-clean-xcode-device-support.sh) echo "Xcode real devices — iPhone & Charon symbol packs (full-only)" ;;
     mac-clean-xcode-test-clones.sh)    echo "Xcode test clones — leftover clone data" ;;
     *)                                 echo "$1" ;;
   esac
@@ -90,19 +97,22 @@ STANDARD_CLEANERS=(
   "$SCRIPT_DIR/mac-clean-nuget-transient.sh"
   "$SCRIPT_DIR/mac-clean-npm-cache.sh"
   "$SCRIPT_DIR/mac-clean-pip-cache.sh"
+  "$SCRIPT_DIR/mac-clean-uv-cache.sh"
   "$SCRIPT_DIR/mac-clean-rider-caches.sh"
+  "$SCRIPT_DIR/mac-clean-rider-logs.sh"
   "$SCRIPT_DIR/mac-clean-yarn-cache.sh"
   "$SCRIPT_DIR/mac-clean-swiftpm-cache.sh"
   "$SCRIPT_DIR/mac-clean-go-build-cache.sh"
   "$SCRIPT_DIR/mac-clean-vscode-caches.sh"
+  "$SCRIPT_DIR/mac-clean-playwright-browsers.sh"
   "$SCRIPT_DIR/mac-clean-stale-temp.sh"
   "$SCRIPT_DIR/mac-clean-xcode-derived-data.sh"
-  "$SCRIPT_DIR/mac-clean-xcode-device-support.sh"
-  "$SCRIPT_DIR/mac-clean-xcode-simulators.sh"
-  "$SCRIPT_DIR/mac-clean-xcode-test-clones.sh"
 )
 
 FULL_CLEANERS=(
+  "$SCRIPT_DIR/mac-clean-xcode-simulators.sh"
+  "$SCRIPT_DIR/mac-clean-xcode-device-support.sh"
+  "$SCRIPT_DIR/mac-clean-uv-cache-all.sh"
 )
 
 list_cleaners() {

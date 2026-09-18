@@ -60,7 +60,7 @@ describe() {
     linux-clean-copilot-index-cache.sh)  echo "Copilot index cache — project context & index" ;;
     linux-clean-docker-build-cache.sh)   echo "Docker build cache — old buildx layers" ;;
     linux-clean-nuget-transient.sh)      echo "NuGet transient — http-cache, scratch & plugin cache" ;;
-    linux-clean-npm-cache.sh)            echo "npm cache — global download cache" ;;
+    linux-clean-npm-cache.sh)            echo "npm cache — global download cache and old npx installs" ;;
     linux-clean-rider-caches.sh)         echo "JetBrains Rider — caches, indexes & host temp" ;;
     linux-clean-yarn-cache.sh)           echo "Yarn cache — global package cache" ;;
     linux-clean-stale-temp.sh)           echo "Stale temp — old /tmp entries" ;;

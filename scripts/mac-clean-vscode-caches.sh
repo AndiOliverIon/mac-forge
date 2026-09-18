@@ -6,6 +6,7 @@ CODE_ROOT="$HOME/Library/Application Support/Code"
 CACHE_SUBDIRS=(
   "Cache"
   "CachedData"
+  "CachedExtensionVSIXs"
   "Code Cache"
   "GPUCache"
 )
@@ -23,8 +24,9 @@ usage() {
 Usage: mac-clean-vscode-caches [--dry-run]
 
 Delete Visual Studio Code's reconstructable caches (Cache, CachedData,
-Code Cache, GPUCache). Settings, keybindings, extensions, and workspace state
-are preserved; VS Code rebuilds these caches on the next launch.
+CachedExtensionVSIXs, Code Cache, GPUCache). Settings, keybindings, installed
+extensions, and workspace state are preserved; VS Code rebuilds these caches
+on the next launch.
 
 Options:
   -n, --dry-run Show the targeted cache directories and their size only.

@@ -2,8 +2,6 @@
 set -euo pipefail
 
 DEVICE_SUPPORT_DIR="$HOME/Library/Developer/Xcode/iOS DeviceSupport"
-RETENTION_MINUTES=43200
-RETENTION_DAYS=30
 
 TARGETS=()
 TARGET_SIZES_KIB=()
@@ -17,10 +15,10 @@ usage() {
   cat <<'EOF'
 Usage: mac-clean-xcode-device-support [--dry-run]
 
-Delete Xcode iOS DeviceSupport symbol bundles whose entire contents are older
-than thirty days. These per-iOS-version bundles are regenerated automatically
-the next time a matching device is connected. Recently used bundles, archives,
-settings, and source code are preserved.
+Delete all current-user Xcode iOS DeviceSupport symbol packs for physical
+devices (iPhone and Charon). Xcode recopies a pack the next time you debug
+on that device with a matching iOS version. Archives, settings, signing
+assets, source code, and simulators are preserved.
 
 Options:
   -n, --dry-run Show eligible bundles and their reported size without deleting.
@@ -54,10 +52,6 @@ candidate_is_safe() {
   [[ "$(stat -f '%u' "$candidate")" == "$uid" ]] || return 1
 
   if find "$candidate" ! -user "$uid" -print -quit | grep -q .; then
-    return 1
-  fi
-
-  if find "$candidate" -mmin "-$RETENTION_MINUTES" -print -quit | grep -q .; then
     return 1
   fi
 
@@ -126,7 +120,7 @@ main() {
   collect_targets "$uid"
 
   if (( ${#TARGETS[@]} == 0 )); then
-    echo "No iOS DeviceSupport bundles are entirely older than $RETENTION_DAYS days."
+    echo "No iOS DeviceSupport symbol packs are eligible."
     exit 0
   fi
 
@@ -134,14 +128,16 @@ main() {
     total_kib="$((total_kib + TARGET_SIZES_KIB[$index]))"
   done
 
-  printf 'iOS DeviceSupport bundles entirely older than %d days: %d entries (reported %.2f GiB)\n' \
-    "$RETENTION_DAYS" "${#TARGETS[@]}" "$(awk -v kib="$total_kib" 'BEGIN { print kib / 1048576 }')"
+  printf 'iOS DeviceSupport symbol packs (iPhone & Charon): %d entries (reported %.2f GiB)\n' \
+    "${#TARGETS[@]}" "$(awk -v kib="$total_kib" 'BEGIN { print kib / 1048576 }')"
 
   for index in "${!TARGETS[@]}"; do
     printf '  - %s (%.2f GiB)\n' \
       "$(basename "${TARGETS[$index]}")" \
       "$(awk -v kib="${TARGET_SIZES_KIB[$index]}" 'BEGIN { print kib / 1048576 }')"
   done
+
+  echo "Xcode recopies a pack the next time you debug on that physical device."
 
   if (( dry_run )); then
     echo "Dry run: nothing was deleted."
