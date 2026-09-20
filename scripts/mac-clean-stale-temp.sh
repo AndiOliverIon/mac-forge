@@ -3,11 +3,15 @@ set -euo pipefail
 
 GENERAL_RETENTION_MINUTES=10080
 AI_RETENTION_MINUTES=1440
+HANDOFF_RETENTION_MINUTES=4320
 PREVIEW_LIMIT=25
+
+HANDOFF_ROOT="$HOME/handoffserver"
 
 TARGETS=()
 TARGET_TIERS=()
 TARGET_RETENTIONS=()
+HANDOFF_TARGETS=()
 OPEN_PATHS_FILE=""
 
 die() {
@@ -23,6 +27,10 @@ Delete stale entries owned by the current user from macOS temporary folders.
 Recognized AI-tool entries must be older than 24 hours; all other entries must
 be older than seven days. Open entries, symlinks, mixed-ownership trees, and
 entries containing newer or protected content are preserved.
+
+Also removes handoff review files (request*/findings* markdown) under
+~/handoffserver/<project> that are older than three days. Archived handoffs in
+nested archive/ directories are preserved.
 
 Options:
   -n, --dry-run Show eligible entries without deleting them.
@@ -168,6 +176,55 @@ print_preview() {
   fi
 }
 
+handoff_candidate_is_safe() {
+  local file="$1"
+  local uid="$2"
+
+  [[ -f "$file" ]] || return 1
+  [[ ! -L "$file" ]] || return 1
+  [[ "$(stat -f '%u' "$file")" == "$uid" ]] || return 1
+
+  find "$file" -maxdepth 0 -mmin "+$HANDOFF_RETENTION_MINUTES" -print -quit | grep -q .
+}
+
+collect_handoff_targets() {
+  local root="$1"
+  local uid="$2"
+  local file
+
+  [[ -d "$root" ]] || return 0
+  [[ ! -L "$root" ]] || return 0
+
+  while IFS= read -r -d '' file; do
+    if handoff_candidate_is_safe "$file" "$uid"; then
+      HANDOFF_TARGETS+=("$file")
+    fi
+  done < <(find "$root" -mindepth 2 -maxdepth 2 -type f -user "$uid" \
+    \( -name 'request-*.md' -o -name 'request.md' \
+    -o -name 'findings-*.md' -o -name 'findings.md' \) \
+    -mmin "+$HANDOFF_RETENTION_MINUTES" -print0 2>/dev/null)
+}
+
+print_handoff_preview() {
+  local count="${#HANDOFF_TARGETS[@]}"
+  local limit="$count"
+  local index
+  local remaining
+
+  if (( limit > PREVIEW_LIMIT )); then
+    limit="$PREVIEW_LIMIT"
+  fi
+
+  for (( index = 0; index < limit; index++ )); do
+    printf '  [handoff (3 days)] %s\n' "${HANDOFF_TARGETS[$index]}"
+  done
+
+  remaining="$((count - limit))"
+  if (( remaining > 0 )); then
+    printf '  ... and %d more eligible handoff files\n' "$remaining"
+  fi
+}
+
 main() {
   local dry_run=0
   local uid
@@ -236,6 +293,8 @@ main() {
     collect_targets "$root" "$uid"
   done
 
+  collect_handoff_targets "$HANDOFF_ROOT" "$uid"
+
   for tier in "${TARGET_TIERS[@]}"; do
     if [[ "$tier" == "AI (24 hours)" ]]; then
       ai_count="$((ai_count + 1))"
@@ -247,13 +306,15 @@ main() {
   echo "Stale temporary cleanup:"
   echo "  AI entries older than 24 hours: $ai_count"
   echo "  Other entries older than 7 days: $general_count"
+  echo "  Handoff review files older than 3 days: ${#HANDOFF_TARGETS[@]}"
 
-  if (( ${#TARGETS[@]} == 0 )); then
+  if (( ${#TARGETS[@]} == 0 && ${#HANDOFF_TARGETS[@]} == 0 )); then
     echo "Nothing is eligible."
     exit 0
   fi
 
   print_preview
+  print_handoff_preview
 
   if (( dry_run )); then
     echo "Dry run: nothing was deleted."
@@ -273,6 +334,15 @@ main() {
 
     if candidate_is_safe "$root" "${TARGETS[$index]}" "${TARGET_RETENTIONS[$index]}" "$uid"; then
       rm -rf -- "${TARGETS[$index]}"
+      deleted="$((deleted + 1))"
+    else
+      skipped="$((skipped + 1))"
+    fi
+  done
+
+  for index in "${!HANDOFF_TARGETS[@]}"; do
+    if handoff_candidate_is_safe "${HANDOFF_TARGETS[$index]}" "$uid"; then
+      rm -f -- "${HANDOFF_TARGETS[$index]}"
       deleted="$((deleted + 1))"
     else
       skipped="$((skipped + 1))"

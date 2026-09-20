@@ -63,7 +63,7 @@ describe() {
     linux-clean-npm-cache.sh)            echo "npm cache — global download cache and old npx installs" ;;
     linux-clean-rider-caches.sh)         echo "JetBrains Rider — caches, indexes & host temp" ;;
     linux-clean-yarn-cache.sh)           echo "Yarn cache — global package cache" ;;
-    linux-clean-stale-temp.sh)           echo "Stale temp — old /tmp entries" ;;
+    linux-clean-stale-temp.sh)           echo "Stale temp — old /tmp & handoff review files" ;;
     linux-clean-desktop-caches.sh)       echo "Desktop caches — thumbnails & shader caches (full-only)" ;;
     *)                                   echo "$1" ;;
   esac

@@ -77,7 +77,7 @@ describe() {
     mac-clean-go-build-cache.sh)       echo "Go build cache — compiled build artifacts (GOCACHE)" ;;
     mac-clean-vscode-caches.sh)        echo "VS Code — Cache, CachedData, VSIX downloads, GPUCache" ;;
     mac-clean-playwright-browsers.sh)  echo "Playwright — downloaded browser binaries" ;;
-    mac-clean-stale-temp.sh)           echo "Stale temp — old /tmp & TMPDIR entries" ;;
+    mac-clean-stale-temp.sh)           echo "Stale temp — old /tmp, TMPDIR & handoff review files" ;;
     mac-clean-xcode-derived-data.sh)   echo "Xcode DerivedData — build products & indexes" ;;
     mac-clean-xcode-simulators.sh)     echo "Xcode simulators — iPhone/iPad devices, clones & runtimes (full-only)" ;;
     mac-clean-xcode-device-support.sh) echo "Xcode real devices — iPhone & Charon symbol packs (full-only)" ;;
