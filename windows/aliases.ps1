@@ -306,6 +306,7 @@ $sharedCommands = @{
   "dwkdata" = "scripts/deploy-wonderkitchen.sh"
   "aiusage" = "scripts/agents/usage.sh"
   "slc" = "scripts/license-chapters.sh"
+  "gre" = "scripts/git-reset-ext.sh"
   "mcsleep" = "scripts/mcsleep.sh"
   "mcboot" = "scripts/mcboot.sh"
   "vps1-status" = "scripts/vps1-status"

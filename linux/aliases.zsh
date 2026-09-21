@@ -85,6 +85,7 @@ alias de="~/mac-forge/scripts/crypt.sh decrypt"
 # ------------------------------------------------------------------------------
 alias aiusage='~/mac-forge/scripts/agents/usage.sh'
 alias slc="~/mac-forge/scripts/license-chapters.sh"
+alias gre="~/mac-forge/scripts/git-reset-ext.sh"
 alias gs="git status"
 alias gco="git checkout"
 alias gp="git pull"
