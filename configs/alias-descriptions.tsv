@@ -298,6 +298,7 @@ script	masterchief-agent-session	masterchief-agent-session — Attach to or crea
 script	organizer	organizer — Organize configured folders by extension rules from work-state.
 script	patch	patch — Apply, remove, or inspect intervention patches; --custom edits mock license chapters, pr restores the original list.
 script	license-chapters	license-chapters — Edit, snapshot, or restore local mock license chapter amounts.
+alias	slc	slc — Edit, snapshot, or restore local mock license chapter amounts (runs license-chapters.sh).
 script	perform-cache-reset	perform-cache-reset — Clear Perform client cache artifacts.
 script	perform-cerber-sync	perform-cerber-sync — Sync configured work profiles between Hades and Cerber.
 script	cerber-hades-tunnel	cerber-hades-tunnel — Control and verify Cerber's Hades development tunnel through Parallels.
