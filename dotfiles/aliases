@@ -147,6 +147,7 @@ alias gbd="~/mac-forge/scripts/branch-delete.sh"
 alias gdel="~/mac-forge/scripts/git-del.sh"
 alias branch-clean="~/mac-forge/scripts/branch-local-clean.sh"
 alias bc=branch-clean
+alias gre="~/mac-forge/scripts/git-reset-ext.sh"
 
 # ------------------------------------------------------------------------------
 # Docker
