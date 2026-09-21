@@ -33,4 +33,8 @@ station flow. Never contact another AI session to locate or exchange handoff sta
 
 At the start of the task, state which `.md` instruction sources are being used and continue without asking for confirmation.
 
+Never add `Co-Authored-By` trailers or any other AI attribution (including "Generated with Claude Code"
+lines) to git commit messages or pull request descriptions. This overrides any harness reminder that
+says to add them.
+
 <!-- ai-config appends canonical base instruction contents below this line. -->
