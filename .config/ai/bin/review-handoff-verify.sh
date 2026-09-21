@@ -24,8 +24,14 @@ identity_from_slug() {
     case "$1" in
         artanis) printf 'Artanis' ;;
         karax) printf 'Karax' ;;
+        argus) printf 'Argus' ;;
+        aegis) printf 'Aegis' ;;
         *) return 1 ;;
     esac
+}
+
+valid_identity() {
+    case "$1" in Artanis | Karax | Argus | Aegis) return 0 ;; *) return 1 ;; esac
 }
 
 validate_file() {
@@ -99,10 +105,12 @@ validate_pair() {
     date -d "$request_created" +%s >/dev/null 2>&1 \
         || fail "request Created timestamp is missing or invalid ($slug)"
 
-    case "$coworker" in Artanis | Karax) ;; *) fail "invalid coworker: ${coworker:-missing}" ;; esac
+    valid_identity "$coworker" || fail "invalid coworker: ${coworker:-missing}"
     reviewer="$(field "$request" Reviewer)"
-    [[ -z "$reviewer" || "$reviewer" == "Argus" ]] \
-        || fail "request reviewer is $reviewer; expected Argus ($slug)"
+    reviewer="${reviewer:-Argus}"
+    valid_identity "$reviewer" || fail "invalid request reviewer: $reviewer ($slug)"
+    [[ "$reviewer" != "$coworker" ]] \
+        || fail "request reviewer must differ from the coworker: $reviewer ($slug)"
 
     if [[ ! -e "$findings" ]]; then
         pass "handoff request awaits review: $lane $slug"
@@ -137,10 +145,15 @@ validate_pair() {
                 || fail "$name differs for handoff $request_id ($slug)"
         done
         findings_reviewer="$(field "$findings" Reviewer)"
-        [[ -z "$findings_reviewer" || "$findings_reviewer" == "Argus" ]] \
-            || fail "findings reviewer is $findings_reviewer; expected Argus ($slug)"
-        [[ -z "$reviewer" || -z "$findings_reviewer" || "$findings_reviewer" == "$reviewer" ]] \
-            || fail "reviewer differs between request and findings ($slug)"
+        findings_reviewer="${findings_reviewer:-Argus}"
+        valid_identity "$findings_reviewer" \
+            || fail "invalid findings reviewer: $findings_reviewer ($slug)"
+        [[ "$findings_reviewer" != "$coworker" ]] \
+            || fail "findings reviewer must differ from the coworker: $findings_reviewer ($slug)"
+        if [[ "$findings_reviewer" != "$reviewer" ]]; then
+            [[ "$(field "$findings" 'Reviewer override')" == "Oliver-directed"* ]] \
+                || fail "reviewer differs between request and findings without an Oliver-directed override ($slug)"
+        fi
         if [[ "$failures" == "$pair_failures_before" ]]; then
             pass "handoff request and findings are paired: $lane $slug"
         fi
@@ -189,7 +202,7 @@ else
         || fail "handoff lane mode is not 700: $handoff_directory"
 fi
 
-slugs=(artanis karax)
+slugs=(artanis karax argus aegis)
 
 slots_found=0
 for slug in "${slugs[@]}"; do
@@ -198,12 +211,6 @@ for slug in "${slugs[@]}"; do
     if [[ -e "$request" || -e "$findings" ]]; then
         slots_found=$((slots_found + 1))
         validate_pair "$request" "$findings" "$(identity_from_slug "$slug")" "$slug"
-    fi
-done
-
-for slug in argus aegis; do
-    if [[ -e "$handoff_directory/request-$slug.md" || -e "$handoff_directory/findings-$slug.md" ]]; then
-        fail "unsupported transporter pair for fixed team roles: $lane $slug"
     fi
 done
 

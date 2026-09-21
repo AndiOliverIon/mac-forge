@@ -23,12 +23,12 @@ the task scope. Use `--review-target HEAD`, `working-tree`, `staged`, or a Git d
 review scope is known. If the result is partial, perform only the read-only discovery required to
 identify the missing repository or target files, rerun the resolver, and then continue.
 
-Handoff commands (`Prep for Argus takeoff`, `Process Artanis's review handoff`, `Process Karax's
-review handoff`, `Argus takeoff`, or `Process Argus's findings`) are routed tasks even when no code
-scope is named. Invoke the resolver in `handoff` mode and load its routed instruction paths before
-searching or acting. If the resolver is unavailable, manually read
-`~/.config/ai/guidelines/always/review-handoff.md` and follow its selected station flow. Never contact
-another AI session to locate or exchange handoff state.
+Handoff commands (`Prep for <Reviewer> takeoff` or `Hand off to <Reviewer> for review` — Argus when no
+reviewer is named — `Process <Coworker>'s review handoff`, `<Reviewer> takeoff`, or `Process <Reviewer>'s
+findings`) are routed tasks even when no code scope is named. Invoke the resolver in `handoff` mode and
+load its routed instruction paths before searching or acting. If the resolver is unavailable,
+manually read `~/.config/ai/guidelines/always/review-handoff.md` and follow its selected station flow.
+Never contact another AI session to locate or exchange handoff state.
 
 At the start of the task, state which `.md` instruction sources are being used and continue without
 asking for confirmation.

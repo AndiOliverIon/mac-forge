@@ -25,8 +25,9 @@ continue. For a task spanning repositories, invoke it once per repository and lo
 returned paths. If the resolver is unavailable or fails, fall back to reading
 `~/.config/ai/identities.md`, `~/.config/ai/guidelines/guidelines.md`, and its routed sources manually.
 
-Handoff commands that prepare a review, launch the named reviewer, or process the named reviewer's
-findings are routed tasks even when no code scope is named. Invoke the resolver in `handoff` mode and
+Handoff commands (`Prep for <Reviewer> takeoff` or `Hand off to <Reviewer> for review` — Argus when no
+reviewer is named — `Process <Coworker>'s review handoff`, `<Reviewer> takeoff`, or `Process <Reviewer>'s
+findings`) are routed tasks even when no code scope is named. Invoke the resolver in `handoff` mode and
 load its routed instruction paths before searching or acting. If the resolver is unavailable,
 manually read `~/.config/ai/guidelines/always/review-handoff.md` and follow its selected station flow.
 Never contact another AI session to locate or exchange handoff state.

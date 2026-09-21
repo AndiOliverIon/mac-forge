@@ -1,6 +1,10 @@
-# Artanis/Karax–Argus Review Handoff Router
+# Review Handoff Router
 
-The protocol is dormant unless Oliver invokes a handoff command or an unambiguous equivalent.
+The protocol is dormant unless Oliver invokes a handoff command or an unambiguous equivalent. Default
+roles are Artanis or Karax as Coworker and Argus as Reviewer; when Oliver explicitly names another
+pairing (e.g. Aegis hands off to Karax), the common protocol governs the switch. Station flows keep
+their own lane structure: MasterChief uses `work`, `raynor`, and `zeratul`; Hades is a single
+universe with one lane per repository.
 
 ## Route Before Acting
 

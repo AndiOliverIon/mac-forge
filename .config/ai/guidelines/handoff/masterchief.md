@@ -1,4 +1,4 @@
-# Artanis/Karax–Argus Review Handoff — MasterChief Flow
+# Review Handoff — MasterChief Flow
 
 Use this flow only when the handoff router identifies the local station as `masterchief`.
 
@@ -21,10 +21,19 @@ never read or write another context's transporter files.
 
 ## Linux Role Assignment
 
-The common coworker-to-Argus ownership applies in all three lanes. Artanis or Karax owns
-`request-<coworker>.md`, and Argus owns the matching `findings-<coworker>.md`. Both files include
-`Coworker`, which must match the filename. Aegis may assist with bounded lower-complexity tasks but
-does not replace the active coworker or Argus in this protocol.
+The common Coworker/Reviewer protocol applies in all three lanes, with Argus as the default Reviewer
+and any of Artanis, Karax, Argus, or Aegis eligible for either role when Oliver explicitly asks.
+The Coworker owns `request-<coworker>.md`; the pair's designated Reviewer owns the matching
+`findings-<coworker>.md`. Both files include `Coworker` and `Reviewer`.
+
+Role switching never changes lane rules:
+
+- **Work** is the operator-assisted lane; Coworker and Reviewer may be any two agents Oliver runs
+  there.
+- **Raynor** and **Zeratul** are isolated universes with one agent per universe. A handoff there is
+  played sequentially by whichever agents Oliver assigns to that universe in turn. A role switch
+  never authorizes a second concurrent agent, and a Reviewer from another universe or lane is never
+  consulted.
 
 ## Fixed Paths
 
@@ -43,7 +52,8 @@ does not replace the active coworker or Argus in this protocol.
 - Request: `/home/oliver/raynor/.ai/review-handoff/request-<coworker>.md`
 - Findings: `/home/oliver/raynor/.ai/review-handoff/findings-<coworker>.md`
 
-`<coworker>` is the lowercase identity (`artanis` or `karax`).
+`<coworker>` is the lowercase identity of the Coworker (`artanis`, `karax`, `argus`, or `aegis`). The
+Reviewer is recorded in the file headers, not the filename.
 
 These lane directories are created and validated by `ai-config install`. Do not create or relocate
 them as part of a handoff. If the selected lane directory is missing, stop and report the
@@ -58,11 +68,12 @@ Use:
 - Handoff ID: `<lane>:<repository-name>:<coworker>:<ISO-8601 timestamp>`
 
 The repository name is the basename of the canonical repository root. The lane and coworker token in
-the metadata, handoff ID, and transporter filenames must agree.
+the metadata, handoff ID, and transporter filenames must agree. `Reviewer` is a header field only.
 
 Keep the `Branch` and `Review target` metadata values on one line so the Linux handoff validator can
 compare them exactly. Run `~/.config/ai/bin/review-handoff-verify.sh <lane>` after preparing or
-writing a handoff file. Validate each coworker pair independently. A different findings ID is valid
+writing a handoff file. Validate each coworker pair independently, including that `Coworker` and
+`Reviewer` are distinct valid identities. A different findings ID is valid
 only while it represents that coworker's prior review and the current request in the same pair is
 newer; a findings file newer than a differently identified request in the same pair is an invalid
 reversed stale pair.

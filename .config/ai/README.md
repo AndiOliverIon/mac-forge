@@ -41,6 +41,15 @@ current-context file is written.
 Use `ai-context --help` for its scope arguments. A partial result is expected when the repository or
 target files are not yet known; identify only the missing scope and rerun it.
 
+## Review handoff roles
+
+Default roles: Artanis or Karax prepares a review as Coworker and Argus reviews. When Oliver explicitly
+asks (for example "Aegis, hand off to Karax for review"), any of the four identities may be the
+Coworker or the Reviewer for that one handoff; both names are recorded in the request and findings
+headers. Lane structure is unchanged: MasterChief keeps `work`, `raynor`, and `zeratul`; Hades keeps a
+single universe with one project lane per repository. `bin/review-handoff-verify.sh` validates the
+MasterChief lanes, including distinct Coworker and Reviewer identities.
+
 ## Management
 
 Use the cross-platform helper from either Hades or MasterChief:

@@ -1,8 +1,8 @@
-# Artanis/Karax–Argus Review Handoff — Hades Flow
+# Review Handoff — Hades Flow
 
 Use this flow only when the handoff router identifies the local station as `hades`.
 
-Hades uses a local project-lane root rather than MasterChief's fixed agent-universe lanes. This directory is runtime coordination state, not a network service and not content to commit or synchronize through Mac Forge.
+Hades is a single execution universe with no Work, Raynor, or Zeratul lanes. It uses a local project-lane root, one lane per repository, rather than MasterChief's fixed agent-universe lanes. Role switching (Coworker and Reviewer) changes nothing about that layout. This directory is runtime coordination state, not a network service and not content to commit or synchronize through Mac Forge.
 
 ## Project and Lane Resolution
 
@@ -16,18 +16,28 @@ If the repository is not a Git repository, its root is ambiguous, multiple repos
 
 ## Lane Creation and Isolation
 
-Only the active coworker (Artanis or Karax) may create the handoff root or a missing project lane, and only while processing **“Prep for Argus takeoff”**. Create directories with owner-only access. Each agent must create its owned transporter file with owner-only access; the coworker then creates or completely replaces only `request-<coworker>.md`.
+Only the active Coworker (any of Artanis, Karax, Argus, or Aegis preparing a review) may create the
+handoff root or a missing project lane, and only while processing a prep trigger (**“Prep for Argus
+takeoff”**, **“Prep for `<Reviewer>` takeoff”**, or **“Hand off to `<Reviewer>` for review”**). Create
+directories with owner-only access. Each agent must create its owned transporter file with owner-only
+access; the Coworker then creates or completely replaces only `request-<coworker>.md`.
 
-Argus must not create a missing handoff root, lane, or request file. When processing a handoff, a missing or unsafe path is a configuration error: report it and stop.
+A Reviewer must not create a missing handoff root, lane, or request file. When processing a handoff,
+a missing or unsafe path is a configuration error: report it and stop.
 
-The active lane uses distinct coworker pairs:
+The active lane uses one pair per Coworker, keyed by the Coworker's lowercase identity:
 
-- Artanis request: `/Users/oliver/handoffserver/<project-key>/request-artanis.md`
-- Artanis findings: `/Users/oliver/handoffserver/<project-key>/findings-artanis.md`
-- Karax request: `/Users/oliver/handoffserver/<project-key>/request-karax.md`
-- Karax findings: `/Users/oliver/handoffserver/<project-key>/findings-karax.md`
+- Request: `/Users/oliver/handoffserver/<project-key>/request-<coworker>.md`
+- Findings: `/Users/oliver/handoffserver/<project-key>/findings-<coworker>.md`
 
-Different project lanes may operate concurrently, and both coworker pairs in one project lane may be active at once. While operating in one project lane, never enumerate, inspect, read, or modify another project lane. While operating one coworker's pair, never read or write the other coworker's files except as the common protocol allows to detect an ambiguous **“Argus takeoff”**. A new request replaces only that coworker's prior request.
+`<coworker>` is `artanis`, `karax`, `argus`, or `aegis`. The Reviewer is recorded in the file
+headers, not the filename.
+
+Different project lanes may operate concurrently, and several pairs in one project lane may be active
+at once. While operating in one project lane, never enumerate, inspect, read, or modify another
+project lane. While operating one pair, never read or write another pair's files except as the common
+protocol allows for the Reviewer's header scan on a bare takeoff. A new request replaces only that
+Coworker's prior request.
 
 ## Metadata and Handoff ID
 
@@ -37,6 +47,6 @@ Use:
 - `Lane: <project-key>`
 - Handoff ID: `hades:<project-key>:<coworker>:<ISO-8601 timestamp>`
 
-The coworker token is `artanis` or `karax` and must match the transporter filenames.
+The coworker token is `artanis`, `karax`, `argus`, or `aegis` and must match the transporter filenames. `Reviewer` is a header field only.
 
 The project key in the lane path, metadata, and handoff ID must agree, and the coworker token must match the filenames. The canonical absolute repository path recorded in both transporter files of a pair must match the active repository before review or findings analysis proceeds.
