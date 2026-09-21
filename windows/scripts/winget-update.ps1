@@ -49,6 +49,10 @@ if ($commands.Count -eq 0) {
   return
 }
 
+$noUpgradeExitCode = -1978335189    # APPINSTALLER_CLI_ERROR_UPDATE_NOT_APPLICABLE: already up to date
+$notInstalledExitCode = -1978335212 # APPINSTALLER_CLI_ERROR_NO_APPLICATIONS_FOUND: not installed on this machine
+$benignExitCodes = @($noUpgradeExitCode, $notInstalledExitCode)
+
 $failures = @()
 foreach ($command in $commands) {
   $arguments = @("update") + @(Split-ForgeWingetArguments $command)
@@ -56,7 +60,7 @@ foreach ($command in $commands) {
   Write-Host "winget $($arguments -join ' ')" -ForegroundColor Cyan
   if ($PSCmdlet.ShouldProcess($command, "winget update")) {
     & winget @arguments
-    if ($LASTEXITCODE -ne 0) {
+    if ($LASTEXITCODE -ne 0 -and $benignExitCodes -notcontains $LASTEXITCODE) {
       $failures += $command
       Write-Warning "winget update failed for '$command' (exit code $LASTEXITCODE)."
     }
