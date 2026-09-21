@@ -1,417 +1,417 @@
 # type	name	description
-alias	oliver	Go to the home directory.
-alias	pc	Go to the iCloud personal-organizer folder.
-alias	doc	Go to Documents.
-alias	desk	Go to Desktop.
-alias	dev	Go to the local dev folder.
-alias	down	Go to Downloads.
-alias	projects	Go to the projects folder.
-alias	cdp	Copy the current directory path to the clipboard.
-alias	reloadterm	Reload the current zsh config in this terminal.
-alias	fixdock	Restart the macOS Dock process.
-alias	kp	Kill processes listening on a TCP port, for example kp 8080.
-alias	info	Show system health; --cycle records meaningful changes and configured agent usage once per minute.
-alias	inf	Show system health; --cycle records meaningful changes and configured agent usage once per minute (short for info).
-alias	help	Open the forge command picker for aliases and scripts.
-alias	jadd	Add a journal entry to config-local/journal.json; prompts for title/value/description, where a slash-separated title like personal/general/wifi nests the entry under folders/chapters.
-alias	jrm	Fuzzy-search journal entries (Tab to multi-select across chapters) and delete them after typing 'delete' to confirm.
-alias	jls	Browse journal entries in a colored fzf tree; press Enter on an entry to copy its value/title/description/all to the clipboard. Optional args narrow it: 'jls <chapter>' keeps entries under matching chapters, 'jls <chapter> <entry>' also filters the entries. Prints a plain tree when not interactive.
-alias	jedit	Pick a journal entry via fzf and edit its title/value/description; changing the title moves the entry (Enter keeps current, '-' clears the description).
-alias	encrypt	fzf multi-select files in the current directory and encrypt them in place using config-local/encrypt.key (auto-generated on first use); rewrites each file as a marker line plus base64 AES-256-CBC ciphertext.
-alias	e	Encrypt selected files in the current directory in place (short for encrypt).
-alias	decrypt	fzf multi-select previously encrypted files in the current directory and decrypt them in place using config-local/encrypt.key.
-alias	de	Decrypt selected files in the current directory in place (short for decrypt).
-alias	ai-config	Verify, install, or fast-forward-sync shared AI instructions and tool bootstrap files.
-alias	ai-verify	Run read-only shared AI configuration verification.
-alias	ai-install	Install shared AI configuration with recoverable backups for conflicting local files.
-alias	ai-context	Resolve the current AI station, universe, repository, stack, and instruction context.
-alias	docker-on	Start the Linux Docker Engine on demand and wait until it is ready.
-alias	don	Start the Linux Docker Engine on demand and wait until it is ready (short for docker-on).
-alias	port-release	Port a commit onto a release branch by creating a local cherry-pick branch.
-alias	prl	Port a commit onto a release branch by creating a local cherry-pick branch (short for port-release).
-alias	web	Open a configured web entry in the preferred browser; use web change to switch browser.
-alias	ftp	Pick an ftp-connection via fzf and open a dual-pane browser (remote left, local right); type to filter fzf-style, F5 download, F6 upload.
-alias	sshc	Pick a station via fzf (or pass a name) and open a dual-pane SSH/SFTP browser (remote left, local right); same keys as ftp.
-alias	net	List active network connections by friendly name via fzf, pick one, and run an Apple networkQuality speed test bound to that interface.
-alias	show	Pick an informational section via fzf (or pass its id, e.g. 'show hosts') and print it; sections are data-driven from configs/show-info.json.
-alias	fixdns	Repair stale manual macOS DNS only when normal resolution and every configured resolver fail but 1.1.1.1 works.
-alias	winappclean	Delete Parallels Windows app shortcuts except Visual Studio.app.
-alias	vpn	Start a configured VPN connection from forge state/secrets.
-alias	dvpn	Disconnect the active VPN connection.
-alias	vpns	Show whether an openconnect VPN connection is active.
-alias	eject-all	Eject external volumes with forge safety exclusions and confirmation.
-alias	ejectall	Eject external volumes with forge safety exclusions and confirmation (short for eject-all).
-alias	ea	Short shortcut for eject-all.
-alias	hdd-clean	Find old large files by extension and delete them after confirmation.
-alias	hc	Find old large files by extension and delete them after confirmation (short for hdd-clean).
-alias	binclear	Remove bin and debug directories from the current tree.
-alias	al	Open the alias finder and copy the selected alias name.
-alias	a	Open the alias finder and copy the selected alias name (short for al).
-alias	workset	Switch the active SQL Docker data and snapshot storage paths.
-alias	ws	Switch the active SQL Docker data and snapshot storage paths (short for workset).
-alias	workinfo	Show the current active SQL Docker and snapshot storage paths.
-alias	wi	Show the current active SQL Docker and snapshot storage paths (short for workinfo).
-alias	ardis-migrate	Run Ardis migrations against a selected local SQL database. Optional --version YEAR selects a parallel SQL container.
-alias	am	Run Ardis migrations against a selected local SQL database (short for ardis-migrate). Optional --version YEAR selects a parallel SQL container.
-alias	ram	Run Ardis migrations against a database on a configured remote SQL Server target.
-alias	ardis-patch	Apply, remove, or inspect configured Ardis code patches.
-alias	ap	Apply, remove, or inspect configured Ardis code patches (short for ardis-patch).
-alias	ardis-complete	Complete Ardis planning/activity data over a selected date range.
-alias	ac	Complete Ardis planning/activity data over a selected date range (short for ardis-complete).
-alias	perf-cache-reset	Clear Perform client cache artifacts.
-alias	pcr	Clear Perform client cache artifacts (short for perf-cache-reset).
-alias	publish-tt	Build the Timetrack solution, then build and push its Docker image.
-alias	publish-te	Build the Tools Extensions solution, then build and push its Docker image.
-alias	publish-perf-local	Interactively publish and start a selected Perform branch in a local Portainer-style Docker stack.
-alias	genopenapi	Regenerate the Perform OpenAPI JSON and TypeScript client using the Ardis.Perform namespace; pass --old for Asms2.Web.
-alias	goa	Regenerate the Perform OpenAPI JSON and TypeScript client using the Ardis.Perform namespace; pass --old for Asms2.Web (short for genopenapi).
-alias	genopenapitimetrack	Regenerate the TimeTrack OpenAPI JSON and TypeScript client.
-alias	organizer	Organize configured folders by extension rules from work-state.
-alias	org	Organize configured folders by extension rules from work-state (short for organizer).
-alias	o	Short shortcut for organizer.
-alias	dotnet-clean	Remove generated build output and caches from the current tree; pass --node_modules to include dependencies.
-alias	dnc	Remove generated build output and caches from the current tree; pass --node_modules to include dependencies (short for dotnet-clean).
-alias	clean	Delete contents of selected configured cleanup targets.
-alias	mac-clean	Run standard macOS cleanup scripts in sequence; use --full to include full-only items.
-alias	linux-clean	Run approved reconstructible Linux cache cleaners; use --dry-run to preview and --full for desktop caches.
-alias	sim	Cycle focus through the captured desktop apps with mouse movement; use --cycle SECONDS to save the interval.
-alias	present	Set external display presentation resolution/mode.
-alias	prs	Set external display presentation resolution/mode (short for present).
-alias	convert-mov	Convert a selected .mov in the current folder to a readable, high-quality GIF (half-res, ffmpeg+gifski); use -n to name output, -o to drop near-duplicate frames (smaller GIF).
-alias	patch	Apply, remove, or inspect intervention patches; use --old for legacy project paths; use --custom to edit mock license chapters.
-alias	p	Apply intervention patches; use --old for legacy project paths; use --custom to edit mock license chapters.
-alias	pr	Remove intervention patches and restore the original mock license chapter list.
-alias	stio	Copy or move a selected local file/folder to a station destination, replacing same-name targets.
-alias	sio	Copy or move a selected local file/folder to a station destination, replacing same-name targets (short for stio).
-alias	h2c	Sync Hades changes up to Cerber.
-alias	c2h	Sync Cerber changes down to Hades.
-alias	h2c-preview	Preview what would sync from Hades up to Cerber.
-alias	c2h-preview	Preview what would sync from Cerber down to Hades.
-alias	perf-to-cerber	Sync the Perform profile from Hades up to Cerber.
-alias	perf-from-cerber	Sync the Perform profile from Cerber down to Hades.
-alias	perf-to-cerber-preview	Preview the Perform sync from Hades up to Cerber.
-alias	perf-from-cerber-preview	Preview the Perform sync from Cerber down to Hades.
-alias	gs	Show git working tree status.
-alias	gco	Check out a git branch or path.
-alias	gp	Pull from the configured git remote.
-alias	gfo	Fetch updates from origin.
-alias	gpu	Push the current branch to its configured remote.
-alias	gpo	Publish the current local branch to origin with upstream; fails if the remote branch already exists.
-alias	peer-fetch	Choose and fetch a committed feature branch from Hades or MasterChief, updating only by fast-forward.
-alias	mc2h	Fetch a feature branch from MasterChief personal work into the current Hades repository.
-alias	r2h	Fetch a feature branch from Raynor into the current Hades repository.
-alias	z2h	Fetch a feature branch from Zeratul into the current Hades repository.
-alias	h2mc	Fetch a feature branch from Hades into the current MasterChief personal repository.
-alias	h2r	Fetch a feature branch from Hades into the current Raynor repository.
-alias	h2z	Fetch a feature branch from Hades into the current Zeratul repository.
-alias	gb	List or manage git branches.
-alias	switch	Interactively switch git branches.
-alias	sw	Interactively switch git branches (short for switch).
-alias	gbd	Delete local git branches matching a pattern.
-alias	gdel	Delete local git branches containing a keyword.
-alias	branch-clean	Preview or delete local branches by safe prefix.
-alias	bc	Preview or delete local branches by safe prefix (short for branch-clean).
-alias	dps	List running Docker containers.
-alias	dcu	Start the current docker compose stack.
-alias	dcd	Stop and remove the current docker compose stack.
-alias	dba	Administer a local SQL database: offline/online, drop, recovery, shrink. Optional --version YEAR selects a parallel SQL container.
-alias	dblist	List local SQL databases with friendly total, data, and log sizes. Optional --version YEAR selects a parallel SQL container.
-alias	dbs	Start stopped Docker containers, launching Docker Desktop if needed.
-alias	dbu	Upload a selected .bak from the current folder into the SQL container. Optional --version YEAR selects a parallel SQL container.
-alias	dbr	Restore a selected .bak into the forge SQL Server container. Optional --version YEAR creates/uses a parallel SQL container.
-alias	dbrf	Attach a database from a selected .mdf (+ optional matching .ldf) into the forge SQL Server container, proposing a name extracted from the file. Optional --version YEAR creates/uses a parallel SQL container.
-alias	db-index	Rebuild all indexes in a selected local Docker SQL database. Optional --version YEAR selects a parallel SQL container.
-alias	dbsn	Create a SQL backup snapshot from a selected database. Optional --version YEAR selects a parallel SQL container.
-alias	rdbsn	Create a backup from a configured remote SQL Server target.
-alias	rdbr	Restore a snapshot back into a remote SQL Server, overriding an existing database or cloning into a new one with mdf/ldf collision protection.
-alias	rdbsndrop	Delete .bak snapshot file(s) from a remote SQL Server target's backup path (multi-select, with size shown and space freed reported).
-alias	rdown	Choose a remote .bak with its size shown, then download it to a selected local destination.
-alias	rup	Upload a local .bak backup to a selected remote destination.
-alias	dbc	Clear SQL databases; default hard mode removes container/data after typed confirmation. Optional --version YEAR targets a parallel SQL container.
-alias	dbo	Run configured SQL table cleanup and shrink; data loss is possible.
-alias	dbfix	Run SQL fix scripts from the repo sqls folder against a chosen database.
-alias	sdb	Switch the active appsettings connection string for a configured project.
-alias	sqlexec	Run selected .sql files against a chosen connection/database.
-alias	se	Run selected .sql files against a chosen connection/database (short for sqlexec).
-alias	script-run	Run selected .sql files from the current folder against a chosen SQL connection.
-alias	sr	Select one or more .sql files from the current folder, choose a SQL connection, then run them in order after confirmation.
-alias	forge	Go to the mac-forge repo root.
-alias	work	Go to the main work folder.
-alias	perf	Go to the Ardis Perform repo.
-alias	timetrack	Go to the Ardis Timetrack repo.
-alias	tt	Go to the Ardis Timetrack repo (short for timetrack).
-alias	ttc	Go to the Ardis Timetrack client folder.
-alias	ttclient	Go to the Ardis Timetrack client folder.
-alias	ttmd	Go to the Ardis Timetrack migrations database folder.
-alias	perfclient	Go to the Ardis Perform Angular client.
-alias	perfdev	Go to the Ardis Perform DEV worktree.
-alias	perf228	Go to the Ardis Perform 228 worktree.
-alias	perf230	Go to the Ardis Perform 230 worktree.
-alias	perfold	Go to the older Ardis Perform worktree.
-alias	perfclient230	Go to the Ardis Perform 230 Angular client.
-alias	perftest	Run all Ardis Perform unit tests, or filter them with an optional test-name keyword.
-alias	gpt	Go to the Ardis Tools Extensions repo.
-alias	gptbin	Go to the Ardis Utils debug build output folder.
-alias	lc	Go to the Ardis local connector repo.
-alias	localconnector	Go to the Ardis local connector repo.
-alias	fn	Go to the macOS Frontnotes project.
-alias	bl	Go to the BookingLounge project.
-alias	meerkat	Go to the Meerkat project.
-alias	rooted	Go to the Rooted project.
-alias	aiwk	Go to the Alice in Wonder Kitchen project.
-alias	clients	Go to shared SQL client backup/storage folder.
-alias	invoice	Go to the TNI invoice project.
-alias	inv	Go to the TNI invoice project (short for invoice).
-alias	ti	Go to the TNI invoice project (short for invoice).
-alias	tally-legacy-import	Rebuild only tally-dev without prompting, then import all live TniInvoice data and reconcile it.
-alias	tally-legacy-reset	Drop and rebuild only the disposable tally-dev database without prompting.
-alias	tally-legacy-refresh	Compatibility alias for the complete tally-legacy-import reset and import cycle.
-alias	perflog	Go to Perform output logs.
-alias	andi-notes	Go to the Obsidian Andi notes folder.
-alias	an	Go to the Obsidian Andi notes folder (short for andi-notes).
-alias	notes	Go to the Obsidian Andi notes folder (short for andi-notes).
-alias	vsql	Go to shared SQL storage.
-alias	cloudforge	Go to the iCloud forge folder.
-alias	snapshots	Go to shared SQL Docker snapshots.
-alias	snap	Go to shared SQL Docker snapshots (short for snapshots).
-alias	snapdel	Delete everything in the shared snapshots folder; no prompt.
-alias	locsql	Go to the local SQL folder.
-alias	lcsql	Go to the local SQL folder (short for locsql).
-alias	locsnapshots	Go to local SQL snapshots.
-alias	lcsnaphots	Typo-compatible shortcut for locsnapshots.
-alias	lcsnap	Go to local SQL snapshots (short for locsnapshots).
-alias	lcs	Short shortcut for locsnapshots.
-alias	lcsnapdel	Delete everything in local SQL snapshots; no prompt.
-alias	shared	Go to the shared mounted volume.
-alias	cloud	Go to the iCloud Drive root.
-alias	gdrive	Go to the Google Drive My Drive folder.
-alias	demo	Go to the Cerber-mounted Ardis demo folder.
-alias	work-cerb	Go to the Cerber-mounted work volume.
-alias	copilot	Run GitHub Copilot CLI.
-alias	aiusage	Show local agent/API usage stats.
-alias	dela	Delete everything in the current directory; no prompt.
-alias	perflogclean	Delete all files in Perform output logs; no prompt.
-alias	screenshotclean	Delete PNG screenshots from Desktop; no prompt.
-alias	rmc	SSH into MasterChief.
-alias	rmcr	SSH into MasterChief over Tailscale.
-alias	showeth	Show network hardware ports and their current IP addresses.
-alias	mcshutdown	Shut down Ubuntu on MasterChief over SSH.
-alias	mcsleep	Suspend Ubuntu on MasterChief over SSH.
-alias	ms	Suspend Ubuntu on MasterChief over SSH (short for mcsleep).
-alias	mcboot	Wake MasterChief with Wake-on-LAN.
-alias	mcbt	Wake MasterChief with Wake-on-LAN (short for mcboot).
-alias	mb	Short shortcut for mcboot.
-alias	wake	Pick any station via fzf (or pass a name) and send it a Wake-on-LAN magic packet using its configured MAC; errors clearly when the MAC is not set.
-alias	rider	Open JetBrains Rider.
-alias	aliases	Print the alias file.
-alias	codex-local-register	Register the local LAN LLM bundle from the current directory as Codex profile local-lan; use --verify to test it.
-alias	link-dotfiles	Link Linux dotfiles into place.
-alias	ldf	Link Linux dotfiles into place (short for link-dotfiles).
-alias	verify-workstation	Run the read-only MasterChief workstation and agent-universe report locally or remotely from Hades.
-alias	vw	Run the read-only MasterChief workstation and agent-universe report locally or remotely from Hades (short for verify-workstation).
-alias	workspace-primary	Load the primary Linux workspace layout.
-alias	wp	Load the primary Linux workspace layout (short for workspace-primary).
-alias	display	Set Linux display scaling.
-alias	mnt	Select and mount a saved Linux network share.
-alias	mnthadesw	Mount the Hades work share on Linux.
-alias	mnthw	Mount the Hades work share on Linux (short for mnthadesw).
-alias	umnthadesw	Unmount the Hades work share on Linux.
-alias	umnthw	Unmount the Hades work share on Linux (short for umnthadesw).
-alias	hades-tunnel-up	Open the SSH tunnel to Hades Angular/Perform dev servers.
-alias	hades-tunnel-down	Close the SSH tunnel to Hades.
-alias	hades-tunnel-status	Show whether the Hades dev tunnel is up.
-alias	htu	Open the SSH tunnel to Hades Angular/Perform dev servers (short for hades-tunnel-up).
-alias	htd	Close the SSH tunnel to Hades (short for hades-tunnel-down).
-alias	raynor	Open Raynor's persistent MasterChief session or use optional shell, start, attach, status, logs, and stop actions.
-alias	zeratul	Open Zeratul's persistent MasterChief session or use optional shell, start, attach, status, logs, and stop actions.
-alias	cerber-tunnel-up	Open Cerber's tunnel to the Hades Angular/Perform dev servers from macOS.
-alias	cerber-tunnel-status	Show and verify Cerber's tunnel to Hades from macOS.
-alias	cerber-tunnel-down	Close Cerber's tunnel to Hades from macOS.
-script	aliases	Open the alias finder and copy the selected shortcut.
-script	ai-config	Verify, install, or fast-forward-sync shared AI instructions and tool bootstrap files.
-script	ardis-complete	Complete Ardis planning/activity data over a selected date range.
-script	ardis-migrate	Run Ardis migrations against a selected local SQL database. Optional --version YEAR selects a parallel SQL container.
-script	bin-clear	Remove bin and debug directories from the current tree.
-script	branch-delete	Delete local git branches matching a pattern.
-script	branch-local-clean	Preview or delete local branches by safe prefix.
-script	clean	Delete contents of selected configured cleanup targets.
-script	mac-clean	Run standard macOS cleanup scripts in sequence; use --full to include full-only items.
-script	mac-clean-browser-caches	Clear only Chrome and Brave per-profile disk and code caches while preserving credentials, sessions, profiles, browsing data, and configuration.
-script	mac-clean-claude-cache	Clear only Claude Desktop browser response and code caches while preserving credentials, conversations, sessions, application data, runtime bundles, and configuration.
-script	mac-clean-codex-cache	Clear only Codex desktop browser response and code caches while preserving credentials, conversations, sessions, projects, worktrees, and configuration.
-script	mac-clean-copilot-index-cache	Clear only GitHub Copilot project-context and project-index caches while preserving authentication, sessions, configuration, plugins, binaries, and runtime packages.
-script	mac-clean-docker-build-cache	Prune only reclaimable Docker build cache unused for seven days; preserve containers, images, volumes, networks, builders, configuration, and credentials.
-script	mac-clean-homebrew	Clean Homebrew using its default cleanup and retention policy.
-script	mac-clean-nuget-transient	Clear NuGet HTTP, temporary, and plugin caches while preserving global packages and configuration.
-script	mac-clean-npm-cache	Verify npm's configured cache and garbage-collect unneeded content without changing npm configuration.
-script	mac-clean-rider-caches	Clear only Rider indexes, IDE caches, and ReSharper caches while preserving Local History, file/test history, plugins, settings, projects, VCS data, and credentials.
-script	mac-clean-yarn-cache	Clear Yarn v1's downloaded package cache while preserving projects, dependencies, lockfiles, global packages, configuration, and credentials.
-script	mac-clean-swiftpm-cache	Purge SwiftPM's global repository cache while preserving package resolution, project builds, configuration, security fingerprints, and credentials.
-script	mac-clean-stale-temp	Delete current-user temporary entries older than seven days, or recognized AI-tool entries older than 24 hours, while preserving open, recently modified, or macOS-protected content.
-script	mac-clean-xcode-derived-data	Delete Xcode DerivedData entries whose entire contents are older than seven days while preserving archives, configuration, and recent build data.
-script	mac-clean-xcode-simulators	Quit Simulator, shut down and erase all devices, and delete unavailable devices.
-script	mac-clean-xcode-test-clones	Delete verified Xcode parallel-test simulator clones older than seven days.
-script	linux-clean	Run approved reconstructible Linux cache cleaners; use --dry-run to preview and --full for desktop caches.
-script	linux-clean-browser-caches	Clear Chrome disk and code caches while preserving credentials, sessions, profiles, browsing data, and configuration.
-script	linux-clean-claude-cache	Clear Claude CLI staging cache while preserving credentials, conversations, sessions, configuration, projects, and MCP logs.
-script	linux-clean-copilot-index-cache	Clear Copilot project-context and project-index caches while preserving authentication, configuration, plugins, binaries, and runtime packages.
-script	linux-clean-docker-build-cache	Prune only Docker build cache unused for seven days; preserve containers, images, volumes, networks, configuration, credentials, and SQL data.
-script	linux-clean-nuget-transient	Clear NuGet HTTP, temporary, and plugin caches while preserving global packages and configuration.
-script	linux-clean-npm-cache	Verify npm's configured cache and garbage-collect unneeded content without changing npm configuration.
-script	linux-clean-rider-caches	Clear Rider indexes and reconstructible caches while preserving history, settings, projects, VCS data, plugins, models, and credentials.
-script	linux-clean-yarn-cache	Clear Yarn v1 downloaded packages while preserving projects, dependencies, lockfiles, global packages, configuration, and credentials.
-script	linux-clean-stale-temp	Delete stale current-user temporary entries while preserving open, recent, symlinked, and mixed-ownership content.
-script	linux-clean-desktop-caches	Clear reconstructible thumbnail and shader caches as a full-only cleanup.
-script	sim	Cycle focus through the desktop apps captured at startup until Ctrl+C, with mouse movement and no clicks.
-script	convert-mov	Convert a selected .mov in the current folder to a readable, high-quality GIF (half-res, ffmpeg+gifski); use -n to name output, -o to drop near-duplicate frames (smaller GIF).
-script	db-admin	Administer a local SQL database: offline/online, drop, recovery, shrink. Optional --version YEAR selects a parallel SQL container.
-script	db-clear	Clear SQL databases; default hard mode removes container/data after typed confirmation. Optional --version YEAR targets a parallel SQL container.
-script	db-fix	Run SQL fix scripts from the repo sqls folder against a chosen database.
-script	db-index	Rebuild all indexes in a selected local Docker SQL database. Optional --version YEAR selects a parallel SQL container.
-script	db-optimize	Run configured SQL table cleanup and shrink; data loss is possible.
-script	db-remote-backup	Create a backup from a configured remote SQL Server target.
-script	db-remote-download	Choose a remote .bak with its size shown, then download it to a selected local destination.
-script	db-remote-upload	Upload a local .bak backup to a selected remote destination.
-script	db-restore	Restore a selected .bak into the forge SQL Server container. Optional --version YEAR creates/uses a parallel SQL container.
-script	db-restore-files	Attach a database from a selected .mdf (+ optional matching .ldf) into the forge SQL Server container, proposing a name extracted from the file. Optional --version YEAR creates/uses a parallel SQL container.
-script	db-snapshot	Create a SQL backup snapshot from a selected database. Optional --version YEAR selects a parallel SQL container.
-script	db-upload-bak	Upload a selected .bak from the current folder into the SQL container. Optional --version YEAR selects a parallel SQL container.
-script	docker-start	Start stopped Docker containers, launching Docker Desktop if needed.
-script	dotnet-clean	Remove generated build output and caches from the current tree; pass --node_modules to include dependencies.
-script	dvpn	Disconnect the active VPN connection.
-script	vpn-status	Show whether an openconnect VPN connection is active.
-script	eject-all	Eject external volumes with forge safety exclusions and confirmation.
-script	forge	Shared forge runtime; usually sourced by other scripts.
-script	gen-open-api	Regenerate the Perform OpenAPI JSON and TypeScript client.
-script	gen-open-api-timetrack	Regenerate the TimeTrack OpenAPI JSON and TypeScript client.
-script	git-del	Delete local git branches containing a keyword.
-script	git-switch	Interactively switch git branches.
-script	git-peer-fetch	Choose and fetch a committed feature branch from Hades or MasterChief with fast-forward-only safety.
-script	hades-tunnel	Open/close/status the SSH tunnel from Windows or Linux to Hades dev servers.
-script	hdd-clean	Find old large files by extension and delete them after confirmation.
-script	help	Open the forge command picker for aliases and scripts.
-script	info	Show a forge machine/system health snapshot.
-script	mcboot	Wake MasterChief with Wake-on-LAN.
-script	wake	Pick any station via fzf (or pass a name) and send it a Wake-on-LAN magic packet using its configured MAC; errors clearly when the MAC is not set.
-script	mcsleep	Suspend Ubuntu on MasterChief over SSH.
-script	masterchief-agent-session	Attach to or create Raynor's or Zeratul's isolated persistent tmux session, preferring MasterChief UTP with Wi-Fi fallback.
-script	organizer	Organize configured folders by extension rules from work-state.
-script	patch	Apply, remove, or inspect intervention patches; --custom edits mock license chapters, pr restores the original list.
-script	license-chapters	Edit, snapshot, or restore local mock license chapter amounts.
-script	perform-cache-reset	Clear Perform client cache artifacts.
-script	perform-cerber-sync	Sync configured work profiles between Hades and Cerber.
-script	cerber-hades-tunnel	Control and verify Cerber's Hades development tunnel through Parallels.
-script	perform-prep	Prepare Perform build output dependencies.
-script	perform-test	Run all Ardis Perform unit tests, or filter them with an optional test-name keyword.
-script	port-release	Port a commit onto a release branch by creating a local cherry-pick branch.
-script	present	Set external display presentation resolution/mode.
-script	sql-execute	Run selected .sql files against a chosen connection/database.
-script	script-run	Run selected .sql files from the current folder against a chosen SQL connection.
-script	station-io	Copy or move a selected local file/folder to a station destination, replacing same-name targets.
-script	switch-db	Switch the active appsettings connection string for a configured project.
-script	vpn	Start a configured VPN connection from forge state/secrets.
-script	web	Open a configured web entry in the preferred browser; use web change to switch browser.
-script	ftp	Pick an ftp-connection via fzf and open a dual-pane browser (remote left, local right); type to filter fzf-style, F5 download, F6 upload.
-script	sshc	Pick a station via fzf (or pass a name) and open a dual-pane SSH/SFTP browser (remote left, local right); same keys as ftp.
-script	net	List active network connections by friendly name via fzf, pick one, and run an Apple networkQuality speed test bound to that interface.
-script	show	Pick an informational section via fzf (or pass its id, e.g. 'show hosts') and print it; sections are data-driven from configs/show-info.json.
-script	fix-dns	Repair stale manual macOS DNS only when normal resolution and every configured resolver fail but 1.1.1.1 works.
-script	win-shortcut-clean	Delete Parallels Windows app shortcuts except Visual Studio.app.
-script	work	Switch or inspect the active SQL Docker data and snapshot storage paths.
-script	ardis-migrate-remote	Run Ardis migrations locally against a configured remote SQL Server target instead of the local database.
-script	configure-ghostty	Symlink the shared Ghostty terminal config into place on macOS.
-script	convert-heic	Convert HEIC images in the current directory to JPG via an fzf multi-select picker.
-script	db-list	List local SQL Server databases with state, recovery model, and data/log/total size. Optional --version YEAR selects a parallel SQL container.
-script	db-remote-restore	Restore a .bak from a configured remote SQL Server's backup path back into that same server, remapping files with WITH MOVE.
-script	deploy-meerkat-site	Upload and switch the live release of the meerkat.tnisoft.ro marketing site on vps1 (dry-run by default; --apply to go live).
-script	deploy-tnisoft-site	Upload and switch the live release of the tnisoft.ro marketing site on vps1 (dry-run by default; --apply to go live).
-script	deploy-wonderkitchen	Upload and switch the live release of the generated WonderKitchen static catalog on vps1 (dry-run by default; --apply to go live).
-script	disp	Pick a display layout (All / Laptop only / Extended only) via fzf and apply it.
-script	docker-clean-known-facts	Remove only exact, verified Docker leftovers from our publish workflows.
-script	docker-cleanup	Remove every local Docker image not used by a currently running container.
-script	dotnet-build	Build the .sln/.slnx (or .csproj) found in the current directory; fzf-pick when several exist.
-script	git-publish-origin	Publish the current local branch to origin with upstream; fails if the remote branch already exists.
-script	mac-clean-go-build-cache	Clear the Go build cache (GOCACHE) only; module cache is untouched.
-script	mac-clean-pip-cache	Purge the pip download/wheel cache; installed packages and virtualenvs are untouched.
-script	mac-clean-vscode-caches	Clear only VS Code's disk and code caches while preserving settings, extensions, and history.
-script	mac-clean-xcode-device-support	Delete Xcode iOS DeviceSupport symbol bundles older than 30 days.
-script	perform-local-portainer	Build and run a local Portainer-style Docker stack for Ardis Perform without touching the app repo.
-script	publish-te	Build the Tools Extensions solution and publish/push its Docker image.
-script	publish-tt	Build the Ardis Timetrack solution and publish/push its Docker image.
-script	tally-app	Build and launch the Tally macOS app (debug or release, with separate preference domains).
-alias	v1sn	Create a .bak snapshot of a vps1 database into the vps1 snapshots folder.
-alias	vps1-snapshot	Long form of v1sn: create a .bak snapshot of a vps1 database.
-alias	v1r	Restore a .bak from the vps1 snapshots folder into the vps1 SQL Server.
-alias	vps1-restore	Long form of v1r: restore a vps1 snapshot into the vps1 SQL Server.
-alias	v1dbindex	Rebuild all indexes in a selected vps1 SQL database.
-alias	vps1-db-index	Long form of v1dbindex: rebuild all indexes in a selected vps1 SQL database.
-alias	v1down	Download vps1 .bak snapshots into the current directory; multiple selections become a timestamped zip archive.
-alias	vps1-download	Long form of v1down: download vps1 snapshots into the current directory.
-alias	v1up	Upload a local .bak into the vps1 snapshots folder for later restore.
-alias	vps1-upload	Long form of v1up: upload a local .bak into the vps1 snapshots folder.
-alias	rdown-to-v1	Choose a remote .bak with its size shown, then relay it from the portainer share straight to vps1 snapshots without touching the Mac SSD.
-alias	vps1-relay-download	Long form of rdown-to-v1: choose a remote .bak with its size shown and stream it from the share to vps1 with no local copy.
-alias	v1drop	Drop live user database(s) on vps1 (multi-select, confirm with 'delete').
-alias	vps1-drop	Long form of v1drop: drop live user database(s) on vps1.
-alias	v1sndrop	Delete .bak snapshot file(s) from the vps1 snapshots folder (multi-select).
-alias	vps1-snapshot-drop	Long form of v1sndrop: delete vps1 .bak snapshot file(s).
-alias	v1am	Run Ardis migrations against a database on vps1.
-alias	vps1-migrate	Long form of v1am: run Ardis migrations against a vps1 database.
-alias	v1list	List all installed databases and all available snapshots on vps1.
-alias	vps1-list	Long form of v1list: list vps1 databases and snapshots.
-alias	v1opt	Optimize a vps1 database: set recovery SIMPLE and shrink log/data files to reclaim disk (best-effort, no data deleted).
-alias	vps1-optimize	Long form of v1opt: shrink/optimize a vps1 database to reduce its disk footprint.
-alias	vps1-status	Show vps1 host health plus storage per app keyword (web dirs + databases), endpoints, CPU, and recent history.
-alias	v1-bl-publish	Build and publish the BookingLounge API to a vps1 endpoint (development, or gated production: main + clean tree).
-alias	vps1-bl-publish	Long form of v1-bl-publish: publish the BookingLounge API to a vps1 endpoint.
-alias	v1-bl-tunnel-up	Open the SSH tunnel so localhost:5081 reaches the private BookingLounge dev API on vps1.
-alias	v1-bl-tunnel-down	Close the BookingLounge dev API SSH tunnel (localhost:5081).
-alias	v1-bl-tunnel-status	Show whether the BookingLounge dev API SSH tunnel is up (localhost:5081) + dev health.
-alias	v1-meerkat-tunnel-up	Open the SSH tunnel so localhost:5281 reaches the private Meerkat dev API on vps1.
-alias	v1-meerkat-tunnel-down	Close the Meerkat dev SSH tunnel (localhost:5281).
-alias	v1-meerkat-tunnel-status	Show whether the Meerkat dev SSH tunnel is up (localhost:5281) + dev health.
-alias	meerkat-enroll	SSH into vps1 and print the current Meerkat direct enrollment string using sudo.
-alias	v1-tally-tunnel-up	Open the SSH tunnel so localhost:5181 reaches the private Tally dev API on vps1 (needed by the macOS Debug build).
-alias	v1-tally-tunnel-down	Close the Tally dev API SSH tunnel (localhost:5181).
-alias	v1-tally-tunnel-status	Show whether the Tally dev API SSH tunnel is up (localhost:5181) + dev health.
-alias	v1-license-tunnel-up	Open the SSH tunnel so localhost and the private Parallels network can reach CodeMeter on vps1.
-alias	v1-license-tunnel-down	Close the vps1 CodeMeter license SSH tunnel (localhost:22350).
-alias	v1-license-tunnel-status	Show whether the vps1 CodeMeter license SSH tunnel is up (localhost:22350).
-alias	v1-sql-tunnel-up	Open the SSH tunnel so localhost:14333 reaches the private vps1 SQL Server (VS Code: Server = localhost,14333).
-alias	v1-sql-tunnel-down	Close the vps1 SQL Server SSH tunnel (localhost:14333).
-alias	v1-sql-tunnel-status	Show whether the vps1 SQL Server SSH tunnel is up (localhost:14333).
-alias	v1-sql-up	Bring selected OFFLINE vps1 databases ONLINE via an interactive fzf multi-select picker.
-alias	v1-sql-down	Take selected ONLINE vps1 databases OFFLINE via an interactive fzf multi-select picker.
-alias	vps1-sql-up	Long form of v1-sql-up: bring selected vps1 databases ONLINE.
-alias	vps1-sql-down	Long form of v1-sql-down: take selected vps1 databases OFFLINE.
-alias	vps1-bl-tunnel-up	Long form of v1-bl-tunnel-up: open the BookingLounge dev API SSH tunnel (localhost:5081).
-alias	vps1-bl-tunnel-down	Long form of v1-bl-tunnel-down: close the BookingLounge dev API SSH tunnel.
-alias	vps1-bl-tunnel-status	Long form of v1-bl-tunnel-status: show whether the BookingLounge dev API SSH tunnel is up.
-alias	vps1-meerkat-tunnel-up	Long form of v1-meerkat-tunnel-up: open the Meerkat dev API SSH tunnel (localhost:5281).
-alias	vps1-meerkat-tunnel-down	Long form of v1-meerkat-tunnel-down: close the Meerkat dev API SSH tunnel.
-alias	vps1-meerkat-tunnel-status	Long form of v1-meerkat-tunnel-status: show whether the Meerkat dev API SSH tunnel is up.
-alias	vps1-tally-tunnel-up	Long form of v1-tally-tunnel-up: open the Tally dev API SSH tunnel (localhost:5181).
-alias	vps1-tally-tunnel-down	Long form of v1-tally-tunnel-down: close the Tally dev API SSH tunnel.
-alias	vps1-tally-tunnel-status	Long form of v1-tally-tunnel-status: show whether the Tally dev API SSH tunnel is up.
-alias	vps1-sql-tunnel-up	Long form of v1-sql-tunnel-up: open the vps1 SQL Server SSH tunnel (localhost:14333).
-alias	vps1-sql-tunnel-down	Long form of v1-sql-tunnel-down: close the vps1 SQL Server SSH tunnel.
-alias	vps1-sql-tunnel-status	Long form of v1-sql-tunnel-status: show whether the vps1 SQL Server SSH tunnel is up.
-alias	convert-heic	Convert HEIC images in the current directory to JPG via an fzf multi-select picker.
-alias	convo	Launch the Convoy Hunter Godot game in windowed mode.
-alias	data	Go to /data.
-alias	dock	Go to /data/docker.
-alias	docker-cleanup	Remove every local Docker image not used by a currently running container.
-alias	dcl	Remove every local Docker image not used by a currently running container (short for docker-cleanup).
-alias	docker-clean-fact	Remove only exact, verified Docker leftovers from our publish workflows.
-alias	dcf	Remove only exact, verified Docker leftovers from our publish workflows (short for docker-clean-fact).
-alias	disp	Pick a display layout (All / Laptop only / Extended only) via fzf and apply it.
-alias	dotnetbuild	Build the .sln/.slnx (or .csproj) found in the current directory; fzf-pick when several exist; add -r for Release (default Debug).
-alias	dnb	Build the .sln/.slnx (or .csproj) found in the current directory; fzf-pick when several exist; add -r for Release (default Debug) (short for dotnetbuild).
-alias	dwkdata	Deploy the generated WonderKitchen static catalog to vps1 (dry-run by default; --apply to go live).
-alias	sp	Toggle a passwordless-sudo window for this station (--on | --off | --status).
-alias	tally	Go to the Tally project.
-alias	tally-app	Build and launch the Tally macOS app (debug or release, with separate preference domains).
-alias	ttbs	Go to the Ardis Timetrack repo and build its solution.
-alias	ttbd	Go to the Ardis Timetrack repo and build/push its Docker image.
-alias	wk	Go to the Alice in Wonder Kitchen project.
-alias	wkdata	Go to the Alice in Wonder Kitchen data folder.
+alias	oliver	oliver — Go to the home directory.
+alias	pc	pc — Go to the iCloud personal-organizer folder.
+alias	doc	doc — Go to Documents.
+alias	desk	desk — Go to Desktop.
+alias	dev	dev — Go to the local dev folder.
+alias	down	down — Go to Downloads.
+alias	projects	projects — Go to the projects folder.
+alias	cdp	cdp — Copy the current directory path to the clipboard.
+alias	reloadterm	reloadterm — Reload the current zsh config in this terminal.
+alias	fixdock	fixdock — Restart the macOS Dock process.
+alias	kp	kp — Kill processes listening on a TCP port, for example kp 8080.
+alias	info	info — Show system health; --cycle records meaningful changes and configured agent usage once per minute.
+alias	inf	inf — Show system health; --cycle records meaningful changes and configured agent usage once per minute (short for info).
+alias	help	help — Open the forge command picker for aliases and scripts.
+alias	jadd	jadd — Add a journal entry to config-local/journal.json; prompts for title/value/description, where a slash-separated title like personal/general/wifi nests the entry under folders/chapters.
+alias	jrm	jrm — Fuzzy-search journal entries (Tab to multi-select across chapters) and delete them after typing 'delete' to confirm.
+alias	jls	jls — Browse journal entries in a colored fzf tree; press Enter on an entry to copy its value/title/description/all to the clipboard. Optional args narrow it: 'jls <chapter>' keeps entries under matching chapters, 'jls <chapter> <entry>' also filters the entries. Prints a plain tree when not interactive.
+alias	jedit	jedit — Pick a journal entry via fzf and edit its title/value/description; changing the title moves the entry (Enter keeps current, '-' clears the description).
+alias	encrypt	encrypt — fzf multi-select files in the current directory and encrypt them in place using config-local/encrypt.key (auto-generated on first use); rewrites each file as a marker line plus base64 AES-256-CBC ciphertext.
+alias	e	e — Encrypt selected files in the current directory in place (short for encrypt).
+alias	decrypt	decrypt — fzf multi-select previously encrypted files in the current directory and decrypt them in place using config-local/encrypt.key.
+alias	de	de — Decrypt selected files in the current directory in place (short for decrypt).
+alias	ai-config	ai-config — Verify, install, or fast-forward-sync shared AI instructions and tool bootstrap files.
+alias	ai-verify	ai-verify — Run read-only shared AI configuration verification.
+alias	ai-install	ai-install — Install shared AI configuration with recoverable backups for conflicting local files.
+alias	ai-context	ai-context — Resolve the current AI station, universe, repository, stack, and instruction context.
+alias	docker-on	docker-on — Start the Linux Docker Engine on demand and wait until it is ready.
+alias	don	don — Start the Linux Docker Engine on demand and wait until it is ready (short for docker-on).
+alias	port-release	port-release — Port a commit onto a release branch by creating a local cherry-pick branch.
+alias	prl	prl — Port a commit onto a release branch by creating a local cherry-pick branch (short for port-release).
+alias	web	web — Open a configured web entry in the preferred browser; use web change to switch browser.
+alias	ftp	ftp — Pick an ftp-connection via fzf and open a dual-pane browser (remote left, local right); type to filter fzf-style, F5 download, F6 upload.
+alias	sshc	sshc — Pick a station via fzf (or pass a name) and open a dual-pane SSH/SFTP browser (remote left, local right); same keys as ftp.
+alias	net	net — List active network connections by friendly name via fzf, pick one, and run an Apple networkQuality speed test bound to that interface.
+alias	show	show — Pick an informational section via fzf (or pass its id, e.g. 'show hosts') and print it; sections are data-driven from configs/show-info.json.
+alias	fixdns	fixdns — Repair stale manual macOS DNS only when normal resolution and every configured resolver fail but 1.1.1.1 works.
+alias	winappclean	winappclean — Delete Parallels Windows app shortcuts except Visual Studio.app.
+alias	vpn	vpn — Start a configured VPN connection from forge state/secrets.
+alias	dvpn	dvpn — Disconnect the active VPN connection.
+alias	vpns	vpns — Show whether an openconnect VPN connection is active.
+alias	eject-all	eject-all — Eject external volumes with forge safety exclusions and confirmation.
+alias	ejectall	ejectall — Eject external volumes with forge safety exclusions and confirmation (short for eject-all).
+alias	ea	ea — Short shortcut for eject-all.
+alias	hdd-clean	hdd-clean — Find old large files by extension and delete them after confirmation.
+alias	hc	hc — Find old large files by extension and delete them after confirmation (short for hdd-clean).
+alias	binclear	binclear — Remove bin and debug directories from the current tree.
+alias	al	al — Open the alias finder and copy the selected alias name.
+alias	a	a — Open the alias finder and copy the selected alias name (short for al).
+alias	workset	workset — Switch the active SQL Docker data and snapshot storage paths.
+alias	ws	ws — Switch the active SQL Docker data and snapshot storage paths (short for workset).
+alias	workinfo	workinfo — Show the current active SQL Docker and snapshot storage paths.
+alias	wi	wi — Show the current active SQL Docker and snapshot storage paths (short for workinfo).
+alias	ardis-migrate	ardis-migrate — Run Ardis migrations against a selected local SQL database. Optional --version YEAR selects a parallel SQL container.
+alias	am	am — Run Ardis migrations against a selected local SQL database (short for ardis-migrate). Optional --version YEAR selects a parallel SQL container.
+alias	ram	ram — Run Ardis migrations against a database on a configured remote SQL Server target.
+alias	ardis-patch	ardis-patch — Apply, remove, or inspect configured Ardis code patches.
+alias	ap	ap — Apply, remove, or inspect configured Ardis code patches (short for ardis-patch).
+alias	ardis-complete	ardis-complete — Complete Ardis planning/activity data over a selected date range.
+alias	ac	ac — Complete Ardis planning/activity data over a selected date range (short for ardis-complete).
+alias	perf-cache-reset	perf-cache-reset — Clear Perform client cache artifacts.
+alias	pcr	pcr — Clear Perform client cache artifacts (short for perf-cache-reset).
+alias	publish-tt	publish-tt — Build the Timetrack solution, then build and push its Docker image.
+alias	publish-te	publish-te — Build the Tools Extensions solution, then build and push its Docker image.
+alias	publish-perf-local	publish-perf-local — Interactively publish and start a selected Perform branch in a local Portainer-style Docker stack.
+alias	genopenapi	genopenapi — Regenerate the Perform OpenAPI JSON and TypeScript client using the Ardis.Perform namespace; pass --old for Asms2.Web.
+alias	goa	goa — Regenerate the Perform OpenAPI JSON and TypeScript client using the Ardis.Perform namespace; pass --old for Asms2.Web (short for genopenapi).
+alias	genopenapitimetrack	genopenapitimetrack — Regenerate the TimeTrack OpenAPI JSON and TypeScript client.
+alias	organizer	organizer — Organize configured folders by extension rules from work-state.
+alias	org	org — Organize configured folders by extension rules from work-state (short for organizer).
+alias	o	o — Short shortcut for organizer.
+alias	dotnet-clean	dotnet-clean — Remove generated build output and caches from the current tree; pass --node_modules to include dependencies.
+alias	dnc	dnc — Remove generated build output and caches from the current tree; pass --node_modules to include dependencies (short for dotnet-clean).
+alias	clean	clean — Delete contents of selected configured cleanup targets.
+alias	mac-clean	mac-clean — Run standard macOS cleanup scripts in sequence; use --full to include full-only items.
+alias	linux-clean	linux-clean — Run approved reconstructible Linux cache cleaners; use --dry-run to preview and --full for desktop caches.
+alias	sim	sim — Cycle focus through the captured desktop apps with mouse movement; use --cycle SECONDS to save the interval.
+alias	present	present — Set external display presentation resolution/mode.
+alias	prs	prs — Set external display presentation resolution/mode (short for present).
+alias	convert-mov	convert-mov — Convert a selected .mov in the current folder to a readable, high-quality GIF (half-res, ffmpeg+gifski); use -n to name output, -o to drop near-duplicate frames (smaller GIF).
+alias	patch	patch — Apply, remove, or inspect intervention patches; use --old for legacy project paths; use --custom to edit mock license chapters.
+alias	p	p — Apply intervention patches; use --old for legacy project paths; use --custom to edit mock license chapters.
+alias	pr	pr — Remove intervention patches and restore the original mock license chapter list.
+alias	stio	stio — Copy or move a selected local file/folder to a station destination, replacing same-name targets.
+alias	sio	sio — Copy or move a selected local file/folder to a station destination, replacing same-name targets (short for stio).
+alias	h2c	h2c — Sync Hades changes up to Cerber.
+alias	c2h	c2h — Sync Cerber changes down to Hades.
+alias	h2c-preview	h2c-preview — Preview what would sync from Hades up to Cerber.
+alias	c2h-preview	c2h-preview — Preview what would sync from Cerber down to Hades.
+alias	perf-to-cerber	perf-to-cerber — Sync the Perform profile from Hades up to Cerber.
+alias	perf-from-cerber	perf-from-cerber — Sync the Perform profile from Cerber down to Hades.
+alias	perf-to-cerber-preview	perf-to-cerber-preview — Preview the Perform sync from Hades up to Cerber.
+alias	perf-from-cerber-preview	perf-from-cerber-preview — Preview the Perform sync from Cerber down to Hades.
+alias	gs	gs — Show git working tree status.
+alias	gco	gco — Check out a git branch or path.
+alias	gp	gp — Pull from the configured git remote.
+alias	gfo	gfo — Fetch updates from origin.
+alias	gpu	gpu — Push the current branch to its configured remote.
+alias	gpo	gpo — Publish the current local branch to origin with upstream; fails if the remote branch already exists.
+alias	peer-fetch	peer-fetch — Choose and fetch a committed feature branch from Hades or MasterChief, updating only by fast-forward.
+alias	mc2h	mc2h — Fetch a feature branch from MasterChief personal work into the current Hades repository.
+alias	r2h	r2h — Fetch a feature branch from Raynor into the current Hades repository.
+alias	z2h	z2h — Fetch a feature branch from Zeratul into the current Hades repository.
+alias	h2mc	h2mc — Fetch a feature branch from Hades into the current MasterChief personal repository.
+alias	h2r	h2r — Fetch a feature branch from Hades into the current Raynor repository.
+alias	h2z	h2z — Fetch a feature branch from Hades into the current Zeratul repository.
+alias	gb	gb — List or manage git branches.
+alias	switch	switch — Interactively switch git branches.
+alias	sw	sw — Interactively switch git branches (short for switch).
+alias	gbd	gbd — Delete local git branches matching a pattern.
+alias	gdel	gdel — Delete local git branches containing a keyword.
+alias	branch-clean	branch-clean — Preview or delete local branches by safe prefix.
+alias	bc	bc — Preview or delete local branches by safe prefix (short for branch-clean).
+alias	dps	dps — List running Docker containers.
+alias	dcu	dcu — Start the current docker compose stack.
+alias	dcd	dcd — Stop and remove the current docker compose stack.
+alias	dba	dba — Administer a local SQL database: offline/online, drop, recovery, shrink. Optional --version YEAR selects a parallel SQL container.
+alias	dblist	dblist — List local SQL databases with friendly total, data, and log sizes. Optional --version YEAR selects a parallel SQL container.
+alias	dbs	dbs — Start stopped Docker containers, launching Docker Desktop if needed.
+alias	dbu	dbu — Upload a selected .bak from the current folder into the SQL container. Optional --version YEAR selects a parallel SQL container.
+alias	dbr	dbr — Restore a selected .bak into the forge SQL Server container. Optional --version YEAR creates/uses a parallel SQL container.
+alias	dbrf	dbrf — Attach a database from a selected .mdf (+ optional matching .ldf) into the forge SQL Server container, proposing a name extracted from the file. Optional --version YEAR creates/uses a parallel SQL container.
+alias	db-index	db-index — Rebuild all indexes in a selected local Docker SQL database. Optional --version YEAR selects a parallel SQL container.
+alias	dbsn	dbsn — Create a SQL backup snapshot from a selected database. Optional --version YEAR selects a parallel SQL container.
+alias	rdbsn	rdbsn — Create a backup from a configured remote SQL Server target.
+alias	rdbr	rdbr — Restore a snapshot back into a remote SQL Server, overriding an existing database or cloning into a new one with mdf/ldf collision protection.
+alias	rdbsndrop	rdbsndrop — Delete .bak snapshot file(s) from a remote SQL Server target's backup path (multi-select, with size shown and space freed reported).
+alias	rdown	rdown — Choose a remote .bak with its size shown, then download it to a selected local destination.
+alias	rup	rup — Upload a local .bak backup to a selected remote destination.
+alias	dbc	dbc — Clear SQL databases; default hard mode removes container/data after typed confirmation. Optional --version YEAR targets a parallel SQL container.
+alias	dbo	dbo — Run configured SQL table cleanup and shrink; data loss is possible.
+alias	dbfix	dbfix — Run SQL fix scripts from the repo sqls folder against a chosen database.
+alias	sdb	sdb — Switch the active appsettings connection string for a configured project.
+alias	sqlexec	sqlexec — Run selected .sql files against a chosen connection/database.
+alias	se	se — Run selected .sql files against a chosen connection/database (short for sqlexec).
+alias	script-run	script-run — Run selected .sql files from the current folder against a chosen SQL connection.
+alias	sr	sr — Select one or more .sql files from the current folder, choose a SQL connection, then run them in order after confirmation.
+alias	forge	forge — Go to the mac-forge repo root.
+alias	work	work — Go to the main work folder.
+alias	perf	perf — Go to the Ardis Perform repo.
+alias	timetrack	timetrack — Go to the Ardis Timetrack repo.
+alias	tt	tt — Go to the Ardis Timetrack repo (short for timetrack).
+alias	ttc	ttc — Go to the Ardis Timetrack client folder.
+alias	ttclient	ttclient — Go to the Ardis Timetrack client folder.
+alias	ttmd	ttmd — Go to the Ardis Timetrack migrations database folder.
+alias	perfclient	perfclient — Go to the Ardis Perform Angular client.
+alias	perfdev	perfdev — Go to the Ardis Perform DEV worktree.
+alias	perf228	perf228 — Go to the Ardis Perform 228 worktree.
+alias	perf230	perf230 — Go to the Ardis Perform 230 worktree.
+alias	perfold	perfold — Go to the older Ardis Perform worktree.
+alias	perfclient230	perfclient230 — Go to the Ardis Perform 230 Angular client.
+alias	perftest	perftest — Run all Ardis Perform unit tests, or filter them with an optional test-name keyword.
+alias	gpt	gpt — Go to the Ardis Tools Extensions repo.
+alias	gptbin	gptbin — Go to the Ardis Utils debug build output folder.
+alias	lc	lc — Go to the Ardis local connector repo.
+alias	localconnector	localconnector — Go to the Ardis local connector repo.
+alias	fn	fn — Go to the macOS Frontnotes project.
+alias	bl	bl — Go to the BookingLounge project.
+alias	meerkat	meerkat — Go to the Meerkat project.
+alias	rooted	rooted — Go to the Rooted project.
+alias	aiwk	aiwk — Go to the Alice in Wonder Kitchen project.
+alias	clients	clients — Go to shared SQL client backup/storage folder.
+alias	invoice	invoice — Go to the TNI invoice project.
+alias	inv	inv — Go to the TNI invoice project (short for invoice).
+alias	ti	ti — Go to the TNI invoice project (short for invoice).
+alias	tally-legacy-import	tally-legacy-import — Rebuild only tally-dev without prompting, then import all live TniInvoice data and reconcile it.
+alias	tally-legacy-reset	tally-legacy-reset — Drop and rebuild only the disposable tally-dev database without prompting.
+alias	tally-legacy-refresh	tally-legacy-refresh — Compatibility alias for the complete tally-legacy-import reset and import cycle.
+alias	perflog	perflog — Go to Perform output logs.
+alias	andi-notes	andi-notes — Go to the Obsidian Andi notes folder.
+alias	an	an — Go to the Obsidian Andi notes folder (short for andi-notes).
+alias	notes	notes — Go to the Obsidian Andi notes folder (short for andi-notes).
+alias	vsql	vsql — Go to shared SQL storage.
+alias	cloudforge	cloudforge — Go to the iCloud forge folder.
+alias	snapshots	snapshots — Go to shared SQL Docker snapshots.
+alias	snap	snap — Go to shared SQL Docker snapshots (short for snapshots).
+alias	snapdel	snapdel — Delete everything in the shared snapshots folder; no prompt.
+alias	locsql	locsql — Go to the local SQL folder.
+alias	lcsql	lcsql — Go to the local SQL folder (short for locsql).
+alias	locsnapshots	locsnapshots — Go to local SQL snapshots.
+alias	lcsnaphots	lcsnaphots — Typo-compatible shortcut for locsnapshots.
+alias	lcsnap	lcsnap — Go to local SQL snapshots (short for locsnapshots).
+alias	lcs	lcs — Short shortcut for locsnapshots.
+alias	lcsnapdel	lcsnapdel — Delete everything in local SQL snapshots; no prompt.
+alias	shared	shared — Go to the shared mounted volume.
+alias	cloud	cloud — Go to the iCloud Drive root.
+alias	gdrive	gdrive — Go to the Google Drive My Drive folder.
+alias	demo	demo — Go to the Cerber-mounted Ardis demo folder.
+alias	work-cerb	work-cerb — Go to the Cerber-mounted work volume.
+alias	copilot	copilot — Run GitHub Copilot CLI.
+alias	aiusage	aiusage — Show local agent/API usage stats.
+alias	dela	dela — Delete everything in the current directory; no prompt.
+alias	perflogclean	perflogclean — Delete all files in Perform output logs; no prompt.
+alias	screenshotclean	screenshotclean — Delete PNG screenshots from Desktop; no prompt.
+alias	rmc	rmc — SSH into MasterChief.
+alias	rmcr	rmcr — SSH into MasterChief over Tailscale.
+alias	showeth	showeth — Show network hardware ports and their current IP addresses.
+alias	mcshutdown	mcshutdown — Shut down Ubuntu on MasterChief over SSH.
+alias	mcsleep	mcsleep — Suspend Ubuntu on MasterChief over SSH.
+alias	ms	ms — Suspend Ubuntu on MasterChief over SSH (short for mcsleep).
+alias	mcboot	mcboot — Wake MasterChief with Wake-on-LAN.
+alias	mcbt	mcbt — Wake MasterChief with Wake-on-LAN (short for mcboot).
+alias	mb	mb — Short shortcut for mcboot.
+alias	wake	wake — Pick any station via fzf (or pass a name) and send it a Wake-on-LAN magic packet using its configured MAC; errors clearly when the MAC is not set.
+alias	rider	rider — Open JetBrains Rider.
+alias	aliases	aliases — Print the alias file.
+alias	codex-local-register	codex-local-register — Register the local LAN LLM bundle from the current directory as Codex profile local-lan; use --verify to test it.
+alias	link-dotfiles	link-dotfiles — Link Linux dotfiles into place.
+alias	ldf	ldf — Link Linux dotfiles into place (short for link-dotfiles).
+alias	verify-workstation	verify-workstation — Run the read-only MasterChief workstation and agent-universe report locally or remotely from Hades.
+alias	vw	vw — Run the read-only MasterChief workstation and agent-universe report locally or remotely from Hades (short for verify-workstation).
+alias	workspace-primary	workspace-primary — Load the primary Linux workspace layout.
+alias	wp	wp — Load the primary Linux workspace layout (short for workspace-primary).
+alias	display	display — Set Linux display scaling.
+alias	mnt	mnt — Select and mount a saved Linux network share.
+alias	mnthadesw	mnthadesw — Mount the Hades work share on Linux.
+alias	mnthw	mnthw — Mount the Hades work share on Linux (short for mnthadesw).
+alias	umnthadesw	umnthadesw — Unmount the Hades work share on Linux.
+alias	umnthw	umnthw — Unmount the Hades work share on Linux (short for umnthadesw).
+alias	hades-tunnel-up	hades-tunnel-up — Open the SSH tunnel to Hades Angular/Perform dev servers.
+alias	hades-tunnel-down	hades-tunnel-down — Close the SSH tunnel to Hades.
+alias	hades-tunnel-status	hades-tunnel-status — Show whether the Hades dev tunnel is up.
+alias	htu	htu — Open the SSH tunnel to Hades Angular/Perform dev servers (short for hades-tunnel-up).
+alias	htd	htd — Close the SSH tunnel to Hades (short for hades-tunnel-down).
+alias	raynor	raynor — Open Raynor's persistent MasterChief session or use optional shell, start, attach, status, logs, and stop actions.
+alias	zeratul	zeratul — Open Zeratul's persistent MasterChief session or use optional shell, start, attach, status, logs, and stop actions.
+alias	cerber-tunnel-up	cerber-tunnel-up — Open Cerber's tunnel to the Hades Angular/Perform dev servers from macOS.
+alias	cerber-tunnel-status	cerber-tunnel-status — Show and verify Cerber's tunnel to Hades from macOS.
+alias	cerber-tunnel-down	cerber-tunnel-down — Close Cerber's tunnel to Hades from macOS.
+script	aliases	aliases — Open the alias finder and copy the selected shortcut.
+script	ai-config	ai-config — Verify, install, or fast-forward-sync shared AI instructions and tool bootstrap files.
+script	ardis-complete	ardis-complete — Complete Ardis planning/activity data over a selected date range.
+script	ardis-migrate	ardis-migrate — Run Ardis migrations against a selected local SQL database. Optional --version YEAR selects a parallel SQL container.
+script	bin-clear	bin-clear — Remove bin and debug directories from the current tree.
+script	branch-delete	branch-delete — Delete local git branches matching a pattern.
+script	branch-local-clean	branch-local-clean — Preview or delete local branches by safe prefix.
+script	clean	clean — Delete contents of selected configured cleanup targets.
+script	mac-clean	mac-clean — Run standard macOS cleanup scripts in sequence; use --full to include full-only items.
+script	mac-clean-browser-caches	mac-clean-browser-caches — Clear only Chrome and Brave per-profile disk and code caches while preserving credentials, sessions, profiles, browsing data, and configuration.
+script	mac-clean-claude-cache	mac-clean-claude-cache — Clear only Claude Desktop browser response and code caches while preserving credentials, conversations, sessions, application data, runtime bundles, and configuration.
+script	mac-clean-codex-cache	mac-clean-codex-cache — Clear only Codex desktop browser response and code caches while preserving credentials, conversations, sessions, projects, worktrees, and configuration.
+script	mac-clean-copilot-index-cache	mac-clean-copilot-index-cache — Clear only GitHub Copilot project-context and project-index caches while preserving authentication, sessions, configuration, plugins, binaries, and runtime packages.
+script	mac-clean-docker-build-cache	mac-clean-docker-build-cache — Prune only reclaimable Docker build cache unused for seven days; preserve containers, images, volumes, networks, builders, configuration, and credentials.
+script	mac-clean-homebrew	mac-clean-homebrew — Clean Homebrew using its default cleanup and retention policy.
+script	mac-clean-nuget-transient	mac-clean-nuget-transient — Clear NuGet HTTP, temporary, and plugin caches while preserving global packages and configuration.
+script	mac-clean-npm-cache	mac-clean-npm-cache — Verify npm's configured cache and garbage-collect unneeded content without changing npm configuration.
+script	mac-clean-rider-caches	mac-clean-rider-caches — Clear only Rider indexes, IDE caches, and ReSharper caches while preserving Local History, file/test history, plugins, settings, projects, VCS data, and credentials.
+script	mac-clean-yarn-cache	mac-clean-yarn-cache — Clear Yarn v1's downloaded package cache while preserving projects, dependencies, lockfiles, global packages, configuration, and credentials.
+script	mac-clean-swiftpm-cache	mac-clean-swiftpm-cache — Purge SwiftPM's global repository cache while preserving package resolution, project builds, configuration, security fingerprints, and credentials.
+script	mac-clean-stale-temp	mac-clean-stale-temp — Delete current-user temporary entries older than seven days, or recognized AI-tool entries older than 24 hours, while preserving open, recently modified, or macOS-protected content.
+script	mac-clean-xcode-derived-data	mac-clean-xcode-derived-data — Delete Xcode DerivedData entries whose entire contents are older than seven days while preserving archives, configuration, and recent build data.
+script	mac-clean-xcode-simulators	mac-clean-xcode-simulators — Quit Simulator, shut down and erase all devices, and delete unavailable devices.
+script	mac-clean-xcode-test-clones	mac-clean-xcode-test-clones — Delete verified Xcode parallel-test simulator clones older than seven days.
+script	linux-clean	linux-clean — Run approved reconstructible Linux cache cleaners; use --dry-run to preview and --full for desktop caches.
+script	linux-clean-browser-caches	linux-clean-browser-caches — Clear Chrome disk and code caches while preserving credentials, sessions, profiles, browsing data, and configuration.
+script	linux-clean-claude-cache	linux-clean-claude-cache — Clear Claude CLI staging cache while preserving credentials, conversations, sessions, configuration, projects, and MCP logs.
+script	linux-clean-copilot-index-cache	linux-clean-copilot-index-cache — Clear Copilot project-context and project-index caches while preserving authentication, configuration, plugins, binaries, and runtime packages.
+script	linux-clean-docker-build-cache	linux-clean-docker-build-cache — Prune only Docker build cache unused for seven days; preserve containers, images, volumes, networks, configuration, credentials, and SQL data.
+script	linux-clean-nuget-transient	linux-clean-nuget-transient — Clear NuGet HTTP, temporary, and plugin caches while preserving global packages and configuration.
+script	linux-clean-npm-cache	linux-clean-npm-cache — Verify npm's configured cache and garbage-collect unneeded content without changing npm configuration.
+script	linux-clean-rider-caches	linux-clean-rider-caches — Clear Rider indexes and reconstructible caches while preserving history, settings, projects, VCS data, plugins, models, and credentials.
+script	linux-clean-yarn-cache	linux-clean-yarn-cache — Clear Yarn v1 downloaded packages while preserving projects, dependencies, lockfiles, global packages, configuration, and credentials.
+script	linux-clean-stale-temp	linux-clean-stale-temp — Delete stale current-user temporary entries while preserving open, recent, symlinked, and mixed-ownership content.
+script	linux-clean-desktop-caches	linux-clean-desktop-caches — Clear reconstructible thumbnail and shader caches as a full-only cleanup.
+script	sim	sim — Cycle focus through the desktop apps captured at startup until Ctrl+C, with mouse movement and no clicks.
+script	convert-mov	convert-mov — Convert a selected .mov in the current folder to a readable, high-quality GIF (half-res, ffmpeg+gifski); use -n to name output, -o to drop near-duplicate frames (smaller GIF).
+script	db-admin	db-admin — Administer a local SQL database: offline/online, drop, recovery, shrink. Optional --version YEAR selects a parallel SQL container.
+script	db-clear	db-clear — Clear SQL databases; default hard mode removes container/data after typed confirmation. Optional --version YEAR targets a parallel SQL container.
+script	db-fix	db-fix — Run SQL fix scripts from the repo sqls folder against a chosen database.
+script	db-index	db-index — Rebuild all indexes in a selected local Docker SQL database. Optional --version YEAR selects a parallel SQL container.
+script	db-optimize	db-optimize — Run configured SQL table cleanup and shrink; data loss is possible.
+script	db-remote-backup	db-remote-backup — Create a backup from a configured remote SQL Server target.
+script	db-remote-download	db-remote-download — Choose a remote .bak with its size shown, then download it to a selected local destination.
+script	db-remote-upload	db-remote-upload — Upload a local .bak backup to a selected remote destination.
+script	db-restore	db-restore — Restore a selected .bak into the forge SQL Server container. Optional --version YEAR creates/uses a parallel SQL container.
+script	db-restore-files	db-restore-files — Attach a database from a selected .mdf (+ optional matching .ldf) into the forge SQL Server container, proposing a name extracted from the file. Optional --version YEAR creates/uses a parallel SQL container.
+script	db-snapshot	db-snapshot — Create a SQL backup snapshot from a selected database. Optional --version YEAR selects a parallel SQL container.
+script	db-upload-bak	db-upload-bak — Upload a selected .bak from the current folder into the SQL container. Optional --version YEAR selects a parallel SQL container.
+script	docker-start	docker-start — Start stopped Docker containers, launching Docker Desktop if needed.
+script	dotnet-clean	dotnet-clean — Remove generated build output and caches from the current tree; pass --node_modules to include dependencies.
+script	dvpn	dvpn — Disconnect the active VPN connection.
+script	vpn-status	vpn-status — Show whether an openconnect VPN connection is active.
+script	eject-all	eject-all — Eject external volumes with forge safety exclusions and confirmation.
+script	forge	forge — Shared forge runtime; usually sourced by other scripts.
+script	gen-open-api	gen-open-api — Regenerate the Perform OpenAPI JSON and TypeScript client.
+script	gen-open-api-timetrack	gen-open-api-timetrack — Regenerate the TimeTrack OpenAPI JSON and TypeScript client.
+script	git-del	git-del — Delete local git branches containing a keyword.
+script	git-switch	git-switch — Interactively switch git branches.
+script	git-peer-fetch	git-peer-fetch — Choose and fetch a committed feature branch from Hades or MasterChief with fast-forward-only safety.
+script	hades-tunnel	hades-tunnel — Open/close/status the SSH tunnel from Windows or Linux to Hades dev servers.
+script	hdd-clean	hdd-clean — Find old large files by extension and delete them after confirmation.
+script	help	help — Open the forge command picker for aliases and scripts.
+script	info	info — Show a forge machine/system health snapshot.
+script	mcboot	mcboot — Wake MasterChief with Wake-on-LAN.
+script	wake	wake — Pick any station via fzf (or pass a name) and send it a Wake-on-LAN magic packet using its configured MAC; errors clearly when the MAC is not set.
+script	mcsleep	mcsleep — Suspend Ubuntu on MasterChief over SSH.
+script	masterchief-agent-session	masterchief-agent-session — Attach to or create Raynor's or Zeratul's isolated persistent tmux session, preferring MasterChief UTP with Wi-Fi fallback.
+script	organizer	organizer — Organize configured folders by extension rules from work-state.
+script	patch	patch — Apply, remove, or inspect intervention patches; --custom edits mock license chapters, pr restores the original list.
+script	license-chapters	license-chapters — Edit, snapshot, or restore local mock license chapter amounts.
+script	perform-cache-reset	perform-cache-reset — Clear Perform client cache artifacts.
+script	perform-cerber-sync	perform-cerber-sync — Sync configured work profiles between Hades and Cerber.
+script	cerber-hades-tunnel	cerber-hades-tunnel — Control and verify Cerber's Hades development tunnel through Parallels.
+script	perform-prep	perform-prep — Prepare Perform build output dependencies.
+script	perform-test	perform-test — Run all Ardis Perform unit tests, or filter them with an optional test-name keyword.
+script	port-release	port-release — Port a commit onto a release branch by creating a local cherry-pick branch.
+script	present	present — Set external display presentation resolution/mode.
+script	sql-execute	sql-execute — Run selected .sql files against a chosen connection/database.
+script	script-run	script-run — Run selected .sql files from the current folder against a chosen SQL connection.
+script	station-io	station-io — Copy or move a selected local file/folder to a station destination, replacing same-name targets.
+script	switch-db	switch-db — Switch the active appsettings connection string for a configured project.
+script	vpn	vpn — Start a configured VPN connection from forge state/secrets.
+script	web	web — Open a configured web entry in the preferred browser; use web change to switch browser.
+script	ftp	ftp — Pick an ftp-connection via fzf and open a dual-pane browser (remote left, local right); type to filter fzf-style, F5 download, F6 upload.
+script	sshc	sshc — Pick a station via fzf (or pass a name) and open a dual-pane SSH/SFTP browser (remote left, local right); same keys as ftp.
+script	net	net — List active network connections by friendly name via fzf, pick one, and run an Apple networkQuality speed test bound to that interface.
+script	show	show — Pick an informational section via fzf (or pass its id, e.g. 'show hosts') and print it; sections are data-driven from configs/show-info.json.
+script	fix-dns	fix-dns — Repair stale manual macOS DNS only when normal resolution and every configured resolver fail but 1.1.1.1 works.
+script	win-shortcut-clean	win-shortcut-clean — Delete Parallels Windows app shortcuts except Visual Studio.app.
+script	work	work — Switch or inspect the active SQL Docker data and snapshot storage paths.
+script	ardis-migrate-remote	ardis-migrate-remote — Run Ardis migrations locally against a configured remote SQL Server target instead of the local database.
+script	configure-ghostty	configure-ghostty — Symlink the shared Ghostty terminal config into place on macOS.
+script	convert-heic	convert-heic — Convert HEIC images in the current directory to JPG via an fzf multi-select picker.
+script	db-list	db-list — List local SQL Server databases with state, recovery model, and data/log/total size. Optional --version YEAR selects a parallel SQL container.
+script	db-remote-restore	db-remote-restore — Restore a .bak from a configured remote SQL Server's backup path back into that same server, remapping files with WITH MOVE.
+script	deploy-meerkat-site	deploy-meerkat-site — Upload and switch the live release of the meerkat.tnisoft.ro marketing site on vps1 (dry-run by default; --apply to go live).
+script	deploy-tnisoft-site	deploy-tnisoft-site — Upload and switch the live release of the tnisoft.ro marketing site on vps1 (dry-run by default; --apply to go live).
+script	deploy-wonderkitchen	deploy-wonderkitchen — Upload and switch the live release of the generated WonderKitchen static catalog on vps1 (dry-run by default; --apply to go live).
+script	disp	disp — Pick a display layout (All / Laptop only / Extended only) via fzf and apply it.
+script	docker-clean-known-facts	docker-clean-known-facts — Remove only exact, verified Docker leftovers from our publish workflows.
+script	docker-cleanup	docker-cleanup — Remove every local Docker image not used by a currently running container.
+script	dotnet-build	dotnet-build — Build the .sln/.slnx (or .csproj) found in the current directory; fzf-pick when several exist.
+script	git-publish-origin	git-publish-origin — Publish the current local branch to origin with upstream; fails if the remote branch already exists.
+script	mac-clean-go-build-cache	mac-clean-go-build-cache — Clear the Go build cache (GOCACHE) only; module cache is untouched.
+script	mac-clean-pip-cache	mac-clean-pip-cache — Purge the pip download/wheel cache; installed packages and virtualenvs are untouched.
+script	mac-clean-vscode-caches	mac-clean-vscode-caches — Clear only VS Code's disk and code caches while preserving settings, extensions, and history.
+script	mac-clean-xcode-device-support	mac-clean-xcode-device-support — Delete Xcode iOS DeviceSupport symbol bundles older than 30 days.
+script	perform-local-portainer	perform-local-portainer — Build and run a local Portainer-style Docker stack for Ardis Perform without touching the app repo.
+script	publish-te	publish-te — Build the Tools Extensions solution and publish/push its Docker image.
+script	publish-tt	publish-tt — Build the Ardis Timetrack solution and publish/push its Docker image.
+script	tally-app	tally-app — Build and launch the Tally macOS app (debug or release, with separate preference domains).
+alias	v1sn	v1sn — Create a .bak snapshot of a vps1 database into the vps1 snapshots folder.
+alias	vps1-snapshot	vps1-snapshot — Long form of v1sn: create a .bak snapshot of a vps1 database.
+alias	v1r	v1r — Restore a .bak from the vps1 snapshots folder into the vps1 SQL Server.
+alias	vps1-restore	vps1-restore — Long form of v1r: restore a vps1 snapshot into the vps1 SQL Server.
+alias	v1dbindex	v1dbindex — Rebuild all indexes in a selected vps1 SQL database.
+alias	vps1-db-index	vps1-db-index — Long form of v1dbindex: rebuild all indexes in a selected vps1 SQL database.
+alias	v1down	v1down — Download vps1 .bak snapshots into the current directory; multiple selections become a timestamped zip archive.
+alias	vps1-download	vps1-download — Long form of v1down: download vps1 snapshots into the current directory.
+alias	v1up	v1up — Upload a local .bak into the vps1 snapshots folder for later restore.
+alias	vps1-upload	vps1-upload — Long form of v1up: upload a local .bak into the vps1 snapshots folder.
+alias	rdown-to-v1	rdown-to-v1 — Choose a remote .bak with its size shown, then relay it from the portainer share straight to vps1 snapshots without touching the Mac SSD.
+alias	vps1-relay-download	vps1-relay-download — Long form of rdown-to-v1: choose a remote .bak with its size shown and stream it from the share to vps1 with no local copy.
+alias	v1drop	v1drop — Drop live user database(s) on vps1 (multi-select, confirm with 'delete').
+alias	vps1-drop	vps1-drop — Long form of v1drop: drop live user database(s) on vps1.
+alias	v1sndrop	v1sndrop — Delete .bak snapshot file(s) from the vps1 snapshots folder (multi-select).
+alias	vps1-snapshot-drop	vps1-snapshot-drop — Long form of v1sndrop: delete vps1 .bak snapshot file(s).
+alias	v1am	v1am — Run Ardis migrations against a database on vps1.
+alias	vps1-migrate	vps1-migrate — Long form of v1am: run Ardis migrations against a vps1 database.
+alias	v1list	v1list — List all installed databases and all available snapshots on vps1.
+alias	vps1-list	vps1-list — Long form of v1list: list vps1 databases and snapshots.
+alias	v1opt	v1opt — Optimize a vps1 database: set recovery SIMPLE and shrink log/data files to reclaim disk (best-effort, no data deleted).
+alias	vps1-optimize	vps1-optimize — Long form of v1opt: shrink/optimize a vps1 database to reduce its disk footprint.
+alias	vps1-status	vps1-status — Show vps1 host health plus storage per app keyword (web dirs + databases), endpoints, CPU, and recent history.
+alias	v1-bl-publish	v1-bl-publish — Build and publish the BookingLounge API to a vps1 endpoint (development, or gated production: main + clean tree).
+alias	vps1-bl-publish	vps1-bl-publish — Long form of v1-bl-publish: publish the BookingLounge API to a vps1 endpoint.
+alias	v1-bl-tunnel-up	v1-bl-tunnel-up — Open the SSH tunnel so localhost:5081 reaches the private BookingLounge dev API on vps1.
+alias	v1-bl-tunnel-down	v1-bl-tunnel-down — Close the BookingLounge dev API SSH tunnel (localhost:5081).
+alias	v1-bl-tunnel-status	v1-bl-tunnel-status — Show whether the BookingLounge dev API SSH tunnel is up (localhost:5081) + dev health.
+alias	v1-meerkat-tunnel-up	v1-meerkat-tunnel-up — Open the SSH tunnel so localhost:5281 reaches the private Meerkat dev API on vps1.
+alias	v1-meerkat-tunnel-down	v1-meerkat-tunnel-down — Close the Meerkat dev SSH tunnel (localhost:5281).
+alias	v1-meerkat-tunnel-status	v1-meerkat-tunnel-status — Show whether the Meerkat dev SSH tunnel is up (localhost:5281) + dev health.
+alias	meerkat-enroll	meerkat-enroll — SSH into vps1 and print the current Meerkat direct enrollment string using sudo.
+alias	v1-tally-tunnel-up	v1-tally-tunnel-up — Open the SSH tunnel so localhost:5181 reaches the private Tally dev API on vps1 (needed by the macOS Debug build).
+alias	v1-tally-tunnel-down	v1-tally-tunnel-down — Close the Tally dev API SSH tunnel (localhost:5181).
+alias	v1-tally-tunnel-status	v1-tally-tunnel-status — Show whether the Tally dev API SSH tunnel is up (localhost:5181) + dev health.
+alias	v1-license-tunnel-up	v1-license-tunnel-up — Open the SSH tunnel so localhost and the private Parallels network can reach CodeMeter on vps1.
+alias	v1-license-tunnel-down	v1-license-tunnel-down — Close the vps1 CodeMeter license SSH tunnel (localhost:22350).
+alias	v1-license-tunnel-status	v1-license-tunnel-status — Show whether the vps1 CodeMeter license SSH tunnel is up (localhost:22350).
+alias	v1-sql-tunnel-up	v1-sql-tunnel-up — Open the SSH tunnel so localhost:14333 reaches the private vps1 SQL Server (VS Code: Server = localhost,14333).
+alias	v1-sql-tunnel-down	v1-sql-tunnel-down — Close the vps1 SQL Server SSH tunnel (localhost:14333).
+alias	v1-sql-tunnel-status	v1-sql-tunnel-status — Show whether the vps1 SQL Server SSH tunnel is up (localhost:14333).
+alias	v1-sql-up	v1-sql-up — Bring selected OFFLINE vps1 databases ONLINE via an interactive fzf multi-select picker.
+alias	v1-sql-down	v1-sql-down — Take selected ONLINE vps1 databases OFFLINE via an interactive fzf multi-select picker.
+alias	vps1-sql-up	vps1-sql-up — Long form of v1-sql-up: bring selected vps1 databases ONLINE.
+alias	vps1-sql-down	vps1-sql-down — Long form of v1-sql-down: take selected vps1 databases OFFLINE.
+alias	vps1-bl-tunnel-up	vps1-bl-tunnel-up — Long form of v1-bl-tunnel-up: open the BookingLounge dev API SSH tunnel (localhost:5081).
+alias	vps1-bl-tunnel-down	vps1-bl-tunnel-down — Long form of v1-bl-tunnel-down: close the BookingLounge dev API SSH tunnel.
+alias	vps1-bl-tunnel-status	vps1-bl-tunnel-status — Long form of v1-bl-tunnel-status: show whether the BookingLounge dev API SSH tunnel is up.
+alias	vps1-meerkat-tunnel-up	vps1-meerkat-tunnel-up — Long form of v1-meerkat-tunnel-up: open the Meerkat dev API SSH tunnel (localhost:5281).
+alias	vps1-meerkat-tunnel-down	vps1-meerkat-tunnel-down — Long form of v1-meerkat-tunnel-down: close the Meerkat dev API SSH tunnel.
+alias	vps1-meerkat-tunnel-status	vps1-meerkat-tunnel-status — Long form of v1-meerkat-tunnel-status: show whether the Meerkat dev API SSH tunnel is up.
+alias	vps1-tally-tunnel-up	vps1-tally-tunnel-up — Long form of v1-tally-tunnel-up: open the Tally dev API SSH tunnel (localhost:5181).
+alias	vps1-tally-tunnel-down	vps1-tally-tunnel-down — Long form of v1-tally-tunnel-down: close the Tally dev API SSH tunnel.
+alias	vps1-tally-tunnel-status	vps1-tally-tunnel-status — Long form of v1-tally-tunnel-status: show whether the Tally dev API SSH tunnel is up.
+alias	vps1-sql-tunnel-up	vps1-sql-tunnel-up — Long form of v1-sql-tunnel-up: open the vps1 SQL Server SSH tunnel (localhost:14333).
+alias	vps1-sql-tunnel-down	vps1-sql-tunnel-down — Long form of v1-sql-tunnel-down: close the vps1 SQL Server SSH tunnel.
+alias	vps1-sql-tunnel-status	vps1-sql-tunnel-status — Long form of v1-sql-tunnel-status: show whether the vps1 SQL Server SSH tunnel is up.
+alias	convert-heic	convert-heic — Convert HEIC images in the current directory to JPG via an fzf multi-select picker.
+alias	convo	convo — Launch the Convoy Hunter Godot game in windowed mode.
+alias	data	data — Go to /data.
+alias	dock	dock — Go to /data/docker.
+alias	docker-cleanup	docker-cleanup — Remove every local Docker image not used by a currently running container.
+alias	dcl	dcl — Remove every local Docker image not used by a currently running container (short for docker-cleanup).
+alias	docker-clean-fact	docker-clean-fact — Remove only exact, verified Docker leftovers from our publish workflows.
+alias	dcf	dcf — Remove only exact, verified Docker leftovers from our publish workflows (short for docker-clean-fact).
+alias	disp	disp — Pick a display layout (All / Laptop only / Extended only) via fzf and apply it.
+alias	dotnetbuild	dotnetbuild — Build the .sln/.slnx (or .csproj) found in the current directory; fzf-pick when several exist; add -r for Release (default Debug).
+alias	dnb	dnb — Build the .sln/.slnx (or .csproj) found in the current directory; fzf-pick when several exist; add -r for Release (default Debug) (short for dotnetbuild).
+alias	dwkdata	dwkdata — Deploy the generated WonderKitchen static catalog to vps1 (dry-run by default; --apply to go live).
+alias	sp	sp — Toggle a passwordless-sudo window for this station (--on | --off | --status).
+alias	tally	tally — Go to the Tally project.
+alias	tally-app	tally-app — Build and launch the Tally macOS app (debug or release, with separate preference domains).
+alias	ttbs	ttbs — Go to the Ardis Timetrack repo and build its solution.
+alias	ttbd	ttbd — Go to the Ardis Timetrack repo and build/push its Docker image.
+alias	wk	wk — Go to the Alice in Wonder Kitchen project.
+alias	wkdata	wkdata — Go to the Alice in Wonder Kitchen data folder.
