@@ -25,10 +25,12 @@ REQUIRED_SOURCES=(
     guidelines/guidelines.md
     guidelines/always/provisional-rules.md
     guidelines/always/review-handoff.md
+    guidelines/always/jira-tasks.md
     guidelines/always/test-execution.md
     guidelines/handoff/common.md
     guidelines/handoff/hades.md
     guidelines/handoff/masterchief.md
+    guidelines/jira/common.md
     guidelines/stacks/angular-development.md
     guidelines/stacks/angular-review/_core.md
     guidelines/stacks/angular-review/forms.md
