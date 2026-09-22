@@ -15,14 +15,13 @@ routing table here and do not resolve a project from memory.
    - a named project and component (e.g. "Internal Apps / TimeTrack");
    - a product or app synonym (e.g. "the timetrack app").
 2. Enumerate `~/.config/ai/guidelines/jira/projects/*.md`, ignoring any file whose name begins with
-   `_` (templates). When the target is an explicit issue key, filter that listing by filename prefix
-   `<key-prefix-lower>-*.md` first (e.g. `IA-807` → `ia-*.md`) — every leaf follows the
-   `<project-key-lower>-<component-slug>.md` convention from step 4, so this costs only a directory
-   listing, never a file read. Read the `jira-leaf` header block of the files that survive the filter
-   (or, for a named-project/component or app-synonym target, of every remaining file) and match the
-   target against the header's `project-key`, `component`, and `aliases`. If a prefix filter yields
-   zero files, fall back once to a full header-scan of every remaining leaf, in case a leaf's filename
-   does not follow the convention, before concluding zero matches.
+   `_` (templates). When the target is an explicit issue key, filter that listing by the filename
+   convention in step 4 for the key's prefix — e.g. `IA-807` → `ia-*.md`; `PER-6727` → `per-*.md` and
+   `per.md`. This costs only a directory listing, never a file read. Read the `jira-leaf` header block
+   of the files that survive the filter (or, for a named-project/component or app-synonym target, of
+   every remaining file) and match the target against the header's `project-key`, `component`, and
+   `aliases`. If the filter yields zero files, fall back once to a full header-scan of every remaining
+   leaf, in case a leaf's filename does not follow either convention, before concluding zero matches.
 3. Exactly one match: load that full leaf and use its identifiers. Zero matches (after the fallback
    scan when one applied): stop and ask Oliver which project and component to use, and when no leaf
    exists for a project he names, offer to create one from `projects/_template.md`. More than one
@@ -35,10 +34,12 @@ routing table here and do not resolve a project from memory.
      requires a single resolved leaf (ask which component) so each leaf's `project = <KEY> AND
      component = <Component>` scoping is honored. Do not create, edit, comment, or transition until
      Oliver names the component and the single leaf is resolved.
-4. As a fast path you may open `<project-key-lower>-<component-slug>.md` directly (the component slug
-   is the component name lowercased with spaces and punctuation turned into hyphens, e.g. `TimeTrack`
-   → `ia-timetrack.md`, `OPPO Editor` → `ia-oppo-editor.md`), but still confirm the header matches the
-   target before acting.
+4. As a fast path you may open a leaf filename directly, but still confirm the header matches the
+   target before acting. A component-scoped leaf (`components: enforced`) follows
+   `<project-key-lower>-<component-slug>.md`, the component slug being the component name lowercased
+   with spaces and punctuation turned into hyphens (e.g. `TimeTrack` → `ia-timetrack.md`, `OPPO Editor`
+   → `ia-oppo-editor.md`). A standalone leaf (`components: none`) follows `<project-key-lower>.md`
+   (e.g. `PER` → `per.md`).
 
 Each leaf header uses this shape:
 
@@ -47,11 +48,20 @@ Each leaf header uses this shape:
 site: <site>
 project-key: <KEY>
 project-id: <id>
+components: enforced|none
 component: <Component Name>
 component-id: <id>
 aliases: <comma-separated names, keys, and synonyms>
 -->
 ```
+
+`components` declares once, for the whole project, whether components apply — never rediscover this
+with a `twg jira space component query` once a leaf already states it. `components: enforced` means
+every leaf for that project scopes to one named component and keeps the `component` / `component-id`
+lines; a project with several components has one leaf per component, each `components: enforced`.
+`components: none` means the project doesn't use components for filing work — omit the `component` and
+`component-id` lines entirely, drop all component scoping from JQL (`project = <KEY>` alone), and drop
+the component field from any create payload.
 
 The header's identifiers are authoritative. If a `twg` response names a different site or project than
 the selected leaf, stop.

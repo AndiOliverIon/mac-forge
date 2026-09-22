@@ -4,6 +4,7 @@
 site: ardis.atlassian.net
 project-key: IA
 project-id: 10061
+components: enforced
 component: TimeTrack
 component-id: 11845
 aliases: timetrack, time track, time tracking, IA/TimeTrack, Internal Apps TimeTrack

@@ -23,10 +23,7 @@ This file is the single tool-neutral entry point for deciding which shared guide
 
 ## Reading Tasks By Number
 
-- When told to read, open, or look up a task by its number/key (e.g. `PER-6792`), treat it as a Jira
-  request: follow the dormant `always/jira-tasks.md` pointer into `guidelines/jira/common.md`, resolve
-  the project leaf, and use the TWG Jira CLI (`twg jira workitem get <KEY>`) as the source of truth,
-  within that leaf's permitted actions.
+- See `always/jira-tasks.md` (already loaded) for handling a task by its number/key (e.g. `PER-6792`).
 
 ## Task Modes
 

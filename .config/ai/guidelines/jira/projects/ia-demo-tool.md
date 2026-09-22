@@ -4,6 +4,7 @@
 site: ardis.atlassian.net
 project-key: IA
 project-id: 10061
+components: enforced
 component: DEMO TOOL
 component-id: 10361
 aliases: demo tool, demotool, DEMO TOOL, IA/DEMO TOOL, Internal Apps DEMO TOOL
