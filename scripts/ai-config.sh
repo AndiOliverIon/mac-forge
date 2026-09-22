@@ -548,14 +548,12 @@ verify_config() {
     check_tool_directory "$CODEX_DIR" "Codex"
     check_tool_directory "$CLAUDE_DIR" "Claude"
     check_tool_directory "$GROK_DIR" "Grok"
+    check_tool_directory "$COPILOT_DIR" "Copilot"
     check_grok_compat_config
     check_bootstrap "$CODEX_TEMPLATE" "$CODEX_BOOTSTRAP" "Codex"
     check_bootstrap "$CLAUDE_TEMPLATE" "$CLAUDE_BOOTSTRAP" "Claude"
     check_bootstrap "$GROK_TEMPLATE" "$GROK_BOOTSTRAP" "Grok" render_grok_bootstrap
-    if [[ "$station" == "masterchief" ]]; then
-        check_tool_directory "$COPILOT_DIR" "Copilot"
-        check_bootstrap "$COPILOT_TEMPLATE" "$COPILOT_BOOTSTRAP" "Copilot"
-    fi
+    check_bootstrap "$COPILOT_TEMPLATE" "$COPILOT_BOOTSTRAP" "Copilot"
     check_station_context
     check_git_state
 
@@ -685,8 +683,8 @@ install_config() {
     ensure_tool_directory "$CODEX_DIR" "Codex"
     ensure_tool_directory "$CLAUDE_DIR" "Claude"
     ensure_tool_directory "$GROK_DIR" "Grok"
+    ensure_tool_directory "$COPILOT_DIR" "Copilot"
     if [[ "$station" == "masterchief" ]]; then
-        ensure_tool_directory "$COPILOT_DIR" "Copilot"
         for lane in work raynor zeratul; do
             handoff_directory="/home/oliver/$lane/.ai/review-handoff"
             if [[ -L "$handoff_directory" ]]; then
@@ -701,9 +699,7 @@ install_config() {
     install_bootstrap "$CODEX_TEMPLATE" "$CODEX_BOOTSTRAP"
     install_bootstrap "$CLAUDE_TEMPLATE" "$CLAUDE_BOOTSTRAP"
     install_bootstrap "$GROK_TEMPLATE" "$GROK_BOOTSTRAP" render_grok_bootstrap
-    if [[ "$station" == "masterchief" ]]; then
-        install_bootstrap "$COPILOT_TEMPLATE" "$COPILOT_BOOTSTRAP"
-    fi
+    install_bootstrap "$COPILOT_TEMPLATE" "$COPILOT_BOOTSTRAP"
 
     printf '\n'
     verify_config
