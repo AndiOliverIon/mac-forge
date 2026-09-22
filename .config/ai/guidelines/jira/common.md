@@ -15,13 +15,19 @@ routing table here and do not resolve a project from memory.
    - a named project and component (e.g. "Internal Apps / TimeTrack");
    - a product or app synonym (e.g. "the timetrack app").
 2. Enumerate `~/.config/ai/guidelines/jira/projects/*.md`, ignoring any file whose name begins with
-   `_` (templates), and read only each remaining file's `jira-leaf` header block. Match the target
-   against the header's `project-key`, `component`, and `aliases`.
-3. Exactly one match: load that full leaf and use its identifiers. Zero matches: stop and ask Oliver
-   which project and component to use, and when no leaf exists for a project he names, offer to create
-   one from `projects/_template.md`. More than one match (e.g. a bare issue key against a project with
-   several component leaves): stop and ask which component — except the read-only fast path below.
-   Never guess a site, project, or component.
+   `_` (templates). When the target is an explicit issue key, filter that listing by filename prefix
+   `<key-prefix-lower>-*.md` first (e.g. `IA-807` → `ia-*.md`) — every leaf follows the
+   `<project-key-lower>-<component-slug>.md` convention from step 4, so this costs only a directory
+   listing, never a file read. Read the `jira-leaf` header block of the files that survive the filter
+   (or, for a named-project/component or app-synonym target, of every remaining file) and match the
+   target against the header's `project-key`, `component`, and `aliases`. If a prefix filter yields
+   zero files, fall back once to a full header-scan of every remaining leaf, in case a leaf's filename
+   does not follow the convention, before concluding zero matches.
+3. Exactly one match: load that full leaf and use its identifiers. Zero matches (after the fallback
+   scan when one applied): stop and ask Oliver which project and component to use, and when no leaf
+   exists for a project he names, offer to create one from `projects/_template.md`. More than one
+   match (e.g. a bare issue key against a project with several component leaves): stop and ask which
+   component — except the read-only fast path below. Never guess a site, project, or component.
    - **Read-only fast path:** when the request is a direct lookup of a single item by its known issue
      key (a `get`, not a search) and every matched candidate leaf grants `Read / query: Yes`, you may
      read that item without asking, using the project facts the candidates share — the key alone
