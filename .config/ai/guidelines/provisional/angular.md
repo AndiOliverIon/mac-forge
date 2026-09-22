@@ -13,3 +13,6 @@
   or equivalent intent-revealing prefix, such as `isDisabled` or `isEnabled`.
 - In shared action services, represent in-flight state generically for the whole service or by
   action identity rather than adding a boolean for each concrete action.
+- Place dialogs and their orchestration services under a feature only when they are feature-specific.
+  When a dialog is intended for multiple application areas, keep the component and service in
+  `shared`; leave feature-specific transport subscriptions and filtering in the consuming feature.
