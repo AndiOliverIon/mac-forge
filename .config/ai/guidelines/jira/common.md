@@ -68,7 +68,8 @@ the selected leaf, stop.
 
 ## Tool
 
-Use the TWG CLI, not the browser and not a guessed REST call.
+Use an authenticated Jira integration, not the browser and not a guessed REST call. Use the TWG CLI
+for reads, discovery, and mutations when it works:
 
 ```bash
 twg <command>
@@ -78,6 +79,21 @@ The authenticated `twg` CLI already resolves the correct site. Do not run `twg` 
 or credential commands unless Oliver explicitly asks for auth repair. If the shell reports
 `command not found`, retry with `$HOME/.local/bin/twg` and say that directory is missing from `PATH`.
 An auth or permission error is not a `PATH` problem.
+
+When the connected Atlassian Rovo tools are available, prefer them for Jira mutations. They must
+follow the same project-leaf, metadata-discovery, duplicate-check, transition-discovery, and
+read-back rules in this file.
+
+If a TWG create, update, transition, or field-metadata command reports that it cannot verify the
+target site against the saved default site's organization:
+
+1. Do not retry the same CLI mutation, report Jira writes unavailable, or run setup/login commands.
+2. Resolve accessible Atlassian resources through the connector and require an exact URL match with
+   the selected leaf's `site`.
+3. Use the connector to discover required fields, perform the mutation, discover transitions when
+   needed, and read the result back.
+4. Keep the selected leaf's project, component, and issue-type identifiers authoritative.
+5. Stop only if the connector is unavailable, fails, or resolves a different site or project.
 
 Before an unfamiliar mutation, read the live contract and prefer it over any documented flag if they
 disagree:
@@ -102,12 +118,14 @@ twg help describe "jira workitem transition"
 ## Create
 
 - Discover create fields for the chosen type before the first create in a session, and again if Jira
-  rejects the payload: `twg jira workitem field create-metadata --space <KEY> --type <Type>`.
+  rejects the payload: `twg jira workitem field create-metadata --space <KEY> --type <Type>`, or the
+  connected Atlassian tool's equivalent metadata operation.
 - If metadata marks a field required and Oliver did not supply a value, stop and ask. Do not invent
   priority, assignee, sprint, story points, labels, or resolution.
-- `create` has no `--components` flag; set the component with `--field 'components=[{"id":"<id>"}]'`
-  using the component id from the leaf. `--field` values parse as JSON when valid JSON; do not pass the
-  same field through both `--field` and `--fields-json`.
+- With TWG, `create` has no `--components` flag; set the component with
+  `--field 'components=[{"id":"<id>"}]'` using the component id from the leaf. `--field` values parse
+  as JSON when valid JSON; do not pass the same field through both `--field` and `--fields-json`. With
+  the Atlassian connector, include the same component id in the create operation's additional fields.
 - A sub-task also needs `--parent <KEY>`.
 
 Description rules:
@@ -135,8 +153,9 @@ Description rules:
 
 ## Status Changes
 
-- Do not guess a transition id. Discover first — omitting `--transition-id` is read-only:
-  `twg jira workitem transition --id <KEY>`. Then call it again with one returned `--transition-id`.
+- Do not guess a transition id. Discover available transitions through the active integration first,
+  then perform the transition with one returned id. With TWG, omitting `--transition-id` is read-only:
+  `twg jira workitem transition --id <KEY>`.
 - If a transition lists required screen fields and Oliver did not supply them, ask. A request to cancel
   or close does not imply a Resolution such as `Won't Do`, `Declined`, or `Duplicate`.
 - `--status` on `jira workitem update` is a second transition path; prefer the discovery command so
@@ -144,9 +163,10 @@ Description rules:
 
 ## Verify
 
-After every create or update, read the item back with `twg jira workitem get <KEY> --fields ...` and
-report `https://<site>/browse/<KEY>`. Confirm the project, issue type, component, summary, and
-description match what Oliver requested.
+After every create, update, or transition, read the item back through the active integration and
+report `https://<site>/browse/<KEY>`. With TWG, use `twg jira workitem get <KEY> --fields ...`. Confirm
+the project, issue type, component, summary, description, and requested status match what Oliver
+requested.
 
 ## Safety Invariants
 
