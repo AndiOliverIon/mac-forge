@@ -12,7 +12,12 @@ dotnet tool restore
 dotnet build "$PROJDIR/Ardis.Timetrack.csproj" -c Debug
 
 # Generate OpenAPI JSON from the built assembly.
-DLL="$PROJDIR/bin/Debug/net8.0/Ardis.Timetrack.dll"
+TARGET_FRAMEWORK="$(dotnet msbuild "$PROJDIR/Ardis.Timetrack.csproj" -nologo -getProperty:TargetFramework | tr -d '\r' | tail -n 1)"
+if [[ ! "$TARGET_FRAMEWORK" =~ ^net[0-9]+\.[0-9]+$ ]]; then
+	echo "Unable to determine TargetFramework for $PROJDIR/Ardis.Timetrack.csproj" >&2
+	exit 1
+fi
+DLL="$PROJDIR/bin/Debug/$TARGET_FRAMEWORK/Ardis.Timetrack.dll"
 dotnet tool run swagger tofile --output "$PROJDIR/openapi-v1.json" "$DLL" v1
 
 # Ensure output directory exists; optionally force regeneration.
