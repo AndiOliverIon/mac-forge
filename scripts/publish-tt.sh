@@ -9,8 +9,8 @@ die() {
 usage() {
 	cat <<'EOF'
 Usage:
-  publish-tt          Publish .NET 8 from development to the production v2 image.
-  publish-tt net10    Publish .NET 10 from aoi/net10-upgrade to isolated trial images.
+  publish-tt          Publish .NET 8 from main or release/1.x.x to the v2 image.
+  publish-tt net10    Publish .NET 10 from development to isolated trial images.
 EOF
 }
 
@@ -24,12 +24,12 @@ fi
 mode="${1:-net8}"
 case "$mode" in
 net8)
-	expected_branch="development"
+	expected_branch_description="main or release/1.x.x"
 	expected_target_framework="net8.0"
 	image_tag="v2"
 	;;
 net10)
-	expected_branch="aoi/net10-upgrade"
+	expected_branch_description="development"
 	expected_target_framework="net10.0"
 	image_tag="net10-trial"
 	;;
@@ -51,7 +51,16 @@ cd "$TIMETRACK_ROOT"
 [[ -x ./Ardis.Timetrack/build-docker.sh ]] || die "Docker build script is not executable: $TIMETRACK_ROOT/Ardis.Timetrack/build-docker.sh"
 
 current_branch="$(git symbolic-ref --quiet --short HEAD)" || die "Timetrack must be on a branch, not a detached HEAD."
-[[ "$current_branch" == "$expected_branch" ]] || die "Mode '$mode' requires branch '$expected_branch'; current branch is '$current_branch'."
+case "$mode" in
+net8)
+	if [[ "$current_branch" != "main" && ! "$current_branch" =~ ^release/1\.[0-9]+\.[0-9]+$ ]]; then
+		die "Mode '$mode' requires branch $expected_branch_description; current branch is '$current_branch'."
+	fi
+	;;
+net10)
+	[[ "$current_branch" == "development" ]] || die "Mode '$mode' requires branch $expected_branch_description; current branch is '$current_branch'."
+	;;
+esac
 
 if [[ -n "$(git status --porcelain)" ]]; then
 	die "Timetrack working tree must be clean before publishing."
