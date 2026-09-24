@@ -60,7 +60,7 @@ alias	ardis-complete	ardis-complete — Complete Ardis planning/activity data ov
 alias	ac	ac — Complete Ardis planning/activity data over a selected date range (short for ardis-complete).
 alias	perf-cache-reset	perf-cache-reset — Clear Perform client cache artifacts.
 alias	pcr	pcr — Clear Perform client cache artifacts (short for perf-cache-reset).
-alias	publish-tt	publish-tt — Build the Timetrack solution, then build and push its Docker image.
+alias	publish-tt	publish-tt [net10] — With no argument, publish .NET 8 from development to v2; with net10, publish the isolated .NET 10 trial image.
 alias	publish-te	publish-te — Build the Tools Extensions solution, then build and push its Docker image.
 alias	publish-perf-local	publish-perf-local — Interactively publish and start a selected Perform branch in a local Portainer-style Docker stack.
 alias	genopenapi	genopenapi — Regenerate the Perform OpenAPI JSON and TypeScript client using the Ardis.Perform namespace; pass --old for Asms2.Web.
@@ -338,7 +338,7 @@ script	mac-clean-vscode-caches	mac-clean-vscode-caches — Clear only VS Code's 
 script	mac-clean-xcode-device-support	mac-clean-xcode-device-support — Delete Xcode iOS DeviceSupport symbol bundles older than 30 days.
 script	perform-local-portainer	perform-local-portainer — Build and run a local Portainer-style Docker stack for Ardis Perform without touching the app repo.
 script	publish-te	publish-te — Build the Tools Extensions solution and publish/push its Docker image.
-script	publish-tt	publish-tt — Build the Ardis Timetrack solution and publish/push its Docker image.
+script	publish-tt	publish-tt [net10] — Branch-guarded TimeTrack publish: development/net8 to v2, or aoi/net10-upgrade/net10 to trial images.
 script	tally-app	tally-app — Build and launch the Tally macOS app (debug or release, with separate preference domains).
 alias	v1sn	v1sn — Create a .bak snapshot of a vps1 database into the vps1 snapshots folder.
 alias	vps1-snapshot	vps1-snapshot — Long form of v1sn: create a .bak snapshot of a vps1 database.
