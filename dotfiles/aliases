@@ -255,6 +255,7 @@ alias artanis="codex"
 alias argus="claude"
 alias aegis="copilot"
 alias karax="grok"
+alias talandar="opencode"
 
 # ------------------------------------------------------------------------------
 # Cleanup
