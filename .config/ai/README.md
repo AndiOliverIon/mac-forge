@@ -1,7 +1,7 @@
 # Shared AI Instructions
 
-This directory is the Git-tracked source of truth for shared Artanis, Karax, Argus,
-and Aegis instructions.
+This directory is the Git-tracked source of truth for shared Artanis, Karax, Argus, Aegis, and
+Talandar instructions.
 
 On Unix stations, expose it through the conventional path:
 
@@ -9,9 +9,9 @@ On Unix stations, expose it through the conventional path:
 ln -s "$HOME/mac-forge/.config/ai" "$HOME/.config/ai"
 ```
 
-Do not replace the complete `~/.codex`, `~/.grok`, or `~/.claude` directories. They contain
-tool-owned local state. Their global instruction bootstrap files should load
-the generated canonical base instruction set from `~/.config/ai`.
+Do not replace complete tool-owned configuration directories such as `~/.codex`, `~/.grok`,
+`~/.claude`, or `~/.config/opencode`. They contain local state. Their global instruction bootstrap
+files should load the generated canonical base instruction set from `~/.config/ai`.
 
 Start a new agent session after pulling instruction changes so the updated
 global instruction chain is loaded.
@@ -19,14 +19,15 @@ global instruction chain is loaded.
 ## Context resolution
 
 `ai-config install` generates each tool's global bootstrap from its tracked template and canonical
-shared sources. Codex, Claude, and Copilot embed the small, stable base set so it is available at
-session start. Grok's 10,000-character project-rules limit requires a compact native
+shared sources. Codex, Claude, Copilot, and OpenCode embed the small, stable base set so it is
+available at session start. Grok's 10,000-character project-rules limit requires a compact native
 `~/.grok/AGENTS.md`; Karax uses it to load the canonical base sources through the resolver before
 task work. The installer also sets `[compat.claude] agents = false` in Grok's user configuration so
 Grok does not import Argus's global Claude identity; Claude-compatible skills, rules, and MCP
-settings remain available. On MasterChief the installer manages Codex, Grok, Claude, and Copilot bootstraps and the
-Work, Raynor, and Zeratul review-handoff lanes. Hades retains its Codex, Grok, and Claude bootstrap
-and project-lane layout.
+settings remain available. On MasterChief the installer manages Codex, Grok, Claude, and Copilot
+bootstraps and the Work, Raynor, and Zeratul review-handoff lanes. On Hades it also manages
+OpenCode's `~/.config/opencode/AGENTS.md` bootstrap for Talandar while preserving OpenCode's model
+and provider configuration. Hades retains its single-universe project-lane layout.
 
 The global bootstrap invokes `bin/ai-context.sh` before task work. The resolver combines the
 canonical `configs/stations.json` inventory with the current hostname, scope path, Git metadata, and
@@ -48,7 +49,8 @@ asks (for example "Aegis, hand off to Karax for review"), any of the four identi
 Coworker or the Reviewer for that one handoff; both names are recorded in the request and findings
 headers. Lane structure is unchanged: MasterChief keeps `work`, `raynor`, and `zeratul`; Hades keeps a
 single universe with one project lane per repository. `bin/review-handoff-verify.sh` validates the
-MasterChief lanes, including distinct Coworker and Reviewer identities.
+MasterChief lanes, including distinct Coworker and Reviewer identities. Talandar remains outside
+this formal rotation unless Oliver explicitly promotes or assigns him to a handoff role.
 
 ## Management
 

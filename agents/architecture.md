@@ -24,9 +24,9 @@ paths symlinked to the tracked source instead of divergent copies.
   `~/.config/ghostty/config.ghostty`; `scripts/configure-ghostty.sh` links it to Ghostty's macOS path
   and also links the shared zsh and Powerlevel10k profiles. Its login-shell default is OS-agnostic;
   `macos-titlebar-style` is harmlessly ignored on Linux. Windows is not covered yet.
-- `.config/ai` is the shared Artanis, Karax, Argus, and Aegis instruction source. Unix stations expose it at
-  `~/.config/ai`; tool-owned `~/.codex` and `~/.claude` directories remain physical. Use
-  `scripts/ai-config.sh` to verify, install, or fast-forward-sync the shared configuration.
+- `.config/ai` is the shared Artanis, Karax, Argus, Aegis, and Talandar instruction source. Unix
+  stations expose it at `~/.config/ai`; tool-owned agent configuration directories remain physical.
+  Use `scripts/ai-config.sh` to verify, install, or fast-forward-sync the shared configuration.
 
 ## Runtime and State Authorities
 

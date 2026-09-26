@@ -15,5 +15,6 @@
 - A provisional rule has only two eventual outcomes: delete it when it proves inconsistent or
   valueless, or promote it into the corresponding sealed guidance and remove the provisional entry
   in the same change. For Angular promotion, keep development and review guidance synchronized.
-- Git history is the only record required for removed rules. Artanis, Karax, Argus, and Aegis may recommend
-  candidates, but none may admit, remove, or promote one without Oliver's explicit decision.
+- Git history is the only record required for removed rules. Artanis, Karax, Argus, Aegis, and
+  Talandar may recommend candidates, but none may admit, remove, or promote one without Oliver's
+  explicit decision.

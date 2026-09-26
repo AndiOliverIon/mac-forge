@@ -11,15 +11,18 @@ CODEX_DIR="$USER_CONFIG_ROOT/.codex"
 CLAUDE_DIR="$USER_CONFIG_ROOT/.claude"
 COPILOT_DIR="$USER_CONFIG_ROOT/.copilot"
 GROK_DIR="$USER_CONFIG_ROOT/.grok"
+OPENCODE_DIR="$USER_CONFIG_ROOT/.config/opencode"
 CODEX_BOOTSTRAP="$CODEX_DIR/AGENTS.md"
 CLAUDE_BOOTSTRAP="$CLAUDE_DIR/CLAUDE.md"
 COPILOT_BOOTSTRAP="$COPILOT_DIR/copilot-instructions.md"
 GROK_BOOTSTRAP="$GROK_DIR/AGENTS.md"
+OPENCODE_BOOTSTRAP="$OPENCODE_DIR/AGENTS.md"
 GROK_CONFIG="$GROK_DIR/config.toml"
 CODEX_TEMPLATE="$AI_SOURCE/bootstrap/codex-AGENTS.md"
 CLAUDE_TEMPLATE="$AI_SOURCE/bootstrap/claude-CLAUDE.md"
 COPILOT_TEMPLATE="$AI_SOURCE/bootstrap/copilot-instructions.md"
 GROK_TEMPLATE="$AI_SOURCE/bootstrap/grok-AGENTS.md"
+OPENCODE_TEMPLATE="$AI_SOURCE/bootstrap/opencode-AGENTS.md"
 REQUIRED_SOURCES=(
     identities.md
     guidelines/guidelines.md
@@ -53,6 +56,7 @@ REQUIRED_SOURCES=(
     bootstrap/claude-CLAUDE.md
     bootstrap/copilot-instructions.md
     bootstrap/grok-AGENTS.md
+    bootstrap/opencode-AGENTS.md
 )
 failures=0
 warnings=0
@@ -549,11 +553,17 @@ verify_config() {
     check_tool_directory "$CLAUDE_DIR" "Claude"
     check_tool_directory "$GROK_DIR" "Grok"
     check_tool_directory "$COPILOT_DIR" "Copilot"
+    if [[ "$station" == "hades" ]]; then
+        check_tool_directory "$OPENCODE_DIR" "OpenCode"
+    fi
     check_grok_compat_config
     check_bootstrap "$CODEX_TEMPLATE" "$CODEX_BOOTSTRAP" "Codex"
     check_bootstrap "$CLAUDE_TEMPLATE" "$CLAUDE_BOOTSTRAP" "Claude"
     check_bootstrap "$GROK_TEMPLATE" "$GROK_BOOTSTRAP" "Grok" render_grok_bootstrap
     check_bootstrap "$COPILOT_TEMPLATE" "$COPILOT_BOOTSTRAP" "Copilot"
+    if [[ "$station" == "hades" ]]; then
+        check_bootstrap "$OPENCODE_TEMPLATE" "$OPENCODE_BOOTSTRAP" "OpenCode"
+    fi
     check_station_context
     check_git_state
 
@@ -684,6 +694,9 @@ install_config() {
     ensure_tool_directory "$CLAUDE_DIR" "Claude"
     ensure_tool_directory "$GROK_DIR" "Grok"
     ensure_tool_directory "$COPILOT_DIR" "Copilot"
+    if [[ "$station" == "hades" ]]; then
+        ensure_tool_directory "$OPENCODE_DIR" "OpenCode"
+    fi
     if [[ "$station" == "masterchief" ]]; then
         for lane in work raynor zeratul; do
             handoff_directory="/home/oliver/$lane/.ai/review-handoff"
@@ -700,6 +713,9 @@ install_config() {
     install_bootstrap "$CLAUDE_TEMPLATE" "$CLAUDE_BOOTSTRAP"
     install_bootstrap "$GROK_TEMPLATE" "$GROK_BOOTSTRAP" render_grok_bootstrap
     install_bootstrap "$COPILOT_TEMPLATE" "$COPILOT_BOOTSTRAP"
+    if [[ "$station" == "hades" ]]; then
+        install_bootstrap "$OPENCODE_TEMPLATE" "$OPENCODE_BOOTSTRAP"
+    fi
 
     printf '\n'
     verify_config
@@ -725,7 +741,7 @@ sync_config() {
     if [[ "$(detect_station)" == "masterchief" ]]; then
         printf '\nStart new Codex, Grok, Claude, and Copilot sessions after instruction changes.\n'
     else
-        printf '\nStart new Codex, Grok, and Claude sessions after instruction changes.\n'
+        printf '\nStart new Codex, Grok, Claude, and OpenCode sessions after instruction changes.\n'
     fi
 }
 
