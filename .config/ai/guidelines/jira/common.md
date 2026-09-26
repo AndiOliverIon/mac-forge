@@ -90,10 +90,15 @@ target site against the saved default site's organization:
 1. Do not retry the same CLI mutation, report Jira writes unavailable, or run setup/login commands.
 2. Resolve accessible Atlassian resources through the connector and require an exact URL match with
    the selected leaf's `site`.
-3. Use the connector to discover required fields, perform the mutation, discover transitions when
-   needed, and read the result back.
-4. Keep the selected leaf's project, component, and issue-type identifiers authoritative.
-5. Stop only if the connector is unavailable, fails, or resolves a different site or project.
+3. Stay on the connector for the rest of that Jira operation; do not interleave more CLI probes.
+4. For creation, use this shortest safe sequence: discover create metadata, run the scoped duplicate
+   search, create with the leaf's authoritative project/type/component identifiers, read the item
+   back, discover transitions when a status change was requested, transition, then read it back
+   again.
+5. For update or transition, read the current item, discover the applicable metadata or transitions,
+   perform the smallest requested mutation, and read it back.
+6. Keep the selected leaf's project, component, and issue-type identifiers authoritative.
+7. Stop only if the connector is unavailable, fails, or resolves a different site or project.
 
 Before an unfamiliar mutation, read the live contract and prefer it over any documented flag if they
 disagree:
@@ -156,6 +161,13 @@ Description rules:
 - Do not guess a transition id. Discover available transitions through the active integration first,
   then perform the transition with one returned id. With TWG, omitting `--transition-id` is read-only:
   `twg jira workitem transition --id <KEY>`.
+- Treat a requested status name as exact. Oliver's shorthand `state progress` means the exact
+  `In Progress` status. A transition target whose status category has the same name does not satisfy
+  the request: `Validation` is not `In Progress` merely because its category is `In Progress`.
+- If the exact requested status is not directly available, do not substitute another status.
+  Follow only an unambiguous workflow path through discovered intermediate transitions, rediscovering
+  transitions after each step. If the path is ambiguous or the exact status remains unavailable, ask
+  Oliver instead of choosing a nearby status.
 - If a transition lists required screen fields and Oliver did not supply them, ask. A request to cancel
   or close does not imply a Resolution such as `Won't Do`, `Declined`, or `Duplicate`.
 - `--status` on `jira workitem update` is a second transition path; prefer the discovery command so
