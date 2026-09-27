@@ -6,8 +6,23 @@ DEFAULT_COWORKER="artanis"
 DEFAULT_REVIEWER="argus"
 DEFAULT_MAX_CYCLES=5
 
+record_transcript_failure() {
+	local message="$1"
+	local file="${transcript_file:-}"
+
+	[[ "${transcript_ready:-false}" == true && -n "$file" && ! -L "$file" && -f "$file" ]] ||
+		return 0
+	{
+		printf '## %s — Coordinator failure\n\n' "$(date '+%Y-%m-%dT%H:%M:%S%z')"
+		printf '%s\n\n' "$message"
+	} >>"$file" 2>/dev/null || true
+}
+
 die() {
-	printf 'Error: %s\n' "$*" >&2
+	local message="$*"
+
+	printf 'Error: %s\n' "$message" >&2
+	record_transcript_failure "$message"
 	exit 1
 }
 
@@ -363,6 +378,7 @@ umask 077
 runtime_directory="$(mktemp -d "${TMPDIR:-/tmp}/team-work.XXXXXX")"
 state_initialized=false
 finished=false
+transcript_ready=false
 task_started_token="$(date -u '+%Y%m%dT%H%M%SZ')"
 loop_id="team:$station:$lane:$coworker:$task_started_token"
 started_at="$(iso_timestamp)"
@@ -373,16 +389,19 @@ reviewer_session=""
 transcript_slug="$(task_filename_slug "$prompt")"
 transcript_file="$transcript_directory/$transcript_slug-$task_started_token.md"
 transcript_suffix=2
+transcript_allocation="$(mktemp "$transcript_directory/.transcript.XXXXXX")"
 
-while ! (
-	set -o noclobber
-	: >"$transcript_file"
-) 2>/dev/null; do
+while ! ln "$transcript_allocation" "$transcript_file" 2>/dev/null; do
 	[[ -e "$transcript_file" || -L "$transcript_file" ]] ||
-		die "Cannot create transcript: $transcript_file"
+		{
+			rm -f -- "$transcript_allocation"
+			die "Cannot create transcript: $transcript_file"
+		}
 	transcript_file="$transcript_directory/$transcript_slug-$task_started_token-$transcript_suffix.md"
 	transcript_suffix=$((transcript_suffix + 1))
 done
+rm -f -- "$transcript_allocation"
+require_regular_file "$transcript_file"
 
 append_transcript_message() {
 	local speaker="$1"
@@ -408,6 +427,35 @@ append_transcript_file() {
 	} >>"$transcript_file"
 }
 
+cleanup() {
+	local incoming_status=$?
+	local exit_code="${1:-$incoming_status}"
+	local stop_reason="${2:-exit status $exit_code}"
+	trap - EXIT INT TERM
+
+	if [[ "$finished" != true && ! -L "$transcript_file" && -f "$transcript_file" ]]; then
+		(
+			append_transcript_message "Coordinator" "The workflow stopped with $stop_reason before approval or Oliver's /stop."
+		) 2>/dev/null || true
+	fi
+	if [[ "$state_initialized" == true && "$finished" != true && ! -L "$state_file" && -f "$state_file" ]]; then
+		(
+			state_temp="$(mktemp "$lane_directory/.team-loop-state.XXXXXX")"
+			jq --arg status "failed" --arg updated "$(iso_timestamp)" \
+				'.status = $status | .updatedAt = $updated' "$state_file" >"$state_temp" &&
+				chmod 600 "$state_temp" &&
+				mv "$state_temp" "$state_file"
+		) 2>/dev/null || true
+	fi
+	if [[ -n "${runtime_directory:-}" && -d "$runtime_directory" ]]; then
+		rm -rf -- "$runtime_directory" || true
+	fi
+	exit "$exit_code"
+}
+trap cleanup EXIT
+trap 'cleanup 130 "signal INT"' INT
+trap 'cleanup 143 "signal TERM"' TERM
+
 {
 	printf '# Team Workflow Transcript\n\n'
 	printf -- '- Task: %s\n' "$transcript_slug"
@@ -420,28 +468,8 @@ append_transcript_file() {
 	printf -- '- Reviewer: %s\n\n' "$reviewer_display"
 } >>"$transcript_file"
 chmod 600 "$transcript_file"
+transcript_ready=true
 append_transcript_message "Oliver" "$prompt"
-
-cleanup() {
-	local exit_code=$?
-	trap - EXIT INT TERM
-
-	if [[ "$finished" != true && -f "$transcript_file" ]]; then
-		append_transcript_message "Coordinator" "The workflow stopped with exit status $exit_code before approval or Oliver's /stop."
-	fi
-	if [[ "$state_initialized" == true && "$finished" != true && -f "$state_file" ]]; then
-		state_temp="$(mktemp "$lane_directory/.team-loop-state.XXXXXX")"
-		jq --arg status "failed" --arg updated "$(iso_timestamp)" \
-			'.status = $status | .updatedAt = $updated' "$state_file" >"$state_temp" &&
-			chmod 600 "$state_temp" &&
-			mv "$state_temp" "$state_file"
-	fi
-	if [[ -n "${runtime_directory:-}" && -d "$runtime_directory" ]]; then
-		rm -rf -- "$runtime_directory"
-	fi
-	exit "$exit_code"
-}
-trap cleanup EXIT INT TERM
 
 command -v "$(identity_command "$coworker")" >/dev/null 2>&1 ||
 	die "$(identity_command "$coworker") is required for $coworker_display."
@@ -565,6 +593,8 @@ wait_for_oliver() {
 }
 
 RUN_SESSION_ID=""
+VALIDATED_REQUEST_STATUS=""
+VALIDATED_VERDICT=""
 
 run_agent() {
 	local identity="$1"
@@ -680,7 +710,7 @@ validate_request() {
 	require_header "$request_file" "Repository" "$repository"
 	status="$(header_value "$request_file" "Status")"
 	case "$status" in
-	ready-for-review | awaiting-oliver) printf '%s\n' "$status" ;;
+	ready-for-review | awaiting-oliver) VALIDATED_REQUEST_STATUS="$status" ;;
 	*) die "Unexpected request status: ${status:-missing}" ;;
 	esac
 }
@@ -705,7 +735,7 @@ validate_findings() {
 	require_header "$findings_file" "Handoff ID" "$request_handoff_id"
 	verdict="$(header_value "$findings_file" "Verdict")"
 	case "$verdict" in
-	approved | changes-required | discussion-required) printf '%s\n' "$verdict" ;;
+	approved | changes-required | discussion-required) VALIDATED_VERDICT="$verdict" ;;
 	*) die "Unexpected review verdict: ${verdict:-missing}" ;;
 	esac
 }
@@ -881,8 +911,9 @@ while :; do
 		continue
 	fi
 
-	request_status="$(validate_request "$cycle")"
 	append_transcript_file "$coworker_display review request — cycle $cycle" "$request_file"
+	validate_request "$cycle"
+	request_status="$VALIDATED_REQUEST_STATUS"
 	if [[ "$request_status" == "awaiting-oliver" ]]; then
 		update_state "awaiting-oliver" "$cycle"
 		wait_for_oliver "the Coworker requested a decision in $request_file."
@@ -910,8 +941,9 @@ while :; do
 		continue
 	fi
 
-	verdict="$(validate_findings "$cycle")"
 	append_transcript_file "$reviewer_display findings — cycle $cycle" "$findings_file"
+	validate_findings "$cycle"
+	verdict="$VALIDATED_VERDICT"
 	append_transcript_message "Coordinator" "$reviewer_display recorded verdict '$verdict' for cycle $cycle."
 	case "$verdict" in
 	approved)
