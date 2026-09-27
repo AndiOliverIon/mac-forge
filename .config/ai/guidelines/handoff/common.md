@@ -272,15 +272,16 @@ request; without valid loop metadata, use the manual protocol and keep Oliver in
    `Status: awaiting-oliver`; the Reviewer uses `Verdict: discussion-required`. Do not manufacture
    agreement to keep the loop moving. The running coordinator waits for Oliver's plain-text decision
    in the same terminal and passes it to the existing Coworker session; Oliver does not invoke a
-   second command to resume the loop.
+   second command to resume the loop. The reserved decision `/stop` ends the loop without approval,
+   records `stopped-by-oliver`, and permits a later invocation to start a new task.
 5. `Verdict: changes-required` returns control to the same real Coworker session for the next cycle.
    A new request gets a new handoff ID and the incremented cycle. `Verdict: approved` ends the loop
    and returns the final request and findings to Oliver; it is technical approval within scope, not
    Oliver's approval to commit, push, deploy, or publish.
 6. The coordinator waits interactively at `awaiting-oliver`, `discussion-required`, an integrity
    violation, or the cycle limit. It parses only structured state and never decides whether a finding
-   is correct. Runtime failure stops the loop fail-closed. Approval ends that loop, so the next
-   invocation starts a new task.
+   is correct. Runtime failure stops the loop fail-closed. Approval or Oliver's explicit `/stop`
+   ends that loop, so the next invocation starts a new task.
 
 ## Subsequent Cycles
 

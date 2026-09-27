@@ -22,7 +22,8 @@ Usage:
 Options:
   --prompt <task>        Task, acceptance criteria, scope, and validation authority.
                          Required. The running coordinator asks for later
-                         decisions directly in the same terminal.
+                         decisions directly in the same terminal; enter /stop
+                         at that prompt to end the loop without approval.
   --coworker <identity>  artanis, karax, argus, or aegis. Default: artanis.
   --reviewer <identity>  artanis, karax, argus, or aegis. Default: argus.
   --max-cycles <count>   Maximum review cycles before Oliver is required. Default: 5.
@@ -113,7 +114,7 @@ assert_safe_initial_worktree() {
 		path="${entry:3}"
 		origin=""
 		case "$status" in
-		R* | C*)
+		[RC]? | ?[RC])
 			IFS= read -r -d '' origin || true
 			;;
 		esac
@@ -302,7 +303,7 @@ if [[ -e "$state_file" ]]; then
 		fi
 		die "A stale $previous_status team loop requires recovery before a new task can start. Inspect and move aside $state_file first."
 		;;
-	approved-awaiting-oliver)
+	approved-awaiting-oliver | stopped-by-oliver)
 		;;
 	failed | awaiting-oliver | cycle-limit-awaiting-oliver | unknown | invalid)
 		die "Existing team-loop state '$previous_status' requires recovery before a new task can start. Inspect and move aside $state_file first."
@@ -454,7 +455,7 @@ repository_refs_fingerprint() {
 	local snapshot="$runtime_directory/repository-refs-$RANDOM"
 
 	git symbolic-ref -q HEAD >"$snapshot" 2>/dev/null || git rev-parse HEAD >"$snapshot"
-	git for-each-ref --format='%(refname) %(objectname)' refs/heads refs/remotes >>"$snapshot"
+	git for-each-ref --format='%(refname) %(objectname)' >>"$snapshot"
 	git hash-object "$snapshot"
 	rm -f -- "$snapshot"
 }
@@ -468,10 +469,16 @@ wait_for_oliver() {
 	printf '\nTeam loop is waiting for Oliver: %s\n' "$reason" >&2
 	while :; do
 		printf 'Decision: ' >&2
-		IFS= read -r OLIVER_DECISION || die "No decision was received; the loop remains paused."
+		IFS= read -r OLIVER_DECISION || die "No decision was received; the loop is stopping as failed."
 		[[ -n "${OLIVER_DECISION//[[:space:]]/}" ]] && break
 		printf 'Enter a non-empty decision.\n' >&2
 	done
+	if [[ "$OLIVER_DECISION" == "/stop" ]]; then
+		update_state "stopped-by-oliver" "$cycle"
+		finished=true
+		printf '\nTeam loop stopped by Oliver without approval.\n' >&2
+		exit 0
+	fi
 }
 
 RUN_SESSION_ID=""

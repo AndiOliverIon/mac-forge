@@ -56,7 +56,8 @@ two real assigned CLI sessions and advances only structured transporter states. 
 sustained blocking disagreement, scope expansion, an integrity violation, or the cycle limit needs
 Oliver's decision, the running coordinator waits in the same terminal; enter the decision directly
 and it resumes the recorded sessions. Reviewer approval ends the loop and returns the result to
-Oliver. The coordinator never reviews code or simulates a team identity.
+Oliver. Enter `/stop` at a decision prompt to end without approval; the next invocation may start a
+new task. The coordinator never reviews code or simulates a team identity.
 
 The workflow refuses to start over substantive pending repository changes. Git-ignored paths, known
 local license artifacts, and `local-overrides/` do not block it. A repository may declare another
