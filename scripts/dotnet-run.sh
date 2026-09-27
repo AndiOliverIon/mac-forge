@@ -8,30 +8,45 @@ die() {
 
 usage() {
 	cat <<EOF
-Usage: $(basename "$0") [dotnet run arguments]
+Usage: $(basename "$0") [--profile <name>] [dotnet run arguments]
 
 Starts the ASP.NET Core backend of the solution you are currently in, from the
 terminal. The repository is detected from the current directory, and the web
 startup project (the single Microsoft.NET.Sdk.Web project) is discovered
-automatically. If the repository has a Rider ".run/*.run.xml" configuration for
-that project, its environment variables are reused; otherwise Development is
-assumed. Extra arguments are passed straight through to dotnet run.
+automatically. Rider and this command share the project's launchSettings.json
+profiles. Extra arguments are passed straight through to dotnet run.
 
 Examples:
   $(basename "$0")
+  $(basename "$0") --profile http-entra-local
+  $(basename "$0") --profile http-migrations --no-build
   $(basename "$0") --no-build
   $(basename "$0") -- --urls http://localhost:5005
 
 Environment overrides:
   DR_ROOT             Repository root (defaults to the current git repository)
   DR_PROJECT          Startup project path (skips auto-detection)
+  DR_PROFILE          launchSettings.json profile (same as --profile)
 EOF
 }
 
-if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+PROFILE="${DR_PROFILE:-}"
+case "${1:-}" in
+--help | -h)
 	usage
 	exit 0
-fi
+	;;
+--profile | -p)
+	[[ -n "${2:-}" ]] || die "--profile requires a profile name"
+	PROFILE="$2"
+	shift 2
+	;;
+--profile=*)
+	PROFILE="${1#*=}"
+	[[ -n "$PROFILE" ]] || die "--profile requires a profile name"
+	shift
+	;;
+esac
 
 command -v dotnet >/dev/null 2>&1 || die "dotnet executable not found"
 
@@ -52,50 +67,31 @@ if [[ -z "$PROJECT" ]]; then
 			grep -Eiv '(test|tests)\.csproj$'
 	)
 	case ${#WEB_PROJECTS[@]} in
-		0) die "No Microsoft.NET.Sdk.Web startup project found under $ROOT" ;;
-		1) PROJECT="${WEB_PROJECTS[0]}" ;;
-		*)
-			echo "Multiple web startup projects found under $ROOT:" >&2
-			printf '  %s\n' "${WEB_PROJECTS[@]}" >&2
-			die "Set DR_PROJECT to choose one"
-			;;
+	0) die "No Microsoft.NET.Sdk.Web startup project found under $ROOT" ;;
+	1) PROJECT="${WEB_PROJECTS[0]}" ;;
+	*)
+		echo "Multiple web startup projects found under $ROOT:" >&2
+		printf '  %s\n' "${WEB_PROJECTS[@]}" >&2
+		die "Set DR_PROJECT to choose one"
+		;;
 	esac
 fi
 [[ -f "$PROJECT" ]] || die "Startup project not found: $PROJECT"
 
-# Reuse env from a matching Rider run configuration when one exists.
-apply_run_env() {
-	local run_file="$1"
-	local name value line
-	while IFS= read -r line; do
-		name="$(sed -n 's/.*<env name="\([^"]*\)".*/\1/p' <<<"$line")"
-		value="$(sed -n 's/.*value="\([^"]*\)".*/\1/p' <<<"$line")"
-		[[ -n "$name" ]] || continue
-		# Existing environment wins; only fill what is unset.
-		[[ -n "${!name:-}" ]] || export "$name=$value"
-	done < <(grep '<env ' "$run_file" 2>/dev/null)
-}
-
-RUN_ENV_SOURCE=""
-if [[ -d "$ROOT/.run" ]]; then
-	project_basename="$(basename "$PROJECT")"
-	for run_file in "$ROOT"/.run/*.run.xml; do
-		[[ -f "$run_file" ]] || continue
-		if grep -q "$project_basename" "$run_file"; then
-			apply_run_env "$run_file"
-			RUN_ENV_SOURCE="$run_file"
-			break
-		fi
-	done
-fi
-
-# Sensible defaults when no run configuration supplied them.
+# Sensible defaults for projects without launch settings.
 export DOTNET_ENVIRONMENT="${DOTNET_ENVIRONMENT:-Development}"
 export ASPNETCORE_ENVIRONMENT="${ASPNETCORE_ENVIRONMENT:-Development}"
 
 echo "Repository:  $ROOT"
 echo "Project:     $PROJECT"
 echo "Environment: $ASPNETCORE_ENVIRONMENT"
-[[ -n "$RUN_ENV_SOURCE" ]] && echo "Run config:  $RUN_ENV_SOURCE"
+[[ -n "$PROFILE" ]] && echo "Profile:     $PROFILE"
 
-exec dotnet run --project "$PROJECT" "$@"
+RUN_ARGS=(--project "$PROJECT")
+if [[ -n "$PROFILE" ]]; then
+	LAUNCH_SETTINGS="$(dirname "$PROJECT")/Properties/launchSettings.json"
+	[[ -f "$LAUNCH_SETTINGS" ]] || die "Launch settings not found: $LAUNCH_SETTINGS"
+	RUN_ARGS+=(--launch-profile "$PROFILE")
+fi
+
+exec dotnet run "${RUN_ARGS[@]}" "$@"
