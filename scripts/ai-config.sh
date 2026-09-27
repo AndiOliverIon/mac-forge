@@ -685,7 +685,7 @@ install_bootstrap() {
 }
 
 install_config() {
-    local station lane handoff_directory
+    local station lane handoff_directory transcript_directory
 
     [[ -d "$AI_SOURCE" ]] || die "shared AI source is missing: $AI_SOURCE"
     require_source_layout
@@ -698,11 +698,15 @@ install_config() {
     if [[ "$station" == "masterchief" ]]; then
         for lane in work raynor zeratul; do
             handoff_directory="/home/oliver/$lane/.ai/review-handoff"
+            transcript_directory="$handoff_directory/transcripts"
             if [[ -L "$handoff_directory" ]]; then
                 die "handoff lane must not be a symlink: $handoff_directory"
             fi
-            mkdir -p "$handoff_directory"
-            chmod 700 "/home/oliver/$lane/.ai" "$handoff_directory"
+            if [[ -L "$transcript_directory" ]]; then
+                die "handoff transcript directory must not be a symlink: $transcript_directory"
+            fi
+            mkdir -p "$transcript_directory"
+            chmod 700 "/home/oliver/$lane/.ai" "$handoff_directory" "$transcript_directory"
         done
     fi
     install_ai_link

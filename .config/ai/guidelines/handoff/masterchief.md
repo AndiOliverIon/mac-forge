@@ -29,7 +29,8 @@ The Coworker owns `request-<coworker>.md`; the pair's designated Reviewer owns t
 When Oliver starts `team-work.sh`, the coordinator owns `team-loop-<coworker>.json` in the selected
 lane and invokes the two assigned identities sequentially. It never authorizes concurrent agents in
 one universe. Before launching either identity, it verifies that `FORGE_UNIVERSE_ROOT` is empty for
-Work or resolves to the selected Raynor/Zeratul universe root.
+Work or resolves to the selected Raynor/Zeratul universe root. It also owns the lane's `transcripts/`
+directory contents and writes one transcript per autonomous task.
 
 Role switching never changes lane rules:
 
@@ -47,25 +48,29 @@ Role switching never changes lane rules:
 - Request: `/home/oliver/work/.ai/review-handoff/request-<coworker>.md`
 - Findings: `/home/oliver/work/.ai/review-handoff/findings-<coworker>.md`
 - Coordinator state: `/home/oliver/work/.ai/review-handoff/team-loop-<coworker>.json`
+- Autonomous transcripts: `/home/oliver/work/.ai/review-handoff/transcripts/<task-slug>-<UTC timestamp>.md`
 
 ### Lane `zeratul`
 
 - Request: `/home/oliver/zeratul/.ai/review-handoff/request-<coworker>.md`
 - Findings: `/home/oliver/zeratul/.ai/review-handoff/findings-<coworker>.md`
 - Coordinator state: `/home/oliver/zeratul/.ai/review-handoff/team-loop-<coworker>.json`
+- Autonomous transcripts: `/home/oliver/zeratul/.ai/review-handoff/transcripts/<task-slug>-<UTC timestamp>.md`
 
 ### Lane `raynor`
 
 - Request: `/home/oliver/raynor/.ai/review-handoff/request-<coworker>.md`
 - Findings: `/home/oliver/raynor/.ai/review-handoff/findings-<coworker>.md`
 - Coordinator state: `/home/oliver/raynor/.ai/review-handoff/team-loop-<coworker>.json`
+- Autonomous transcripts: `/home/oliver/raynor/.ai/review-handoff/transcripts/<task-slug>-<UTC timestamp>.md`
 
 `<coworker>` is the lowercase identity of the Coworker (`artanis`, `karax`, `argus`, or `aegis`). The
 Reviewer is recorded in the file headers, not the filename.
 
 These lane directories are created and validated by `ai-config install`. Do not create or relocate
 them as part of a handoff. If the selected lane directory is missing, stop and report the
-configuration problem.
+configuration problem. Each lane's physical owner-only `transcripts/` directory is also installed
+and validated; `team-work.sh` may repair a missing transcript directory before a task starts.
 
 ## Metadata and Handoff ID
 

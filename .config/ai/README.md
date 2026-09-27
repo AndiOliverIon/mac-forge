@@ -59,6 +59,12 @@ and it resumes the recorded sessions. Reviewer approval ends the loop and return
 Oliver. Enter `/stop` at a decision prompt to end without approval; the next invocation may start a
 new task. The coordinator never reviews code or simulates a team identity.
 
+Each autonomous task writes an owner-only Markdown transcript under the active handoff lane's
+`transcripts/` directory. Its filename combines a short slug derived from the task prompt with a UTC
+timestamp. The transcript records Oliver's prompt and decisions, participant prompts and final
+responses, request/findings snapshots, verdicts, pauses, and the outcome. It is an audit and recap
+artifact, not a source of loop control, hidden reasoning, or raw tool events.
+
 The workflow refuses to start over substantive pending repository changes. Git-ignored paths, known
 local license artifacts, and `local-overrides/` do not block it. A repository may declare another
 routine local-only path or glob without changing tracked files:

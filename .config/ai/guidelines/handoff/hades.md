@@ -31,10 +31,15 @@ The active lane uses one pair per Coworker, keyed by the Coworker's lowercase id
 - Request: `/Users/oliver/handoffserver/<project-key>/request-<coworker>.md`
 - Findings: `/Users/oliver/handoffserver/<project-key>/findings-<coworker>.md`
 - Coordinator state: `/Users/oliver/handoffserver/<project-key>/team-loop-<coworker>.json`
+- Autonomous transcripts: `/Users/oliver/handoffserver/<project-key>/transcripts/<task-slug>-<UTC timestamp>.md`
 
 `<coworker>` is `artanis`, `karax`, `argus`, or `aegis`. The Reviewer is recorded in the file
 headers, not the filename. Only `team-work.sh` writes coordinator state. Agents may verify the loop
 ID and session metadata named by their prompt but must not edit that JSON file.
+
+`transcripts/` is a physical owner-only immediate child of the project lane. The coordinator creates
+it when missing and writes one owner-only transcript per autonomous task; manual handoffs do not
+write autonomous transcripts.
 
 Different project lanes may operate concurrently, and several pairs in one project lane may be active
 at once. While operating in one project lane, never enumerate, inspect, read, or modify another

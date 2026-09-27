@@ -27,7 +27,9 @@ decision-maker.
   Reviewer does not implement changes through this protocol.
 - Transporter files are the exclusive channel for substantive handoff content. Do not search for
   handoff state in other AI sessions or contact another session to locate or exchange it. The
-  coordinator's JSON file contains control state and real runtime session IDs only.
+  coordinator's JSON file contains control state and real runtime session IDs only. An autonomous
+  task transcript is an append-only archive written by the coordinator; participants never use it
+  as an input or control channel and must not modify it.
 - Findings authorize analysis only. The Coworker may implement only after Oliver explicitly confirms
   the accepted scope, except inside an active autonomous team loop whose initial prompt explicitly
   authorizes in-scope iterative corrections.
@@ -52,6 +54,11 @@ decision-maker.
   and the Reviewer, and the Coworker name must match the filename.
 - Only `team-work.sh` writes `team-loop-<coworker>.json`. Participants must not modify coordinator
   state or use it as a substitute for the request and findings transporter pair.
+- Only `team-work.sh` writes files under the lane's `transcripts/` directory. Each autonomous task
+  receives one owner-only Markdown file with a concise task slug and UTC timestamp in its filename.
+  It records Oliver's task and decisions, participant prompts and final responses, transporter
+  snapshots, verdicts, pauses, and the terminal outcome. It does not preserve hidden reasoning or a
+  raw tool-event stream.
 - Before reading or writing a present transporter file, reject it if it is a symlink or not a regular
   file. Create a missing owned file only when the active trigger and station flow allow it.
 - Replace a present owned transporter file with one update operation. When using `apply_patch`, use
@@ -282,6 +289,9 @@ request; without valid loop metadata, use the manual protocol and keep Oliver in
    violation, or the cycle limit. It parses only structured state and never decides whether a finding
    is correct. Runtime failure stops the loop fail-closed. Approval or Oliver's explicit `/stop`
    ends that loop, so the next invocation starts a new task.
+7. The coordinator appends every workflow exchange to the task's transcript and records its absolute
+   path in coordinator state. Transcript failure is workflow failure; an agent modification of the
+   transcript is an integrity violation.
 
 ## Subsequent Cycles
 

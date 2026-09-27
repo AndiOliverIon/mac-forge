@@ -30,6 +30,7 @@ Options:
   -h, --help             Show this help.
 
 The repository is the canonical Git repository containing the current directory.
+Each started task writes one task-named Markdown transcript in the handoff lane.
 EOF
 }
 
@@ -83,6 +84,14 @@ require_header() {
 
 physical_directory() {
 	cd -P "$1" 2>/dev/null && pwd
+}
+
+task_filename_slug() {
+	local value
+
+	value="$(printf '%s\n' "$1" | LC_ALL=C tr '[:upper:]' '[:lower:]' | LC_ALL=C tr -cs 'a-z0-9' '-' | sed 's/^-//; s/-$//' | cut -c1-40)"
+	value="${value%-}"
+	printf '%s\n' "${value:-task}"
 }
 
 is_routine_local_change() {
@@ -286,6 +295,20 @@ masterchief)
 *) die "Unsupported station for team workflow: ${station:-unknown}" ;;
 esac
 
+lane_physical="$(physical_directory "$lane_directory")" ||
+	die "Cannot resolve the physical handoff lane: $lane_directory"
+transcript_directory="$lane_directory/transcripts"
+if [[ ! -e "$transcript_directory" ]]; then
+	mkdir -m 700 "$transcript_directory"
+fi
+[[ ! -L "$transcript_directory" && -d "$transcript_directory" ]] ||
+	die "Transcript path must be a physical directory: $transcript_directory"
+transcript_physical="$(physical_directory "$transcript_directory")" ||
+	die "Cannot resolve transcript directory: $transcript_directory"
+[[ "$(dirname "$transcript_physical")" == "$lane_physical" ]] ||
+	die "Transcript directory is not an immediate child of the handoff lane."
+chmod 700 "$transcript_directory"
+
 request_file="$lane_directory/request-$coworker.md"
 findings_file="$lane_directory/findings-$coworker.md"
 state_file="$lane_directory/team-loop-$coworker.json"
@@ -340,11 +363,72 @@ umask 077
 runtime_directory="$(mktemp -d "${TMPDIR:-/tmp}/team-work.XXXXXX")"
 state_initialized=false
 finished=false
+task_started_token="$(date -u '+%Y%m%dT%H%M%SZ')"
+loop_id="team:$station:$lane:$coworker:$task_started_token"
+started_at="$(iso_timestamp)"
+coworker_display="$(display_identity "$coworker")"
+reviewer_display="$(display_identity "$reviewer")"
+coworker_session=""
+reviewer_session=""
+transcript_slug="$(task_filename_slug "$prompt")"
+transcript_file="$transcript_directory/$transcript_slug-$task_started_token.md"
+transcript_suffix=2
+
+while ! (
+	set -o noclobber
+	: >"$transcript_file"
+) 2>/dev/null; do
+	[[ -e "$transcript_file" || -L "$transcript_file" ]] ||
+		die "Cannot create transcript: $transcript_file"
+	transcript_file="$transcript_directory/$transcript_slug-$task_started_token-$transcript_suffix.md"
+	transcript_suffix=$((transcript_suffix + 1))
+done
+
+append_transcript_message() {
+	local speaker="$1"
+	local body="$2"
+
+	require_regular_file "$transcript_file"
+	{
+		printf '## %s — %s\n\n' "$(iso_timestamp)" "$speaker"
+		printf '%s\n\n' "$body"
+	} >>"$transcript_file"
+}
+
+append_transcript_file() {
+	local title="$1"
+	local file="$2"
+
+	require_regular_file "$transcript_file"
+	require_regular_file "$file"
+	{
+		printf '## %s — %s\n\n' "$(iso_timestamp)" "$title"
+		sed 's/^/    /' "$file"
+		printf '\n'
+	} >>"$transcript_file"
+}
+
+{
+	printf '# Team Workflow Transcript\n\n'
+	printf -- '- Task: %s\n' "$transcript_slug"
+	printf -- '- Started: %s\n' "$started_at"
+	printf -- '- Loop ID: %s\n' "$loop_id"
+	printf -- '- Station: %s\n' "$station"
+	printf -- '- Lane: %s\n' "$lane"
+	printf -- '- Repository: %s\n' "$repository"
+	printf -- '- Coworker: %s\n' "$coworker_display"
+	printf -- '- Reviewer: %s\n\n' "$reviewer_display"
+} >>"$transcript_file"
+chmod 600 "$transcript_file"
+append_transcript_message "Oliver" "$prompt"
 
 cleanup() {
 	local exit_code=$?
 	trap - EXIT INT TERM
 
+	if [[ "$finished" != true && -f "$transcript_file" ]]; then
+		append_transcript_message "Coordinator" "The workflow stopped with exit status $exit_code before approval or Oliver's /stop."
+	fi
 	if [[ "$state_initialized" == true && "$finished" != true && -f "$state_file" ]]; then
 		state_temp="$(mktemp "$lane_directory/.team-loop-state.XXXXXX")"
 		jq --arg status "failed" --arg updated "$(iso_timestamp)" \
@@ -358,13 +442,6 @@ cleanup() {
 	exit "$exit_code"
 }
 trap cleanup EXIT INT TERM
-
-loop_id="team:$station:$lane:$coworker:$(date -u '+%Y%m%dT%H%M%SZ')"
-started_at="$(iso_timestamp)"
-coworker_display="$(display_identity "$coworker")"
-reviewer_display="$(display_identity "$reviewer")"
-coworker_session=""
-reviewer_session=""
 
 command -v "$(identity_command "$coworker")" >/dev/null 2>&1 ||
 	die "$(identity_command "$coworker") is required for $coworker_display."
@@ -385,6 +462,7 @@ write_initial_state() {
 		--arg reviewer "$reviewer_display" \
 		--arg requestFile "$request_file" \
 		--arg findingsFile "$findings_file" \
+		--arg transcriptFile "$transcript_file" \
 		--arg startedAt "$started_at" \
 		--argjson maxCycles "$max_cycles" \
 		--argjson coordinatorPid "$$" \
@@ -403,6 +481,7 @@ write_initial_state() {
 			reviewerSessionId: "",
 			requestFile: $requestFile,
 			findingsFile: $findingsFile,
+			transcriptFile: $transcriptFile,
 			coordinatorPid: $coordinatorPid,
 			startedAt: $startedAt,
 			updatedAt: $startedAt
@@ -466,6 +545,7 @@ wait_for_oliver() {
 	local reason="$1"
 
 	[[ -t 0 ]] || die "Oliver's decision is required, but team-work is not attached to an interactive terminal."
+	append_transcript_message "Coordinator" "The workflow is waiting for Oliver: $reason"
 	printf '\nTeam loop is waiting for Oliver: %s\n' "$reason" >&2
 	while :; do
 		printf 'Decision: ' >&2
@@ -473,10 +553,13 @@ wait_for_oliver() {
 		[[ -n "${OLIVER_DECISION//[[:space:]]/}" ]] && break
 		printf 'Enter a non-empty decision.\n' >&2
 	done
+	append_transcript_message "Oliver" "$OLIVER_DECISION"
 	if [[ "$OLIVER_DECISION" == "/stop" ]]; then
 		update_state "stopped-by-oliver" "$cycle"
+		append_transcript_message "Coordinator" "Oliver stopped the workflow without approval."
 		finished=true
 		printf '\nTeam loop stopped by Oliver without approval.\n' >&2
+		printf 'Transcript: %s\n' "$transcript_file" >&2
 		exit 0
 	fi
 }
@@ -492,11 +575,14 @@ run_agent() {
 	local last_message="$runtime_directory/last-$identity.txt"
 	local generated_session="$session_id"
 	local exit_code=0
+	local transcript_before_turn
 
 	printf '%s\n' "$agent_prompt" >"$prompt_file"
 	: >"$raw_output"
 	: >"$last_message"
 
+	append_transcript_message "Input to $(display_identity "$identity") — cycle $cycle" "$agent_prompt"
+	transcript_before_turn="$(git hash-object "$transcript_file")"
 	printf '\nRunning %s (%s)...\n' "$(display_identity "$identity")" "$(identity_command "$identity")"
 
 	case "$identity" in
@@ -556,10 +642,15 @@ run_agent() {
 			"$raw_output" >"$last_message" 2>/dev/null || true
 		;;
 	esac
+	[[ "$(git hash-object "$transcript_file")" == "$transcript_before_turn" ]] ||
+		die "$(display_identity "$identity") modified the coordinator-owned transcript."
 
 	if [[ -s "$last_message" ]]; then
+		append_transcript_file "$(display_identity "$identity") response — cycle $cycle" "$last_message"
 		printf '%s\n' "$(display_identity "$identity") completed the turn:"
 		sed -n '1,40p' "$last_message"
+	else
+		append_transcript_message "$(display_identity "$identity") response — cycle $cycle" "No final response was captured (CLI exit status $exit_code)."
 	fi
 
 	if ((exit_code != 0)); then
@@ -632,6 +723,7 @@ Oliver explicitly authorizes an autonomous team review loop.
 - Repository: $repository
 - Request file: $request_file
 - Findings file: $findings_file
+- Transcript file: $transcript_file (coordinator-owned; do not modify)
 
 Task from Oliver:
 
@@ -667,6 +759,7 @@ Continue Oliver's authorized autonomous team review loop.
 - Repository: $repository
 - Request file: $request_file
 - Findings file: $findings_file
+- Transcript file: $transcript_file (coordinator-owned; do not modify)
 
 Process $reviewer_display's findings from the immediately preceding cycle. Act only as
 $coworker_display. Do not spawn, simulate, or invoke the Reviewer or another AI identity.
@@ -700,6 +793,7 @@ Resume Oliver's paused autonomous team review loop in the same real Coworker ses
 - Repository: $repository
 - Request file: $request_file
 - Findings file: $findings_file
+- Transcript file: $transcript_file (coordinator-owned; do not modify)
 
 Oliver's decision or clarification:
 
@@ -735,6 +829,7 @@ Process $coworker_display's autonomous review handoff as the real $reviewer_disp
 - Repository: $repository
 - Request file: $request_file
 - Findings file: $findings_file
+- Transcript file: $transcript_file (coordinator-owned; do not modify)
 
 Act only as $reviewer_display, the independent Reviewer. Do not spawn, simulate, or invoke the
 Coworker or another AI identity. Independently inspect the actual repository target and write the
@@ -749,6 +844,7 @@ EOF
 }
 
 write_initial_state
+append_transcript_message "Coordinator" "The autonomous team workflow started."
 printf 'Team loop started\n\n'
 
 printf 'Loop ID: %s\n' "$loop_id"
@@ -756,6 +852,7 @@ printf 'Repository: %s\n' "$repository"
 printf 'Coworker: %s (%s)\n' "$coworker_display" "$(identity_command "$coworker")"
 printf 'Reviewer: %s (%s)\n' "$reviewer_display" "$(identity_command "$reviewer")"
 printf 'Maximum cycles: %s\n' "$max_cycles"
+printf 'Transcript: %s\n' "$transcript_file"
 
 cycle=1
 coworker_turn="initial"
@@ -785,6 +882,7 @@ while :; do
 	fi
 
 	request_status="$(validate_request "$cycle")"
+	append_transcript_file "$coworker_display review request — cycle $cycle" "$request_file"
 	if [[ "$request_status" == "awaiting-oliver" ]]; then
 		update_state "awaiting-oliver" "$cycle"
 		wait_for_oliver "the Coworker requested a decision in $request_file."
@@ -813,12 +911,15 @@ while :; do
 	fi
 
 	verdict="$(validate_findings "$cycle")"
+	append_transcript_file "$reviewer_display findings — cycle $cycle" "$findings_file"
+	append_transcript_message "Coordinator" "$reviewer_display recorded verdict '$verdict' for cycle $cycle."
 	case "$verdict" in
 	approved)
 		update_state "approved-awaiting-oliver" "$cycle"
+		append_transcript_message "Coordinator" "The workflow was approved by $reviewer_display and returned to Oliver."
 		finished=true
 		printf '\nTeam loop approved by %s and returned to Oliver.\n' "$reviewer_display"
-		printf 'Request: %s\nFindings: %s\n' "$request_file" "$findings_file"
+		printf 'Request: %s\nFindings: %s\nTranscript: %s\n' "$request_file" "$findings_file" "$transcript_file"
 		exit 0
 		;;
 	discussion-required)

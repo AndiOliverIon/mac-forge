@@ -223,6 +223,7 @@ case "$lane" in
 esac
 
 handoff_directory="/home/oliver/$lane/.ai/review-handoff"
+transcript_directory="$handoff_directory/transcripts"
 ai_directory="/home/oliver/$lane/.ai"
 lane_root="/home/oliver/$lane"
 
@@ -238,6 +239,22 @@ else
     [[ "$(stat -c '%a' "$handoff_directory")" == "700" ]] \
         && pass "handoff lane mode: $lane" \
         || fail "handoff lane mode is not 700: $handoff_directory"
+fi
+
+if [[ -L "$transcript_directory" || ! -d "$transcript_directory" ]]; then
+    fail "transcript archive is not a physical directory: $transcript_directory"
+else
+    [[ "$(stat -c '%a' "$transcript_directory")" == "700" ]] \
+        && pass "transcript archive mode: $lane" \
+        || fail "transcript archive mode is not 700: $transcript_directory"
+    for transcript in "$transcript_directory"/*.md; do
+        [[ -e "$transcript" || -L "$transcript" ]] || continue
+        if [[ -L "$transcript" || ! -f "$transcript" ]]; then
+            fail "transcript is not a physical regular file: $transcript"
+        elif [[ "$(stat -c '%a' "$transcript")" != "600" ]]; then
+            fail "transcript mode is not 600: $transcript"
+        fi
+    done
 fi
 
 slugs=(artanis karax argus aegis)

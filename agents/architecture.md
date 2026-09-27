@@ -75,7 +75,8 @@ development database—may still run locally and is not redirected to VPS1 by th
 - `scripts/team-work.sh`: opt-in autonomous Coworker/Reviewer loop using real persistent AI CLI
   sessions; ordinary review handoffs remain manual. It refuses substantive initial worktree changes,
   preserves approved routine-local changes as a baseline, and waits for Oliver's decisions inside the
-  original terminal process; `/stop` ends a waiting loop without approval.
+  original terminal process; `/stop` ends a waiting loop without approval. Each autonomous task also
+  receives one owner-only Markdown transcript in the active lane's `transcripts/` directory.
 - `scripts/clean.sh`: interactive cleaner for configured target directories.
 - `scripts/perform-prep.sh`, `scripts/perform-test.sh`, `scripts/ardis-migrate.sh`, and
   `scripts/gen-open-api.sh`: Ardis/Perform helpers.
