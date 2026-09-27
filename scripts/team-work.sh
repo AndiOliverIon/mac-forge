@@ -21,8 +21,8 @@ Usage:
 
 Options:
   --prompt <task>        Task, acceptance criteria, scope, and validation authority.
-                         Required. If a loop is paused for Oliver, this is the
-                         decision that resumes its recorded sessions.
+                         Required. The running coordinator asks for later
+                         decisions directly in the same terminal.
   --coworker <identity>  artanis, karax, argus, or aegis. Default: artanis.
   --reviewer <identity>  artanis, karax, argus, or aegis. Default: argus.
   --max-cycles <count>   Maximum review cycles before Oliver is required. Default: 5.
@@ -82,6 +82,55 @@ require_header() {
 
 physical_directory() {
 	cd -P "$1" 2>/dev/null && pwd
+}
+
+is_routine_local_change() {
+	local path="$1"
+	local pattern
+
+	case "$path" in
+	local-overrides/* | */local-overrides/* | wwwroot/license/offline/currentModuleRestrictionList.json | wwwroot/license/offline/currentModuleRestrictionList.original.json | */wwwroot/license/offline/currentModuleRestrictionList.json | */wwwroot/license/offline/currentModuleRestrictionList.original.json)
+		return 0
+		;;
+	esac
+
+	while IFS= read -r pattern; do
+		[[ -n "$pattern" ]] || continue
+		if [[ "$path" == $pattern ]]; then
+			return 0
+		fi
+	done < <(git config --local --get-all team-work.allowedDirtyPath 2>/dev/null || true)
+
+	return 1
+}
+
+assert_safe_initial_worktree() {
+	local entry status path origin
+	local -a blocking_changes=()
+
+	while IFS= read -r -d '' entry; do
+		status="${entry:0:2}"
+		path="${entry:3}"
+		origin=""
+		case "$status" in
+		R* | C*)
+			IFS= read -r -d '' origin || true
+			;;
+		esac
+
+		is_routine_local_change "$path" || blocking_changes+=("$status $path")
+		if [[ -n "$origin" ]]; then
+			is_routine_local_change "$origin" || blocking_changes+=("$status $origin")
+		fi
+	done < <(git status --porcelain=v1 -z --untracked-files=all)
+
+	if ((${#blocking_changes[@]} > 0)); then
+		printf 'Pending repository changes require Oliver\047s decision before team work starts:\n' >&2
+		printf '  %s\n' "${blocking_changes[@]}" >&2
+		printf 'Resolve them, or mark a genuinely routine local path with:\n' >&2
+		printf '  git config --local --add team-work.allowedDirtyPath \047path/or/glob\047\n' >&2
+		die "Team workflow did not start."
+	fi
 }
 
 iso_timestamp() {
@@ -158,6 +207,7 @@ repository="$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null)" ||
 repository="$(physical_directory "$repository")" ||
 	die "Cannot resolve the physical repository root."
 cd "$repository"
+assert_safe_initial_worktree
 
 project_key="$(basename "$repository")"
 [[ "$project_key" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] ||
@@ -214,6 +264,21 @@ masterchief)
 		;;
 	*) die "Repository is outside the supported MasterChief lanes: $repository" ;;
 	esac
+	case "$lane" in
+	work)
+		[[ -z "${FORGE_UNIVERSE_ROOT:-}" ]] ||
+			die "The Work lane requires a shell without FORGE_UNIVERSE_ROOT."
+		;;
+	raynor | zeratul)
+		expected_universe_root="/home/oliver/$lane"
+		[[ -n "${FORGE_UNIVERSE_ROOT:-}" ]] ||
+			die "The $lane lane requires FORGE_UNIVERSE_ROOT=$expected_universe_root."
+		actual_universe_root="$(physical_directory "$FORGE_UNIVERSE_ROOT")" ||
+			die "Cannot resolve FORGE_UNIVERSE_ROOT: $FORGE_UNIVERSE_ROOT"
+		[[ "$actual_universe_root" == "$expected_universe_root" ]] ||
+			die "The $lane lane conflicts with FORGE_UNIVERSE_ROOT=$actual_universe_root."
+		;;
+	esac
 	[[ ! -L "$lane_directory" && -d "$lane_directory" ]] ||
 		die "MasterChief handoff lane is missing or unsafe: $lane_directory"
 	;;
@@ -223,8 +288,6 @@ esac
 request_file="$lane_directory/request-$coworker.md"
 findings_file="$lane_directory/findings-$coworker.md"
 state_file="$lane_directory/team-loop-$coworker.json"
-state_coworker_slug="$coworker"
-resume_loop=false
 previous_status=""
 
 if [[ -e "$state_file" ]]; then
@@ -237,9 +300,15 @@ if [[ -e "$state_file" ]]; then
 		if [[ "$previous_pid" =~ ^[1-9][0-9]*$ ]] && kill -0 "$previous_pid" 2>/dev/null; then
 			die "An active team loop already owns the $coworker transporter pair (PID $previous_pid)."
 		fi
+		die "A stale $previous_status team loop requires recovery before a new task can start. Inspect and move aside $state_file first."
 		;;
-	awaiting-oliver | cycle-limit-awaiting-oliver)
-		resume_loop=true
+	approved-awaiting-oliver)
+		;;
+	failed | awaiting-oliver | cycle-limit-awaiting-oliver | unknown | invalid)
+		die "Existing team-loop state '$previous_status' requires recovery before a new task can start. Inspect and move aside $state_file first."
+		;;
+	*)
+		die "Unexpected team-loop state '$previous_status' in $state_file."
 		;;
 	esac
 fi
@@ -249,6 +318,20 @@ if [[ -e "$request_file" ]]; then
 	existing_repository="$(header_value "$request_file" "Repository")"
 	[[ -z "$existing_repository" || "$existing_repository" == "$repository" ]] ||
 		die "The existing $coworker request belongs to another repository: $existing_repository"
+	request_status="$(header_value "$request_file" "Status")"
+	request_automation="$(header_value "$request_file" "Automation")"
+	request_handoff_id="$(header_value "$request_file" "Handoff ID")"
+	if [[ "$request_status" == "ready-for-review" && "$request_automation" != "team-loop" ]]; then
+		findings_handoff_id=""
+		findings_status=""
+		if [[ -e "$findings_file" ]]; then
+			require_regular_file "$findings_file"
+			findings_handoff_id="$(header_value "$findings_file" "Handoff ID")"
+			findings_status="$(header_value "$findings_file" "Status")"
+		fi
+		[[ -n "$request_handoff_id" && "$findings_status" == "review-complete" && "$findings_handoff_id" == "$request_handoff_id" ]] ||
+			die "A pending manual handoff owns the $coworker transporter pair."
+	fi
 fi
 [[ ! -e "$findings_file" ]] || require_regular_file "$findings_file"
 
@@ -275,49 +358,12 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-if [[ "$resume_loop" == true ]]; then
-	loop_id="$(jq -r '.loopId // empty' "$state_file")"
-	state_repository="$(jq -r '.repository // empty' "$state_file")"
-	coworker_display="$(jq -r '.coworker // empty' "$state_file")"
-	reviewer_display="$(jq -r '.reviewer // empty' "$state_file")"
-	coworker="$(normalize_identity "$coworker_display")"
-	reviewer="$(normalize_identity "$reviewer_display")"
-	coworker_session="$(jq -r '.coworkerSessionId // empty' "$state_file")"
-	reviewer_session="$(jq -r '.reviewerSessionId // empty' "$state_file")"
-	current_cycle="$(jq -r '.cycle // 0' "$state_file")"
-	stored_max_cycles="$(jq -r '.maxCycles // 0' "$state_file")"
-	started_at="$(jq -r '.startedAt // empty' "$state_file")"
-
-	[[ -n "$loop_id" ]] || die "Paused team loop has no loop ID."
-	[[ "$state_repository" == "$repository" ]] ||
-		die "Paused team loop belongs to another repository: ${state_repository:-missing}"
-	display_identity "$coworker" >/dev/null || die "Paused loop has an invalid Coworker."
-	display_identity "$reviewer" >/dev/null || die "Paused loop has an invalid Reviewer."
-	[[ "$coworker" == "$state_coworker_slug" ]] ||
-		die "Paused loop Coworker does not match its state filename."
-	[[ "$coworker" != "$reviewer" ]] || die "Paused loop participants are not distinct."
-	[[ -n "$coworker_session" ]] || die "Paused loop has no Coworker session ID."
-	[[ "$current_cycle" =~ ^[1-9][0-9]*$ ]] || die "Paused loop has an invalid cycle."
-	[[ "$stored_max_cycles" =~ ^[1-9][0-9]*$ ]] || die "Paused loop has an invalid cycle limit."
-	if ((stored_max_cycles > max_cycles)); then
-		max_cycles="$stored_max_cycles"
-	fi
-	start_cycle=$((current_cycle + 1))
-	if [[ "$(header_value "$request_file" "Status")" == "awaiting-oliver" ]]; then
-		start_cycle="$current_cycle"
-	fi
-	if ((start_cycle > max_cycles)); then
-		max_cycles="$start_cycle"
-	fi
-else
-	loop_id="team:$station:$lane:$coworker:$(date -u '+%Y%m%dT%H%M%SZ')"
-	started_at="$(iso_timestamp)"
-	coworker_display="$(display_identity "$coworker")"
-	reviewer_display="$(display_identity "$reviewer")"
-	coworker_session=""
-	reviewer_session=""
-	start_cycle=1
-fi
+loop_id="team:$station:$lane:$coworker:$(date -u '+%Y%m%dT%H%M%SZ')"
+started_at="$(iso_timestamp)"
+coworker_display="$(display_identity "$coworker")"
+reviewer_display="$(display_identity "$reviewer")"
+coworker_session=""
+reviewer_session=""
 
 command -v "$(identity_command "$coworker")" >/dev/null 2>&1 ||
 	die "$(identity_command "$coworker") is required for $coworker_display."
@@ -390,6 +436,44 @@ update_state() {
 	mv "$state_temp" "$state_file"
 }
 
+repository_fingerprint() {
+	local snapshot="$runtime_directory/repository-snapshot-$RANDOM"
+	local path
+
+	git status --porcelain=v2 -z --untracked-files=all >"$snapshot"
+	git diff --binary HEAD >>"$snapshot"
+	while IFS= read -r -d '' path; do
+		printf '\0%s\0' "$path" >>"$snapshot"
+		git hash-object -- "$path" >>"$snapshot"
+	done < <(git ls-files --others --exclude-standard -z)
+	git hash-object "$snapshot"
+	rm -f -- "$snapshot"
+}
+
+repository_refs_fingerprint() {
+	local snapshot="$runtime_directory/repository-refs-$RANDOM"
+
+	git symbolic-ref -q HEAD >"$snapshot" 2>/dev/null || git rev-parse HEAD >"$snapshot"
+	git for-each-ref --format='%(refname) %(objectname)' refs/heads refs/remotes >>"$snapshot"
+	git hash-object "$snapshot"
+	rm -f -- "$snapshot"
+}
+
+OLIVER_DECISION=""
+
+wait_for_oliver() {
+	local reason="$1"
+
+	[[ -t 0 ]] || die "Oliver's decision is required, but team-work is not attached to an interactive terminal."
+	printf '\nTeam loop is waiting for Oliver: %s\n' "$reason" >&2
+	while :; do
+		printf 'Decision: ' >&2
+		IFS= read -r OLIVER_DECISION || die "No decision was received; the loop remains paused."
+		[[ -n "${OLIVER_DECISION//[[:space:]]/}" ]] && break
+		printf 'Enter a non-empty decision.\n' >&2
+	done
+}
+
 RUN_SESSION_ID=""
 
 run_agent() {
@@ -411,13 +495,14 @@ run_agent() {
 	case "$identity" in
 	artanis)
 		if [[ -z "$session_id" ]]; then
-			codex exec --json --color never -C "$repository" \
+			codex -a never exec --json --color never -C "$repository" \
 				--sandbox workspace-write --add-dir "$lane_directory" \
-				--ask-for-approval never --output-last-message "$last_message" - \
+				--output-last-message "$last_message" - \
 				<"$prompt_file" >"$raw_output" || exit_code=$?
 			generated_session="$(jq -r 'select(.type == "thread.started") | .thread_id' "$raw_output" | head -n 1)"
 		else
-			codex exec resume --json --output-last-message "$last_message" "$session_id" - \
+			codex -a never --sandbox workspace-write --add-dir "$lane_directory" \
+				exec resume --json --output-last-message "$last_message" "$session_id" - \
 				<"$prompt_file" >"$raw_output" || exit_code=$?
 		fi
 		;;
@@ -426,12 +511,12 @@ run_agent() {
 			generated_session="$(new_uuid)"
 			claude --print --output-format json --session-id "$generated_session" \
 				--permission-mode auto --permission-prompts none \
-				--add-dir "$lane_directory" "$agent_prompt" \
+				--add-dir "$lane_directory" <"$prompt_file" \
 				>"$raw_output" || exit_code=$?
 		else
 			claude --print --output-format json --resume "$session_id" \
 				--permission-mode auto --permission-prompts none \
-				--add-dir "$lane_directory" "$agent_prompt" \
+				--add-dir "$lane_directory" <"$prompt_file" \
 				>"$raw_output" || exit_code=$?
 		fi
 		jq -r '.result // empty' "$raw_output" >"$last_message" 2>/dev/null || true
@@ -656,14 +741,8 @@ the coordinator will invoke the real Coworker session when another cycle is allo
 EOF
 }
 
-if [[ "$resume_loop" == true ]]; then
-	state_initialized=true
-	update_state "working-coworker" "$start_cycle"
-	printf 'Team loop resumed\n\n'
-else
-	write_initial_state
-	printf 'Team loop started\n\n'
-fi
+write_initial_state
+printf 'Team loop started\n\n'
 
 printf 'Loop ID: %s\n' "$loop_id"
 printf 'Repository: %s\n' "$repository"
@@ -671,29 +750,60 @@ printf 'Coworker: %s (%s)\n' "$coworker_display" "$(identity_command "$coworker"
 printf 'Reviewer: %s (%s)\n' "$reviewer_display" "$(identity_command "$reviewer")"
 printf 'Maximum cycles: %s\n' "$max_cycles"
 
-for ((cycle = start_cycle; cycle <= max_cycles; cycle++)); do
+cycle=1
+coworker_turn="initial"
+
+while :; do
 	update_state "working-coworker" "$cycle"
-	if [[ "$resume_loop" == true && "$cycle" == "$start_cycle" ]]; then
+	coworker_refs_before="$(repository_refs_fingerprint)"
+	case "$coworker_turn" in
+	resume)
 		run_agent "$coworker" "$coworker_session" "$(coworker_resume_prompt "$cycle")"
-		resume_loop=false
-	elif ((cycle == 1)); then
+		;;
+	initial)
 		run_agent "$coworker" "$coworker_session" "$(initial_coworker_prompt)"
-	else
+		;;
+	followup)
 		run_agent "$coworker" "$coworker_session" "$(coworker_followup_prompt "$cycle")"
-	fi
+		;;
+	esac
 	coworker_session="$RUN_SESSION_ID"
+	coworker_refs_after="$(repository_refs_fingerprint)"
+	if [[ "$coworker_refs_after" != "$coworker_refs_before" ]]; then
+		update_state "awaiting-oliver" "$cycle"
+		wait_for_oliver "$coworker_display changed repository refs or HEAD during its turn."
+		prompt="Coordinator integrity alert: $coworker_display changed repository refs or HEAD. Oliver's decision: $OLIVER_DECISION"
+		coworker_turn="resume"
+		continue
+	fi
 
 	request_status="$(validate_request "$cycle")"
 	if [[ "$request_status" == "awaiting-oliver" ]]; then
 		update_state "awaiting-oliver" "$cycle"
-		finished=true
-		printf '\nTeam loop paused for Oliver.\nRequest: %s\n' "$request_file"
-		exit 0
+		wait_for_oliver "the Coworker requested a decision in $request_file."
+		prompt="$OLIVER_DECISION"
+		coworker_turn="resume"
+		continue
 	fi
 
 	update_state "awaiting-reviewer" "$cycle"
+	reviewer_repository_before="$(repository_fingerprint)"
+	reviewer_refs_before="$(repository_refs_fingerprint)"
 	run_agent "$reviewer" "$reviewer_session" "$(reviewer_prompt "$cycle")"
 	reviewer_session="$RUN_SESSION_ID"
+	reviewer_repository_after="$(repository_fingerprint)"
+	reviewer_refs_after="$(repository_refs_fingerprint)"
+	if [[ "$reviewer_repository_after" != "$reviewer_repository_before" || "$reviewer_refs_after" != "$reviewer_refs_before" ]]; then
+		update_state "awaiting-oliver" "$cycle"
+		wait_for_oliver "$reviewer_display changed repository state during a read-only review turn."
+		prompt="Coordinator integrity alert: $reviewer_display changed repository state during review. Oliver's decision: $OLIVER_DECISION"
+		cycle=$((cycle + 1))
+		if ((cycle > max_cycles)); then
+			max_cycles="$cycle"
+		fi
+		coworker_turn="resume"
+		continue
+	fi
 
 	verdict="$(validate_findings "$cycle")"
 	case "$verdict" in
@@ -706,20 +816,27 @@ for ((cycle = start_cycle; cycle <= max_cycles; cycle++)); do
 		;;
 	discussion-required)
 		update_state "awaiting-oliver" "$cycle"
-		finished=true
-		printf '\nTeam loop paused for Oliver because discussion is required.\n'
-		printf 'Findings: %s\n' "$findings_file"
-		exit 0
+		wait_for_oliver "$reviewer_display requires discussion in $findings_file."
+		prompt="$OLIVER_DECISION"
+		cycle=$((cycle + 1))
+		if ((cycle > max_cycles)); then
+			max_cycles="$cycle"
+		fi
+		coworker_turn="resume"
 		;;
 	changes-required)
 		if ((cycle == max_cycles)); then
 			update_state "cycle-limit-awaiting-oliver" "$cycle"
-			finished=true
-			printf '\nTeam loop reached its %s-cycle limit and paused for Oliver.\n' "$max_cycles"
-			printf 'Findings: %s\n' "$findings_file"
-			exit 0
+			wait_for_oliver "the loop reached its $max_cycles-cycle limit with changes still required."
+			prompt="$OLIVER_DECISION"
+			cycle=$((cycle + 1))
+			max_cycles="$cycle"
+			coworker_turn="resume"
+			continue
 		fi
 		update_state "awaiting-coworker" "$cycle"
+		cycle=$((cycle + 1))
+		coworker_turn="followup"
 		;;
 	esac
 done

@@ -73,7 +73,9 @@ development database—may still run locally and is not redirected to VPS1 by th
 - `scripts/info.sh` and `scripts/vps1-status`: local and VPS1 health views.
 - `scripts/ai-config.sh`: verifies, installs, and synchronizes shared AI instructions.
 - `scripts/team-work.sh`: opt-in autonomous Coworker/Reviewer loop using real persistent AI CLI
-  sessions; ordinary review handoffs remain manual.
+  sessions; ordinary review handoffs remain manual. It refuses substantive initial worktree changes,
+  preserves approved routine-local changes as a baseline, and waits for Oliver's decisions inside the
+  original terminal process.
 - `scripts/clean.sh`: interactive cleaner for configured target directories.
 - `scripts/perform-prep.sh`, `scripts/perform-test.sh`, `scripts/ardis-migrate.sh`, and
   `scripts/gen-open-api.sh`: Ardis/Perform helpers.

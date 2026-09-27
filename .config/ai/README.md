@@ -52,10 +52,21 @@ MasterChief lanes, including distinct Coworker and Reviewer identities.
 
 The manual handoff remains the default and returns to Oliver after every review and findings-analysis
 step. `scripts/team-work.sh --prompt <task>` is a separate opt-in flow: it launches and resumes the
-two real assigned CLI sessions, advances only structured transporter states, and pauses for Oliver on
-approval, ambiguity, sustained blocking disagreement, scope expansion, failure, or the cycle limit.
-The coordinator never reviews code or simulates a team identity. When a loop pauses for Oliver,
-rerunning `team-work.sh --prompt <decision>` in the same repository resumes its recorded sessions.
+two real assigned CLI sessions and advances only structured transporter states. When ambiguity,
+sustained blocking disagreement, scope expansion, an integrity violation, or the cycle limit needs
+Oliver's decision, the running coordinator waits in the same terminal; enter the decision directly
+and it resumes the recorded sessions. Reviewer approval ends the loop and returns the result to
+Oliver. The coordinator never reviews code or simulates a team identity.
+
+The workflow refuses to start over substantive pending repository changes. Git-ignored paths, known
+local license artifacts, and `local-overrides/` do not block it. A repository may declare another
+routine local-only path or glob without changing tracked files:
+
+```sh
+git config --local --add team-work.allowedDirtyPath 'path/or/glob'
+```
+
+This exception is a baseline allowance, not permission for either participant to modify that path.
 
 ## Management
 

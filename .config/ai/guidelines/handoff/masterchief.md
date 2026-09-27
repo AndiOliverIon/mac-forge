@@ -28,7 +28,8 @@ The Coworker owns `request-<coworker>.md`; the pair's designated Reviewer owns t
 
 When Oliver starts `team-work.sh`, the coordinator owns `team-loop-<coworker>.json` in the selected
 lane and invokes the two assigned identities sequentially. It never authorizes concurrent agents in
-one universe.
+one universe. Before launching either identity, it verifies that `FORGE_UNIVERSE_ROOT` is empty for
+Work or resolves to the selected Raynor/Zeratul universe root.
 
 Role switching never changes lane rules:
 
