@@ -379,6 +379,7 @@ runtime_directory="$(mktemp -d "${TMPDIR:-/tmp}/team-work.XXXXXX")"
 state_initialized=false
 finished=false
 transcript_ready=false
+transcript_owned=false
 task_started_token="$(date -u '+%Y%m%dT%H%M%SZ')"
 loop_id="team:$station:$lane:$coworker:$task_started_token"
 started_at="$(iso_timestamp)"
@@ -421,7 +422,7 @@ cleanup() {
 	local stop_reason="${2:-exit status $exit_code}"
 	trap - EXIT INT TERM
 
-	if [[ "$finished" != true && ! -L "$transcript_file" && -f "$transcript_file" ]]; then
+	if [[ "$finished" != true && "$transcript_owned" == true && ! -L "$transcript_file" && -f "$transcript_file" ]]; then
 		(
 			append_transcript_message "Coordinator" "The workflow stopped with $stop_reason before approval or Oliver's /stop."
 		) 2>/dev/null || true
@@ -455,6 +456,7 @@ while :; do
 		continue
 	fi
 	if ln -n "$transcript_allocation" "$transcript_file" 2>/dev/null; then
+		transcript_owned=true
 		break
 	fi
 	[[ -e "$transcript_file" || -L "$transcript_file" ]] ||
