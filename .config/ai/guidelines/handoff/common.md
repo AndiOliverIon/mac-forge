@@ -17,15 +17,23 @@ decision-maker.
   from its own session or evident from the repository. If either holds, stop and ask Oliver.
 - Neither participant learns the other's role from another AI session: the transporter files carry
   both names, and each agent's own identity comes from its bootstrap.
+- `team-work.sh` is a deterministic coordinator, not a participant or AI identity. It may launch or
+  resume the two sessions named by Oliver, validate structured headers, and advance loop state; it
+  never reviews code, evaluates findings, or resolves a disagreement.
 
 ## Invariants
 
 - Argus or any other Reviewer independently reviews actual repository state and writes findings; a
   Reviewer does not implement changes through this protocol.
-- Transporter files are the exclusive handoff channel. Do not search for handoff state in other AI
-  sessions or contact another session to locate or exchange it.
+- Transporter files are the exclusive channel for substantive handoff content. Do not search for
+  handoff state in other AI sessions or contact another session to locate or exchange it. The
+  coordinator's JSON file contains control state and real runtime session IDs only.
 - Findings authorize analysis only. The Coworker may implement only after Oliver explicitly confirms
-  the accepted scope.
+  the accepted scope, except inside an active autonomous team loop whose initial prompt explicitly
+  authorizes in-scope iterative corrections.
+- Neither participant may launch, invoke, spawn, or simulate its counterpart. In an autonomous team
+  loop, only the coordinator invokes the separately bootstrapped real sessions and each participant
+  acts only as the identity assigned to that runtime.
 - A handoff concerns exactly one repository. For multiple repositories, stop and ask Oliver to pick
   one or authorize separate handoffs.
 - The station flow owns lane discovery, exact paths, metadata values, handoff-ID format, and whether
@@ -42,6 +50,8 @@ decision-maker.
   `findings-<coworker>.md`. For each cycle, the owner fully replaces its file—never append or create
   per-task transporter files. Neither agent modifies the other's file. Both files name the Coworker
   and the Reviewer, and the Coworker name must match the filename.
+- Only `team-work.sh` writes `team-loop-<coworker>.json`. Participants must not modify coordinator
+  state or use it as a substitute for the request and findings transporter pair.
 - Before reading or writing a present transporter file, reject it if it is a symlink or not a regular
   file. Create a missing owned file only when the active trigger and station flow allow it.
 - Replace a present owned transporter file with one update operation. When using `apply_patch`, use
@@ -54,6 +64,8 @@ decision-maker.
 
 - Every request receives a new handoff ID. The Reviewer copies it exactly into the matching
   `findings-<coworker>.md`.
+- An autonomous request and its findings also carry identical `Automation`, `Loop ID`, `Cycle`, and
+  `Cycle limit` headers. Reject missing or mismatched loop metadata.
 - Before reviewing or analyzing findings, verify station, lane, Coworker, Reviewer, transporter
   filenames, canonical absolute repository path, handoff ID, and exact review target against the
   active session and lane. The acting agent must equal `Coworker` when preparing or analyzing
@@ -89,6 +101,10 @@ agent is the Coworker for that cycle; the named agent, or Argus when none is nam
 # Review Request
 
 - Status: ready-for-review
+- Automation: <team-loop — autonomous loops only>
+- Loop ID: <coordinator loop ID — autonomous loops only>
+- Cycle: <positive integer — autonomous loops only>
+- Cycle limit: <positive integer — autonomous loops only>
 - Station: <masterchief|hades>
 - Lane: <station-flow lane value>
 - Handoff ID: <exact ID>
@@ -126,6 +142,8 @@ agent is the Coworker for that cycle; the named agent, or Argus when none is nam
 ```
 
 The request is a navigation aid, not evidence. The Reviewer verifies it against the repository.
+For an autonomous loop, `Status: awaiting-oliver` is also valid when the Coworker cannot safely
+continue. Such a request must contain an `## Escalation` section with the exact decision required.
 
 ## Reviewer: Process Review Handoff
 
@@ -165,6 +183,10 @@ so and record residual risks or verification limitations.
 # Review Findings
 
 - Status: review-complete
+- Automation: <team-loop — autonomous loops only>
+- Loop ID: <copied exactly — autonomous loops only>
+- Cycle: <copied exactly — autonomous loops only>
+- Cycle limit: <copied exactly — autonomous loops only>
 - Station: <masterchief|hades>
 - Lane: <station-flow lane value>
 - Handoff ID: <copied exactly from the request>
@@ -209,8 +231,9 @@ so and record residual risks or verification limitations.
 ## Coworker: Process the Reviewer's Findings
 
 Trigger: Oliver says **“Process `<Reviewer>`'s findings”** (for example **“Process Argus's
-findings”**) or an unambiguous equivalent. This authorizes analysis only. The addressed agent reads
-only its own pair; a named Reviewer must match `Reviewer` in the findings.
+findings”**) or an unambiguous equivalent. This authorizes analysis only unless the prompt carries a
+valid active autonomous team-loop ID and cycle. The addressed agent reads only its own pair; a named
+Reviewer must match `Reviewer` in the findings.
 
 1. Resolve the routed lane, read only that Coworker's two transporter files, and complete the
    identity and safety checks. Confirm `Coworker` and `Reviewer` in both files agree and that the
@@ -220,12 +243,48 @@ only its own pair; a named Reviewer must match `Reviewer` in the findings.
 4. Immediately present the Reviewer's verdict, the overall assessment, each classification and its
    evidence, recommended actions and tradeoffs, and every decision Oliver and the Coworker must make
    together. State both names.
-5. Stop for discussion and confirmation. Do not implement, edit code or configuration, or modify
-   either transporter file merely because findings exist.
+5. For a manual handoff, stop for discussion and confirmation. Do not implement, edit code or
+   configuration, or modify either transporter file merely because findings exist. For an
+   autonomous loop, follow the bounded behavior below.
+
+## Autonomous Team Loop
+
+Trigger: Oliver starts `team-work.sh --prompt <task>` or gives an equivalent instruction that names
+`Automation: team-loop`, the exact loop ID, cycle, cycle limit, Coworker, Reviewer, repository, and
+transporter paths. The initial task is Oliver's authorization boundary. Default participants are
+Artanis as Coworker and Argus as Reviewer; the coordinator may name another explicit pairing.
+This is an additional opt-in flow. Never infer it from an ordinary prep, takeoff, findings, or review
+request; without valid loop metadata, use the manual protocol and keep Oliver in every cycle.
+
+1. The Coworker may implement the initial task and, on later cycles, confirmed in-scope findings.
+   After loading this handoff protocol, it must resolve development mode for the actual target files
+   and load every selected stack and project instruction before editing. Preserve unrelated changes.
+   Do not commit, push, deploy, run an unauthorized unit test, perform a destructive action, or
+   expand scope merely because the loop is autonomous.
+2. The Coworker classifies every finding as `confirmed`, `partially valid`, `rejected`, or
+   `uncertain`. It implements confirmed in-scope corrections. A rejection or partial acceptance must
+   be carried with evidence in the next request so the Reviewer can reconsider it.
+3. The Reviewer remains independent, inspects actual repository state, and never implements. If it
+   maintains a blocking finding after the Coworker's evidence-based challenge, it writes
+   `Verdict: discussion-required` and states the exact disagreement for Oliver.
+4. Either participant escalates an ambiguous business or architectural decision, scope expansion,
+   destructive action, missing authority, or unsafe uncertainty. The Coworker uses
+   `Status: awaiting-oliver`; the Reviewer uses `Verdict: discussion-required`. Do not manufacture
+   agreement to keep the loop moving.
+5. `Verdict: changes-required` returns control to the same real Coworker session for the next cycle.
+   A new request gets a new handoff ID and the incremented cycle. `Verdict: approved` ends the loop
+   and returns the final request and findings to Oliver; it is technical approval within scope, not
+   Oliver's approval to commit, push, deploy, or publish.
+6. The coordinator stops at `awaiting-oliver`, `discussion-required`, `approved`, runtime failure, or
+   the cycle limit. It parses only structured state and never decides whether a finding is correct.
+   When paused for Oliver, another `team-work.sh --prompt <decision>` invocation in the same
+   repository resumes the recorded real sessions; approval ends that loop, so the next invocation
+   starts a new task.
 
 ## Subsequent Cycles
 
-After Oliver confirms actions, the Coworker may implement only that scope. A later prep trigger starts
-a new cycle by replacing that Coworker's `request-<coworker>.md` with a new handoff ID, exact target,
-`Coworker`, and `Reviewer` (Argus unless Oliver names another); the Reviewer then replaces that same
-pair's `findings-<coworker>.md`. Every other pair is a separate job.
+After Oliver confirms actions, the Coworker may implement only that scope. A later manual prep trigger
+or an authorized autonomous iteration starts a new cycle by replacing that Coworker's
+`request-<coworker>.md` with a new handoff ID, exact target, `Coworker`, and `Reviewer` (Argus unless
+Oliver names another); the Reviewer then replaces that same pair's `findings-<coworker>.md`. Every
+other pair is a separate job.

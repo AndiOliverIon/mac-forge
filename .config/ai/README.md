@@ -50,6 +50,13 @@ headers. Lane structure is unchanged: MasterChief keeps `work`, `raynor`, and `z
 single universe with one project lane per repository. `bin/review-handoff-verify.sh` validates the
 MasterChief lanes, including distinct Coworker and Reviewer identities.
 
+The manual handoff remains the default and returns to Oliver after every review and findings-analysis
+step. `scripts/team-work.sh --prompt <task>` is a separate opt-in flow: it launches and resumes the
+two real assigned CLI sessions, advances only structured transporter states, and pauses for Oliver on
+approval, ambiguity, sustained blocking disagreement, scope expansion, failure, or the cycle limit.
+The coordinator never reviews code or simulates a team identity. When a loop pauses for Oliver,
+rerunning `team-work.sh --prompt <decision>` in the same repository resumes its recorded sessions.
+
 ## Management
 
 Use the cross-platform helper from either Hades or MasterChief:

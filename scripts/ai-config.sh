@@ -5,6 +5,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FORGE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 AI_SOURCE="$FORGE_ROOT/.config/ai"
+TEAM_WORK_SCRIPT="$FORGE_ROOT/scripts/team-work.sh"
 USER_CONFIG_ROOT="${AI_CONFIG_USER_ROOT:-$HOME}"
 AI_LINK="$USER_CONFIG_ROOT/.config/ai"
 CODEX_DIR="$USER_CONFIG_ROOT/.codex"
@@ -171,6 +172,16 @@ check_required_sources() {
         pass "AI handoff validator syntax"
     else
         fail "AI handoff validator has invalid Bash syntax"
+    fi
+    if [[ -x "$TEAM_WORK_SCRIPT" ]]; then
+        pass "team workflow coordinator is executable"
+    else
+        fail "team workflow coordinator is not executable: $TEAM_WORK_SCRIPT"
+    fi
+    if bash -n "$TEAM_WORK_SCRIPT"; then
+        pass "team workflow coordinator syntax"
+    else
+        fail "team workflow coordinator has invalid Bash syntax"
     fi
 
     if jq -e '

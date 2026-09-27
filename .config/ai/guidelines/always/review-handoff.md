@@ -1,10 +1,12 @@
 # Review Handoff Router
 
-The protocol is dormant unless Oliver invokes a handoff command or an unambiguous equivalent. Default
-roles are Artanis or Karax as Coworker and Argus as Reviewer; when Oliver explicitly names another
-pairing (e.g. Aegis hands off to Karax), the common protocol governs the switch. Station flows keep
-their own lane structure: MasterChief uses `work`, `raynor`, and `zeratul`; Hades is a single
-universe with one lane per repository.
+The protocol is dormant unless Oliver invokes a handoff command, starts `team-work.sh`, or gives an
+unambiguous equivalent instruction. Default roles are Artanis or Karax as Coworker and Argus as
+Reviewer; when Oliver explicitly names another pairing (e.g. Aegis hands off to Karax), the common
+protocol governs the switch. An autonomous team-loop prompt carrying `Automation: team-loop` and a
+loop ID is a routed handoff trigger created from Oliver's script invocation. Station flows keep their
+own lane structure: MasterChief uses `work`, `raynor`, and `zeratul`; Hades is a single universe with
+one lane per repository.
 
 ## Route Before Acting
 

@@ -17,8 +17,9 @@ If the repository is not a Git repository, its root is ambiguous, multiple repos
 ## Lane Creation and Isolation
 
 Only the active Coworker (any of Artanis, Karax, Argus, or Aegis preparing a review) may create the
-handoff root or a missing project lane, and only while processing a prep trigger (**“Prep for Argus
-takeoff”**, **“Prep for `<Reviewer>` takeoff”**, or **“Hand off to `<Reviewer>` for review”**). Create
+handoff root or a missing project lane while processing a prep trigger (**“Prep for Argus takeoff”**,
+**“Prep for `<Reviewer>` takeoff”**, or **“Hand off to `<Reviewer>` for review”**). The deterministic
+`team-work.sh` coordinator may also create them when Oliver starts an autonomous team loop. Create
 directories with owner-only access. Each agent must create its owned transporter file with owner-only
 access; the Coworker then creates or completely replaces only `request-<coworker>.md`.
 
@@ -29,9 +30,11 @@ The active lane uses one pair per Coworker, keyed by the Coworker's lowercase id
 
 - Request: `/Users/oliver/handoffserver/<project-key>/request-<coworker>.md`
 - Findings: `/Users/oliver/handoffserver/<project-key>/findings-<coworker>.md`
+- Coordinator state: `/Users/oliver/handoffserver/<project-key>/team-loop-<coworker>.json`
 
 `<coworker>` is `artanis`, `karax`, `argus`, or `aegis`. The Reviewer is recorded in the file
-headers, not the filename.
+headers, not the filename. Only `team-work.sh` writes coordinator state. Agents may verify the loop
+ID and session metadata named by their prompt but must not edit that JSON file.
 
 Different project lanes may operate concurrently, and several pairs in one project lane may be active
 at once. While operating in one project lane, never enumerate, inspect, read, or modify another

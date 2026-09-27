@@ -51,7 +51,8 @@ validate_pair() {
     local findings="$2"
     local expected_identity="$3"
     local slug="$4"
-    local request_status request_station request_lane request_id request_created
+    local request_status request_automation request_loop_id request_cycle request_cycle_limit
+    local request_station request_lane request_id request_created
     local request_repository coworker repository_name reviewer findings_reviewer
     local findings_status findings_station findings_lane findings_id findings_reviewed
     local pair_failures_before request_epoch findings_epoch name
@@ -69,6 +70,10 @@ validate_pair() {
     validate_file "$request" || true
 
     request_status="$(field "$request" Status)"
+    request_automation="$(field "$request" Automation)"
+    request_loop_id="$(field "$request" 'Loop ID')"
+    request_cycle="$(field "$request" Cycle)"
+    request_cycle_limit="$(field "$request" 'Cycle limit')"
     request_station="$(field "$request" Station)"
     request_lane="$(field "$request" Lane)"
     request_id="$(field "$request" 'Handoff ID')"
@@ -76,8 +81,26 @@ validate_pair() {
     request_repository="$(field "$request" Repository)"
     coworker="$(field "$request" Coworker)"
 
-    [[ "$request_status" == "ready-for-review" ]] \
-        || fail "request status is not ready-for-review: ${request_status:-missing} ($slug)"
+    if [[ "$request_automation" == "team-loop" ]]; then
+        case "$request_status" in
+            ready-for-review | awaiting-oliver) ;;
+            *) fail "autonomous request status is invalid: ${request_status:-missing} ($slug)" ;;
+        esac
+        [[ -n "$request_loop_id" ]] || fail "autonomous request loop ID is missing ($slug)"
+        [[ "$request_cycle" =~ ^[1-9][0-9]*$ ]] \
+            || fail "autonomous request cycle is invalid: ${request_cycle:-missing} ($slug)"
+        [[ "$request_cycle_limit" =~ ^[1-9][0-9]*$ ]] \
+            || fail "autonomous request cycle limit is invalid: ${request_cycle_limit:-missing} ($slug)"
+        if [[ "$request_cycle" =~ ^[1-9][0-9]*$ && "$request_cycle_limit" =~ ^[1-9][0-9]*$ ]]; then
+            ((request_cycle <= request_cycle_limit)) \
+                || fail "autonomous request cycle exceeds its limit ($slug)"
+        fi
+    else
+        [[ -z "$request_automation" ]] \
+            || fail "unknown request automation mode: $request_automation ($slug)"
+        [[ "$request_status" == "ready-for-review" ]] \
+            || fail "manual request status is not ready-for-review: ${request_status:-missing} ($slug)"
+    fi
     [[ "$request_station" == "masterchief" ]] \
         || fail "request station is not masterchief: ${request_station:-missing} ($slug)"
     [[ "$request_lane" == "$lane" ]] \
@@ -113,7 +136,11 @@ validate_pair() {
         || fail "request reviewer must differ from the coworker: $reviewer ($slug)"
 
     if [[ ! -e "$findings" ]]; then
-        pass "handoff request awaits review: $lane $slug"
+        if [[ "$request_status" == "awaiting-oliver" ]]; then
+            pass "autonomous handoff awaits Oliver: $lane $slug"
+        else
+            pass "handoff request awaits review: $lane $slug"
+        fi
         return 0
     fi
 
@@ -144,6 +171,17 @@ validate_pair() {
                     || "$findings_value" == "$request_value "*) ]] \
                 || fail "$name differs for handoff $request_id ($slug)"
         done
+        if [[ "$request_automation" == "team-loop" ]]; then
+            for name in Automation 'Loop ID' Cycle 'Cycle limit'; do
+                request_value="$(field "$request" "$name")"
+                findings_value="$(field "$findings" "$name")"
+                [[ -n "$request_value" && "$request_value" == "$findings_value" ]] \
+                    || fail "$name differs for autonomous handoff $request_id ($slug)"
+            done
+        else
+            [[ -z "$(field "$findings" Automation)" ]] \
+                || fail "manual findings unexpectedly declare automation ($slug)"
+        fi
         findings_reviewer="$(field "$findings" Reviewer)"
         findings_reviewer="${findings_reviewer:-Argus}"
         valid_identity "$findings_reviewer" \

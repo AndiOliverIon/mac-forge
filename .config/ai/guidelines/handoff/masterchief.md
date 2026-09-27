@@ -26,6 +26,10 @@ and any of Artanis, Karax, Argus, or Aegis eligible for either role when Oliver 
 The Coworker owns `request-<coworker>.md`; the pair's designated Reviewer owns the matching
 `findings-<coworker>.md`. Both files include `Coworker` and `Reviewer`.
 
+When Oliver starts `team-work.sh`, the coordinator owns `team-loop-<coworker>.json` in the selected
+lane and invokes the two assigned identities sequentially. It never authorizes concurrent agents in
+one universe.
+
 Role switching never changes lane rules:
 
 - **Work** is the operator-assisted lane; Coworker and Reviewer may be any two agents Oliver runs
@@ -41,16 +45,19 @@ Role switching never changes lane rules:
 
 - Request: `/home/oliver/work/.ai/review-handoff/request-<coworker>.md`
 - Findings: `/home/oliver/work/.ai/review-handoff/findings-<coworker>.md`
+- Coordinator state: `/home/oliver/work/.ai/review-handoff/team-loop-<coworker>.json`
 
 ### Lane `zeratul`
 
 - Request: `/home/oliver/zeratul/.ai/review-handoff/request-<coworker>.md`
 - Findings: `/home/oliver/zeratul/.ai/review-handoff/findings-<coworker>.md`
+- Coordinator state: `/home/oliver/zeratul/.ai/review-handoff/team-loop-<coworker>.json`
 
 ### Lane `raynor`
 
 - Request: `/home/oliver/raynor/.ai/review-handoff/request-<coworker>.md`
 - Findings: `/home/oliver/raynor/.ai/review-handoff/findings-<coworker>.md`
+- Coordinator state: `/home/oliver/raynor/.ai/review-handoff/team-loop-<coworker>.json`
 
 `<coworker>` is the lowercase identity of the Coworker (`artanis`, `karax`, `argus`, or `aegis`). The
 Reviewer is recorded in the file headers, not the filename.
