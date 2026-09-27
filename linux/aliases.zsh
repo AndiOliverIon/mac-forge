@@ -64,6 +64,7 @@ alias argus="claude"
 alias aegis="copilot"
 alias karax="grok"
 alias team-work="~/mac-forge/scripts/team-work.sh"
+alias tw="~/mac-forge/scripts/team-work.sh"
 
 # ------------------------------------------------------------------------------
 # Journal
