@@ -53,7 +53,7 @@ terminal. The repository is detected from the current directory, and the web
 startup project (the single Microsoft.NET.Sdk.Web project) is discovered
 automatically. Configurations are discovered from the project's
 launchSettings.json and matching Rider .run files. A single configuration is
-selected automatically; multiple configurations are presented as a menu.
+selected automatically; multiple configurations are presented through fzf.
 Extra arguments are passed straight through to dotnet run.
 
 Examples:
@@ -153,25 +153,19 @@ if [[ -n "$PROFILE" ]]; then
 		fi
 	done
 	[[ "$SELECTED_INDEX" -ge 0 ]] || die "Configuration not found: $PROFILE"
+elif [[ "${#CONFIG_NAMES[@]}" -eq 0 ]]; then
+	die "No runnable configurations found for $PROJECT"
 elif [[ "${#CONFIG_NAMES[@]}" -eq 1 ]]; then
 	SELECTED_INDEX=0
-elif [[ "${#CONFIG_NAMES[@]}" -gt 1 ]]; then
-	[[ -t 0 && -t 1 ]] || die "Multiple configurations found; use --profile <name>"
-
-	echo "Available configurations:"
-	for index in "${!CONFIG_NAMES[@]}"; do
-		printf '  %d) %s [%s]\n' "$((index + 1))" "${CONFIG_NAMES[$index]}" "${CONFIG_TYPES[$index]}"
-	done
-
-	while true; do
-		read -r -p "Choose configuration [1-${#CONFIG_NAMES[@]}]: " selection
-		if [[ "$selection" =~ ^[0-9]+$ ]] &&
-			((selection >= 1 && selection <= ${#CONFIG_NAMES[@]})); then
-			SELECTED_INDEX="$((selection - 1))"
-			break
-		fi
-		echo "Please enter a number from 1 to ${#CONFIG_NAMES[@]}." >&2
-	done
+else
+	command -v fzf >/dev/null 2>&1 || die "Multiple configurations found, but fzf is not installed"
+	selection="$({
+		for index in "${!CONFIG_NAMES[@]}"; do
+			printf '%d\t%s [%s]\n' "$index" "${CONFIG_NAMES[$index]}" "${CONFIG_TYPES[$index]}"
+		done
+	} | fzf --delimiter=$'\t' --with-nth=2.. --prompt='Configuration> ' --height='~50%' --layout=reverse --border)" ||
+		die "No configuration selected"
+	SELECTED_INDEX="${selection%%$'\t'*}"
 fi
 
 RUN_ARGS=(--project "$PROJECT")
