@@ -389,19 +389,7 @@ reviewer_session=""
 transcript_slug="$(task_filename_slug "$prompt")"
 transcript_file="$transcript_directory/$transcript_slug-$task_started_token.md"
 transcript_suffix=2
-transcript_allocation="$(mktemp "$transcript_directory/.transcript.XXXXXX")"
-
-while ! ln "$transcript_allocation" "$transcript_file" 2>/dev/null; do
-	[[ -e "$transcript_file" || -L "$transcript_file" ]] ||
-		{
-			rm -f -- "$transcript_allocation"
-			die "Cannot create transcript: $transcript_file"
-		}
-	transcript_file="$transcript_directory/$transcript_slug-$task_started_token-$transcript_suffix.md"
-	transcript_suffix=$((transcript_suffix + 1))
-done
-rm -f -- "$transcript_allocation"
-require_regular_file "$transcript_file"
+transcript_allocation=""
 
 append_transcript_message() {
 	local speaker="$1"
@@ -447,6 +435,9 @@ cleanup() {
 				mv "$state_temp" "$state_file"
 		) 2>/dev/null || true
 	fi
+	if [[ -n "${transcript_allocation:-}" && ! -L "$transcript_allocation" && -f "$transcript_allocation" ]]; then
+		rm -f -- "$transcript_allocation" || true
+	fi
 	if [[ -n "${runtime_directory:-}" && -d "$runtime_directory" ]]; then
 		rm -rf -- "$runtime_directory" || true
 	fi
@@ -455,6 +446,23 @@ cleanup() {
 trap cleanup EXIT
 trap 'cleanup 130 "signal INT"' INT
 trap 'cleanup 143 "signal TERM"' TERM
+
+transcript_allocation="$(mktemp "$transcript_directory/.transcript.XXXXXX")"
+while :; do
+	if [[ -e "$transcript_file" || -L "$transcript_file" ]]; then
+		transcript_file="$transcript_directory/$transcript_slug-$task_started_token-$transcript_suffix.md"
+		transcript_suffix=$((transcript_suffix + 1))
+		continue
+	fi
+	if ln -n "$transcript_allocation" "$transcript_file" 2>/dev/null; then
+		break
+	fi
+	[[ -e "$transcript_file" || -L "$transcript_file" ]] ||
+		die "Cannot create transcript: $transcript_file"
+done
+rm -f -- "$transcript_allocation"
+transcript_allocation=""
+require_regular_file "$transcript_file"
 
 {
 	printf '# Team Workflow Transcript\n\n'
