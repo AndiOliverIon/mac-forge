@@ -49,6 +49,11 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 \
   || die "Not inside a git repository (or any parent directory)."
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
+# Normalize via `cd`+`pwd -P` so REPO_ROOT and CWD share the same path style.
+# On Git for Windows, `git rev-parse --show-toplevel` returns a drive-letter
+# path (C:/...) while bash's own `pwd` uses MSYS posix style (/c/...); without
+# this normalization the CWD-subtree prefix check below never matches.
+REPO_ROOT="$(cd "${REPO_ROOT}" && pwd -P)"
 CWD="$(pwd -P)"
 
 # Normalize + validate extensions (strip a leading dot, lowercase)
