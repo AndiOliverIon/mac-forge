@@ -41,6 +41,9 @@ Options:
                          at that prompt to end the loop without approval.
   --coworker <identity>  artanis, karax, argus, or aegis. Default: artanis.
   --reviewer <identity>  artanis, karax, argus, or aegis. Default: argus.
+                         When neither --coworker nor --reviewer is given, an fzf
+                         chooser offers the team pairs (default first, then the
+                         other Artanis/Argus pairing, then the Aegis pairings).
   --max-cycles <count>   Maximum review cycles before Oliver is required. Default: 5.
   -h, --help             Show this help.
 
@@ -167,9 +170,49 @@ new_uuid() {
 	uuidgen | tr '[:upper:]' '[:lower:]'
 }
 
+choose_team() {
+	command -v fzf >/dev/null 2>&1 || return 1
+
+	local -a pairs=(
+		"artanis argus"
+		"argus artanis"
+		"artanis aegis"
+		"aegis artanis"
+		"argus aegis"
+		"aegis argus"
+	)
+
+	local -a menu=()
+	local index=1 pair cw rv label suffix
+	for pair in "${pairs[@]}"; do
+		cw="${pair%% *}"
+		rv="${pair##* }"
+		suffix=""
+		((index == 1)) && suffix="  [default]"
+		label="$(printf '%d) %s (coworker) / %s (reviewer)%s' "$index" \
+			"$(display_identity "$cw")" "$(display_identity "$rv")" "$suffix")"
+		menu+=("$label")
+		index=$((index + 1))
+	done
+
+	local selection
+	selection="$(printf '%s\n' "${menu[@]}" |
+		fzf --prompt='Select team> ' --height=40% --reverse --no-multi)" || return 1
+	[[ -n "$selection" ]] || return 1
+
+	local chosen_index="${selection%%)*}"
+	[[ "$chosen_index" =~ ^[1-9][0-9]*$ ]] && ((chosen_index <= ${#pairs[@]})) || return 1
+	local chosen="${pairs[$((chosen_index - 1))]}"
+	coworker="${chosen%% *}"
+	reviewer="${chosen##* }"
+	return 0
+}
+
 coworker="$DEFAULT_COWORKER"
 reviewer="$DEFAULT_REVIEWER"
 max_cycles="$DEFAULT_MAX_CYCLES"
+coworker_set=false
+reviewer_set=false
 prompt=""
 
 while (($# > 0)); do
@@ -186,19 +229,23 @@ while (($# > 0)); do
 	--coworker)
 		(($# >= 2)) || die "--coworker requires a value."
 		coworker="$(normalize_identity "$2")"
+		coworker_set=true
 		shift 2
 		;;
 	--coworker=*)
 		coworker="$(normalize_identity "${1#*=}")"
+		coworker_set=true
 		shift
 		;;
 	--reviewer)
 		(($# >= 2)) || die "--reviewer requires a value."
 		reviewer="$(normalize_identity "$2")"
+		reviewer_set=true
 		shift 2
 		;;
 	--reviewer=*)
 		reviewer="$(normalize_identity "${1#*=}")"
+		reviewer_set=true
 		shift
 		;;
 	--max-cycles)
@@ -219,6 +266,9 @@ while (($# > 0)); do
 done
 
 [[ -n "${prompt//[[:space:]]/}" ]] || die "--prompt is required and must not be empty."
+if [[ "$coworker_set" == false && "$reviewer_set" == false ]]; then
+	choose_team || true
+fi
 display_identity "$coworker" >/dev/null || die "Unknown coworker identity: $coworker"
 display_identity "$reviewer" >/dev/null || die "Unknown reviewer identity: $reviewer"
 [[ "$coworker" != "$reviewer" ]] || die "Coworker and Reviewer must be different identities."
