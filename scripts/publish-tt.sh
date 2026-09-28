@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Snapshot marker: this revision preserves the final .NET 8 production publishing workflow before the TimeTrack .NET 10 cutover.
 set -euo pipefail
 
 die() {
@@ -10,77 +9,77 @@ die() {
 usage() {
 	cat <<'EOF'
 Usage:
-  publish-tt          Publish .NET 8 from main or release/1.x.x to the v2 image.
-  publish-tt net10    Publish .NET 10 from development to isolated trial images.
+  publish-tt          Publish TimeTrack according to the checked-out branch.
+
+Branches:
+  main                Publish .NET 10 to the v2 image.
+  development         Publish .NET 10 to the isolated net10-trial image.
+  release/1.0.91      Publish the frozen .NET 8 release to the v2 image.
 EOF
 }
 
-TIMETRACK_ROOT="${TIMETRACK_ROOT:-$HOME/work/ardis.timetrack}"
-
-if [[ $# -gt 1 ]]; then
-	usage >&2
-	die "Expected no argument or 'net10'."
+if [[ $# -gt 0 ]]; then
+	case "$1" in
+	-h | --help)
+		usage
+		exit 0
+		;;
+	*)
+		usage >&2
+		die "Publishing behavior is selected automatically from the current branch."
+		;;
+	esac
 fi
 
-mode="${1:-net8}"
-case "$mode" in
-net8)
-	expected_branch_description="main or release/1.x.x"
-	expected_target_framework="net8.0"
-	image_tag="v2"
-	;;
-net10)
-	expected_branch_description="development"
-	expected_target_framework="net10.0"
-	image_tag="net10-trial"
-	;;
--h | --help)
-	usage
-	exit 0
-	;;
-*)
-	usage >&2
-	die "Unsupported publish mode: $mode"
-	;;
-esac
+script_dir="$(cd "$(dirname "$0")" && pwd)"
+timetrack_root="${TIMETRACK_ROOT:-$HOME/work/ardis.timetrack}"
+csproj="$timetrack_root/Ardis.Timetrack/Ardis.Timetrack.csproj"
 
-[[ -d "$TIMETRACK_ROOT" ]] || die "Timetrack repo not found: $TIMETRACK_ROOT"
+[[ -d "$timetrack_root" ]] || die "Timetrack repo not found: $timetrack_root"
+[[ -f "$csproj" ]] || die "Timetrack project not found: $csproj"
 
-cd "$TIMETRACK_ROOT"
-
-[[ -x ./buildsolution.sh ]] || die "Solution build script is not executable: $TIMETRACK_ROOT/buildsolution.sh"
-[[ -x ./Ardis.Timetrack/build-docker.sh ]] || die "Docker build script is not executable: $TIMETRACK_ROOT/Ardis.Timetrack/build-docker.sh"
+cd "$timetrack_root"
 
 current_branch="$(git symbolic-ref --quiet --short HEAD)" || die "Timetrack must be on a branch, not a detached HEAD."
-case "$mode" in
-net8)
-	if [[ "$current_branch" != "main" && ! "$current_branch" =~ ^release/1\.[0-9]+\.[0-9]+$ ]]; then
-		die "Mode '$mode' requires branch $expected_branch_description; current branch is '$current_branch'."
-	fi
-	;;
-net10)
-	[[ "$current_branch" == "development" ]] || die "Mode '$mode' requires branch $expected_branch_description; current branch is '$current_branch'."
-	;;
-esac
-
 if [[ -n "$(git status --porcelain)" ]]; then
 	die "Timetrack working tree must be clean before publishing."
 fi
 
-target_framework="$(sed -nE 's|.*<TargetFramework>([^<]+)</TargetFramework>.*|\1|p' ./Ardis.Timetrack/Ardis.Timetrack.csproj | head -n 1)"
-[[ "$target_framework" == "$expected_target_framework" ]] || die "Mode '$mode' requires TargetFramework '$expected_target_framework'; found '${target_framework:-none}'."
+case "$current_branch" in
+main)
+	publish_profile=".NET 10 production"
+	expected_target_framework="net10.0"
+	publisher="$script_dir/publish-tt-net10.sh"
+	image_tag="v2"
+	allow_production_tag="true"
+	;;
+development)
+	publish_profile=".NET 10 development trial"
+	expected_target_framework="net10.0"
+	publisher="$script_dir/publish-tt-net10.sh"
+	image_tag="net10-trial"
+	allow_production_tag="false"
+	;;
+release/1.0.91)
+	publish_profile="frozen .NET 8 production rollback"
+	expected_target_framework="net8.0"
+	publisher="$script_dir/publish-tt-net8.sh"
+	image_tag="v2"
+	allow_production_tag="true"
+	;;
+*)
+	die "Publishing is not configured for branch '$current_branch'. Use main, development, or release/1.0.91."
+	;;
+esac
 
-echo "Publishing Timetrack mode: $mode"
+target_framework="$(sed -nE 's|.*<TargetFramework>([^<]+)</TargetFramework>.*|\1|p' "$csproj" | head -n 1)"
+[[ "$target_framework" == "$expected_target_framework" ]] || die "Branch '$current_branch' requires TargetFramework '$expected_target_framework'; found '${target_framework:-none}'."
+[[ -x "$publisher" ]] || die "Publisher is not executable: $publisher"
+
+echo "Publishing TimeTrack profile: $publish_profile"
 echo "Source branch: $current_branch"
 echo "Target framework: $target_framework"
 echo "Image tag: portainer.ardis.eu:5000/ardis-timetrack:$image_tag"
 
-echo "Running Timetrack solution build..."
-./buildsolution.sh
-
-echo "Running Timetrack Docker build and push..."
-if [[ "$mode" == "net8" ]]; then
-	TIMETRACK_IMAGE_TAG="$image_tag" TIMETRACK_ALLOW_PRODUCTION_TAG=true ./Ardis.Timetrack/build-docker.sh
-else
-	env -u TIMETRACK_ALLOW_PRODUCTION_TAG TIMETRACK_IMAGE_TAG="$image_tag" ./Ardis.Timetrack/build-docker.sh
-fi
+export TIMETRACK_ALLOW_PRODUCTION_TAG="$allow_production_tag"
+exec "$publisher" "$timetrack_root" "$image_tag"
