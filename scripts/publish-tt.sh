@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Snapshot marker: this revision preserves the final .NET 8 production publishing workflow before the TimeTrack .NET 10 cutover.
 set -euo pipefail
 
 die() {
