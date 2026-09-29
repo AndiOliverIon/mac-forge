@@ -194,7 +194,7 @@ alias	work-cerb	work-cerb — Go to the Cerber-mounted work volume.
 alias	copilot	copilot — Run GitHub Copilot CLI.
 alias	aiusage	aiusage — Show local agent/API usage stats.
 alias	aldaris	aldaris [claude args] — Experimental: launch Claude Code against the local Ollama model (default qwen3-coder:30b; override with ALDARIS_MODEL). Hades-only, for trivial tasks.
-alias	aldaris-ask	aldaris-ask --caller NAME --level LEVEL --task TEXT [--file PATH|-] — Delegate one bounded text step to local Aldaris with a visible, logged banner; --verdict ID records the outcome and --stats summarizes results. Limits live in configs/aldaris.json.
+alias	aldaris-ask	aldaris-ask --caller NAME --level LEVEL --task TEXT [--template NAME] [--schema NAME] [--file PATH|-] — Delegate one bounded text step to local Aldaris with a visible, logged banner; --list shows templates and schemas, --verdict ID records the outcome, --stats summarizes results. Settings live in configs/aldaris/config.json.
 alias	dela	dela — Delete everything in the current directory; no prompt.
 alias	perflogclean	perflogclean — Delete all files in Perform output logs; no prompt.
 alias	screenshotclean	screenshotclean — Delete PNG screenshots from Desktop; no prompt.

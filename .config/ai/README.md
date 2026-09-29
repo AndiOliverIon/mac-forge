@@ -45,7 +45,7 @@ target files are not yet known; identify only the missing scope and rerun it.
 
 Aldaris is a local Ollama helper on Hades, not a team identity. Authorized identities may delegate
 bounded text steps through `scripts/aldaris-ask.sh`, which enforces the caller list and maximum task
-level in `configs/aldaris.json`, prints a visible delegation banner, and logs every call and verdict
+level in `configs/aldaris/config.json`, prints a visible delegation banner, and logs every call and verdict
 to `~/.local/state/mac-forge/aldaris.jsonl`. The rules live in
 `guidelines/always/aldaris-delegation.md`. Raise `maxLevel` or add callers only after
 `aldaris-ask --stats` shows reliable results at the current level. `scripts/aldaris.sh` separately

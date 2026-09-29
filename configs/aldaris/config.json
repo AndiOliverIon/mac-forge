@@ -7,5 +7,6 @@
     "artanis",
     "argus",
     "aegis"
-  ]
+  ],
+  "keepAlive": "30m"
 }

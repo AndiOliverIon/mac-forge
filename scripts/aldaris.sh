@@ -3,7 +3,8 @@ set -euo pipefail
 
 # Experimental: Claude Code backed by a local Ollama model instead of Anthropic.
 OLLAMA_URL="${ALDARIS_OLLAMA_URL:-http://localhost:11434}"
-MODEL="${ALDARIS_MODEL:-qwen3-coder:30b}"
+CONFIG="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/configs/aldaris/config.json"
+MODEL="${ALDARIS_MODEL:-$(jq -r .model "$CONFIG")}"
 
 command -v claude >/dev/null || { echo "claude CLI not found." >&2; exit 1; }
 command -v ollama >/dev/null || { echo "ollama not found." >&2; exit 1; }

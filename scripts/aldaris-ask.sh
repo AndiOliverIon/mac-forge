@@ -3,7 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FORGE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-CONFIG="${ALDARIS_CONFIG:-$FORGE_ROOT/configs/aldaris.json}"
+ALDARIS_DIR="$FORGE_ROOT/configs/aldaris"
+CONFIG="${ALDARIS_CONFIG:-$ALDARIS_DIR/config.json}"
 LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/mac-forge"
 LOG_FILE="$LOG_DIR/aldaris.jsonl"
 LEVELS=(trivial standard moderate high)
@@ -14,20 +15,27 @@ usage() {
 Delegate one bounded, non-agentic step to Aldaris (local Ollama model).
 
 Usage:
-  aldaris-ask --caller NAME --level LEVEL --task TEXT [--file PATH|- ...]
+  aldaris-ask --caller NAME --level LEVEL --task TEXT [--template NAME] [--schema NAME|PATH]
+              [--file PATH|- ...]
   aldaris-ask --verdict ID accepted|corrected|rejected [--note TEXT]
   aldaris-ask --stats
+  aldaris-ask --list
 
 Options:
-  --caller NAME   Delegating identity; must be listed in configs/aldaris.json.
+  --caller NAME   Delegating identity; must be listed in configs/aldaris/config.json.
   --level LEVEL   trivial, standard, moderate, or high; must not exceed maxLevel.
-  --task TEXT     Instruction for Aldaris.
+  --task TEXT     Instruction for Aldaris; with a template, the specifics of this run.
+  --template NAME Tested instructions plus a worked example (see --list).
+  --schema NAME   Force JSON output matching configs/aldaris/schemas/NAME.json or a
+                  schema file path. Aldaris cannot decline in this mode.
   --file PATH     Input file; repeatable. Use - to read piped stdin.
   --verdict ID V  Record how the caller used the response.
   --note TEXT     Optional short reason for a verdict.
-  --stats         Summarize the delegation log by level and verdict.
+  --stats         Summarize the delegation log by level, template, and verdict.
+  --list          List available templates and schemas.
 
 Aldaris only returns text; it never reads or edits files itself.
+Send only the relevant excerpt, not whole files, when a smaller input suffices.
 Log: ~/.local/state/mac-forge/aldaris.jsonl
 EOF
 }
@@ -64,11 +72,23 @@ show_stats() {
             | "  \($g[0].level): \($g | length) total, "
               + (["accepted","corrected","rejected","pending"] | map(. as $k
                   | "\($k) \([$g[] | ($v[.id] // "pending")] | map(select(. == $k)) | length)") | join(", "))
-              + ", avg \(([$g[].durationSeconds] | add / length * 10 | round / 10))s")
+              + ", avg \(([$g[].durationSeconds] | add / length * 10 | round / 10))s"),
+          "By template:",
+          (group_by(.template // "none")[] | . as $g
+            | "  \($g[0].template // "none"): \($g | length) total, accepted \([$g[] | select($v[.id] == "accepted")] | length)")
     ' "$LOG_FILE"
 }
 
-caller="" level="" task="" verdict_id="" verdict="" note=""
+list_assets() {
+    echo "Templates:"
+    for t in "$ALDARIS_DIR"/templates/*.md; do
+        echo "  $(basename "$t" .md) — $(head -1 "$t")"
+    done
+    echo "Schemas:"
+    for t in "$ALDARIS_DIR"/schemas/*.json; do echo "  $(basename "$t" .json)"; done
+}
+
+caller="" level="" task="" template="" schema="" verdict_id="" verdict="" note=""
 files=()
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -76,6 +96,9 @@ while [[ $# -gt 0 ]]; do
         --level) level="${2:-}"; shift 2 ;;
         --task) task="${2:-}"; shift 2 ;;
         --file) files+=("${2:-}"); shift 2 ;;
+        --template) template="${2:-}"; shift 2 ;;
+        --schema) schema="${2:-}"; shift 2 ;;
+        --list) list_assets; exit 0 ;;
         --verdict) verdict_id="${2:-}"; verdict="${3:-}"; shift 3 || die "--verdict needs ID and value" ;;
         --note) note="${2:-}"; shift 2 ;;
         --stats) show_stats; exit 0 ;;
@@ -104,9 +127,25 @@ if [[ "$(level_rank "$level")" -gt "$(level_rank "$max_level")" ]]; then
     die "level '$level' exceeds the current Aldaris limit '$max_level'. Do this step yourself."
 fi
 
+template_text=""
+if [[ -n "$template" ]]; then
+    template_file="$ALDARIS_DIR/templates/$template.md"
+    [[ -f "$template_file" ]] || die "unknown template '$template'; see aldaris-ask --list."
+    template_text="$(cat "$template_file")"
+fi
+
+schema_json="null"
+if [[ -n "$schema" ]]; then
+    schema_file="$schema"
+    [[ -f "$schema_file" ]] || schema_file="$ALDARIS_DIR/schemas/$schema.json"
+    [[ -f "$schema_file" ]] || die "unknown schema '$schema'; see aldaris-ask --list."
+    schema_json="$(jq -c . "$schema_file")" || die "schema is not valid JSON: $schema_file"
+fi
+
 model="$(cfg '.model')"
 ollama_url="$(cfg '.ollamaUrl')"
 context_length="$(cfg '.contextLength')"
+keep_alive="$(cfg '.keepAlive // "5m"')"
 
 curl -fsS --max-time 3 "$ollama_url/api/version" >/dev/null 2>&1 \
     || die "Ollama is not reachable at $ollama_url. Do this step yourself."
@@ -141,17 +180,26 @@ Do not invent facts that are not in the provided input.
 If the task is ambiguous, beyond your confidence, or the input is insufficient, reply with exactly one line:
 ALDARIS_DECLINE: <short reason>'
 
+if [[ -n "$template_text" ]]; then
+    system_prompt+=$'\n\nMETHOD FOR THIS TASK:\n'"$template_text"
+fi
+if [[ "$schema_json" != "null" ]]; then
+    system_prompt+=$'\n\nRespond only with JSON matching the required schema.'
+fi
+
 jq -n --arg model "$model" --arg system "$system_prompt" --arg task "$task" \
-    --rawfile input "$input" --argjson ctx "$context_length" '
+    --rawfile input "$input" --argjson ctx "$context_length" \
+    --arg keepAlive "$keep_alive" --argjson schema "$schema_json" '
     {
         model: $model,
         stream: false,
+        keep_alive: $keepAlive,
         options: {temperature: 0, num_ctx: $ctx},
         messages: [
             {role: "system", content: $system},
             {role: "user", content: ("TASK:\n" + $task + (if $input == "" then "" else "\n\nINPUT:\n" + $input end))}
         ]
-    }' > "$tmp_dir/request.json"
+    } + (if $schema == null then {} else {format: $schema} end)' > "$tmp_dir/request.json"
 
 id="$(date '+%Y%m%d-%H%M%S')-$RANDOM"
 started_at="$(date '+%Y-%m-%d %H:%M:%S')"
@@ -174,8 +222,11 @@ jq -cn --arg id "$id" --arg caller "$caller" --arg level "$level" --arg maxLevel
     --arg task "$task" --arg startedAt "$started_at" --arg model "$model" \
     --argjson durationSeconds "$duration" --argjson promptTokens "$prompt_tokens" \
     --argjson outputTokens "$output_tokens" --argjson declined "$declined" \
+    --arg template "$template" --arg schema "$schema" \
     --args '{type:"delegation", id:$id, caller:$caller, level:$level, maxLevel:$maxLevel,
-        task:$task, inputs:$ARGS.positional, startedAt:$startedAt, model:$model,
+        task:$task, template:(if $template == "" then null else $template end),
+        schema:(if $schema == "" then null else $schema end),
+        inputs:$ARGS.positional, startedAt:$startedAt, model:$model,
         durationSeconds:$durationSeconds, promptTokens:$promptTokens,
         outputTokens:$outputTokens, declined:$declined}' \
     "${input_summary[@]+"${input_summary[@]}"}" >> "$LOG_FILE"
@@ -196,6 +247,8 @@ else
     echo "  inputs:    none"
 fi
 echo "  asked:     $task"
+[[ -n "$template" ]] && echo "  template:  $template"
+[[ -n "$schema" ]] && echo "  schema:    $schema"
 echo "────────────────────────────── RESPONSE ─────────────────────────────────"
 printf '%s\n' "$response"
 echo "─────────────────────────────────────────────────────────────────────────"

@@ -1,6 +1,6 @@
 # Aldaris Delegation
 
-Aldaris is a local, non-accountable text helper (Ollama `qwen3-coder:30b` on Hades), not a team
+Aldaris is a local, non-accountable text helper (the Ollama model in its config, on Hades), not a team
 identity. It never acts as Coworker or Reviewer and never edits files. The delegating identity stays
 fully accountable for every result it uses.
 
@@ -8,7 +8,7 @@ fully accountable for every result it uses.
 
 - Delegation is allowed by default. When Oliver's prompt says not to use Aldaris, do not delegate
   any step of that task until Oliver allows it again.
-- Only the callers listed in `~/mac-forge/configs/aldaris.json` may delegate (currently Artanis,
+- Only the callers listed in `~/mac-forge/configs/aldaris/config.json` may delegate (currently Artanis,
   Argus, and Aegis). The same file sets `maxLevel`; only Oliver changes it.
 - Delegate a step only when you have high confidence Aldaris will handle it correctly and checking
   its answer costs less than doing the step yourself. When in doubt, do it yourself.
@@ -21,10 +21,12 @@ fully accountable for every result it uses.
 ## How
 
 Run `~/mac-forge/scripts/aldaris-ask.sh --caller <you> --level <level> --task "<instruction>"
-[--file <path> ...]` (`--file -` reads piped stdin). Give it a precise, self-contained instruction.
-If the script fails, Ollama is offline, or Aldaris replies `ALDARIS_DECLINE`, do the step yourself
-and continue the task without stopping, retrying at a higher level, or starting Ollama; mention the
-fallback in one line.
+[--template <name>] [--schema <name>] [--file <path> ...]` (`--file -` reads piped stdin; `--list`
+shows templates and schemas). Use a matching template whenever one exists, and a schema when you will
+parse the result. Send only the relevant excerpt, not whole files, when that suffices; the smaller the
+input, the more reliable the answer. If the script fails, Ollama is offline, or Aldaris replies
+`ALDARIS_DECLINE`, do the step yourself and continue the task without stopping, retrying at a higher
+level, or starting Ollama; mention the fallback in one line.
 
 ## Visibility and verdict
 
