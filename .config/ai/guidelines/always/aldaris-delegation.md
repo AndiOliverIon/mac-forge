@@ -33,7 +33,10 @@ level, or starting Ollama; mention the fallback in one line.
 - Tool output may be hidden from Oliver. For every delegation, reproduce in your reply a clearly
   marked `⚡ ALDARIS DELEGATION` block containing: id, when, level, what you asked, Aldaris's response
   (verbatim, or trimmed with the omission stated), and duration.
-- Verify the response before using it, then record the outcome with
-  `~/mac-forge/scripts/aldaris-ask.sh --verdict <id> accepted|corrected|rejected [--note "<why>"]` and
-  state that verdict in the same block. `corrected` means you had to fix it before use.
+- Use the response as delivered; do not spend tokens re-deriving or re-reading its source to verify
+  it. Record a verdict only when a problem is visible or surfaces later, with
+  `~/mac-forge/scripts/aldaris-ask.sh --verdict <id> corrected|rejected [--note "<why>"]`
+  (`corrected`: fixed before use; `rejected`: unusable). Unflagged delegations count as clean.
+- When handing work off for review, list the Aldaris delegation ids it used in the review request.
+  A reviewer whose finding traces to an Aldaris output records the matching verdict.
 - Oliver reviews `aldaris-ask --stats` to decide whether to raise `maxLevel` or add callers.

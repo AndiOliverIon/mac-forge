@@ -70,12 +70,12 @@ show_stats() {
         | "Delegations: \(length)",
           (group_by(.level)[] | . as $g
             | "  \($g[0].level): \($g | length) total, "
-              + (["accepted","corrected","rejected","pending"] | map(. as $k
-                  | "\($k) \([$g[] | ($v[.id] // "pending")] | map(select(. == $k)) | length)") | join(", "))
+              + (["corrected","rejected","clean"] | map(. as $k
+                  | "\($k) \([$g[] | ($v[.id] // "clean")] | map(select(. == $k)) | length)") | join(", "))
               + ", avg \(([$g[].durationSeconds] | add / length * 10 | round / 10))s"),
           "By template:",
           (group_by(.template // "none")[] | . as $g
-            | "  \($g[0].template // "none"): \($g | length) total, accepted \([$g[] | select($v[.id] == "accepted")] | length)")
+            | "  \($g[0].template // "none"): \($g | length) total, flagged \([$g[] | select($v[.id] != null and $v[.id] != "accepted")] | length)")
     ' "$LOG_FILE"
 }
 
@@ -256,5 +256,5 @@ echo "  duration:  ${duration}s  (prompt ${prompt_tokens} tok, output ${output_t
 if [[ "$declined" == true ]]; then
     echo "  status:    DECLINED by Aldaris — do this step yourself"
 fi
-echo "  verdict:   pending → aldaris-ask --verdict $id accepted|corrected|rejected"
+echo "  verdict:   clean unless flagged → aldaris-ask --verdict $id corrected|rejected"
 echo "$rule"
