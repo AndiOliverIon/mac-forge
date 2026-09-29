@@ -17,19 +17,19 @@ Delegate one bounded, non-agentic step to Aldaris (local Ollama model).
 Usage:
   aldaris-ask --caller NAME --level LEVEL --task TEXT [--template NAME] [--schema NAME|PATH]
               [--file PATH|- ...]
-  aldaris-ask --verdict ID accepted|corrected|rejected [--note TEXT]
+  aldaris-ask --verdict ID corrected|rejected [--note TEXT]
   aldaris-ask --stats
   aldaris-ask --list
 
 Options:
-  --caller NAME   Delegating identity; must be listed in configs/aldaris/config.json.
+  --caller NAME   Your identity in lowercase (e.g. argus); must be listed in the config.
   --level LEVEL   trivial, standard, moderate, or high; must not exceed maxLevel.
   --task TEXT     Instruction for Aldaris; with a template, the specifics of this run.
   --template NAME Tested instructions plus a worked example (see --list).
   --schema NAME   Force JSON output matching configs/aldaris/schemas/NAME.json or a
                   schema file path. Aldaris cannot decline in this mode.
   --file PATH     Input file; repeatable. Use - to read piped stdin.
-  --verdict ID V  Record how the caller used the response.
+  --verdict ID V  Flag a problem: corrected (fixed before use) or rejected (unusable).
   --note TEXT     Optional short reason for a verdict.
   --stats         Summarize the delegation log by level, template, and verdict.
   --list          List available templates and schemas.
