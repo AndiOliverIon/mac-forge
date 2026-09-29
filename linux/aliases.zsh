@@ -65,6 +65,8 @@ alias aegis="copilot"
 alias karax="grok"
 alias team-work="~/mac-forge/scripts/team-work.sh"
 alias tw="~/mac-forge/scripts/team-work.sh"
+alias work-today="~/mac-forge/scripts/work-today.sh"
+alias wt=work-today
 
 # ------------------------------------------------------------------------------
 # Journal

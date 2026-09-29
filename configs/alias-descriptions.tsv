@@ -53,6 +53,8 @@ alias	workset	workset — Switch the active SQL Docker data and snapshot storage
 alias	ws	ws — Switch the active SQL Docker data and snapshot storage paths (short for workset).
 alias	workinfo	workinfo — Show the current active SQL Docker and snapshot storage paths.
 alias	wi	wi — Show the current active SQL Docker and snapshot storage paths (short for workinfo).
+alias	work-today	work-today — Report Jira tasks you logged work on for a day (default today; --log N for N days ago, 1 = yesterday), grouped by project with per-task time, per-project subtotals and a grand total.
+alias	wt	wt — Report Jira tasks you logged work on for a day, grouped by project with a total (short for work-today; --log N picks N days ago).
 alias	ardis-migrate	ardis-migrate — Run Ardis migrations against a selected local SQL database. Optional --version YEAR selects a parallel SQL container.
 alias	am	am — Run Ardis migrations against a selected local SQL database (short for ardis-migrate). Optional --version YEAR selects a parallel SQL container.
 alias	ram	ram — Run Ardis migrations against a database on a configured remote SQL Server target.
@@ -191,6 +193,7 @@ alias	demo	demo — Go to the Cerber-mounted Ardis demo folder.
 alias	work-cerb	work-cerb — Go to the Cerber-mounted work volume.
 alias	copilot	copilot — Run GitHub Copilot CLI.
 alias	aiusage	aiusage — Show local agent/API usage stats.
+alias	aldaris	aldaris [claude args] — Experimental: launch Claude Code against the local Ollama model (default qwen3-coder:30b; override with ALDARIS_MODEL). Hades-only, for trivial tasks.
 alias	dela	dela — Delete everything in the current directory; no prompt.
 alias	perflogclean	perflogclean — Delete all files in Perform output logs; no prompt.
 alias	screenshotclean	screenshotclean — Delete PNG screenshots from Desktop; no prompt.
