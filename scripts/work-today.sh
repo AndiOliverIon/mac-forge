@@ -10,6 +10,8 @@ Usage:
   work-today --log N    Same, for the day N days in the past (1 = yesterday, 2 = two days ago, ...).
   work-today --span N   Cover today plus the previous N days, each day segmented separately,
                         with a combined total. --span 1 = yesterday and today so far.
+                        Every day except today is split into before-13:00 and 13:00-and-after
+                        segments (local time) for standup.
 
 --log and --span combine: --log picks the most recent day, --span extends the range further back.
 
@@ -168,9 +170,22 @@ result = twg_json(["jira", "workitem", "query", "--jql", jql, "--fields", "summa
 issues = (result.get("data", {}) or {}).get("issues") or result.get("issues") or []
 
 # Aggregate my declared seconds per issue, per day, grouped by project.
-# by_day[date] -> {pkey -> {"name":..., "issues": {key: {"summary":..., "seconds":...}}}}
-by_day = {d: {} for d in days}
+# For a --span view, every day except today is split into two segments by local
+# start time (before 13:00 and 13:00-and-after) to match the standup rhythm.
+# by_day[date] -> {"all"|"before"|"after": {pkey -> {"name":..., "issues": {...}}}}
+SPLIT_HOUR = 13
+today = now.date()
+multi = len(days) > 1
+by_day = {d: {"all": {}, "before": {}, "after": {}} for d in days}
 in_range = set(days)
+
+
+def add_entry(projects, pkey, pname, key, summary, seconds):
+    p = projects.setdefault(pkey, {"name": pname, "issues": {}})
+    entry = p["issues"].setdefault(key, {"summary": summary, "seconds": 0})
+    entry["seconds"] += seconds
+
+
 for issue in issues:
     key = issue.get("key")
     summary = issue.get("summary", "")
@@ -188,10 +203,12 @@ for issue in issues:
         seconds = int(wl.get("timeSpentSeconds", 0))
         if seconds <= 0:
             continue
-        projects = by_day[started.date()]
-        p = projects.setdefault(pkey, {"name": pname, "issues": {}})
-        entry = p["issues"].setdefault(key, {"summary": summary, "seconds": 0})
-        entry["seconds"] += seconds
+        d = started.date()
+        if multi and d != today:
+            seg = "before" if started.hour < SPLIT_HOUR else "after"
+        else:
+            seg = "all"
+        add_entry(by_day[d][seg], pkey, pname, key, summary, seconds)
 
 
 def fmt(seconds):
@@ -233,15 +250,39 @@ grand_tasks = 0
 active_days = 0
 
 for d in days:
-    projects = by_day[d]
+    buckets = by_day[d]
+    segmented = multi and d != today
     print()
     print(f"{BOLD}── {day_label(d)}{RESET}")
     print()
-    if not projects:
-        print(f"{DIM}No time declared.{RESET}")
-        print()
-        continue
-    day_seconds, day_tasks = render_day(projects)
+
+    if segmented:
+        before, after = buckets["before"], buckets["after"]
+        if not before and not after:
+            print(f"{DIM}No time declared.{RESET}")
+            print()
+            continue
+        day_seconds = 0
+        day_tasks = 0
+        for label, pmap in (("Before 13:00", before), ("13:00 and after", after)):
+            print(f"{YELLOW}{BOLD}▸ {label}{RESET}")
+            if not pmap:
+                print(f"{DIM}  (nothing){RESET}")
+                print()
+                continue
+            s, t = render_day(pmap)
+            day_seconds += s
+            day_tasks += t
+        proj_count = len(set(before) | set(after))
+    else:
+        projects = buckets["all"]
+        if not projects:
+            print(f"{DIM}No time declared.{RESET}")
+            print()
+            continue
+        day_seconds, day_tasks = render_day(projects)
+        proj_count = len(projects)
+
     grand_seconds += day_seconds
     grand_tasks += day_tasks
     active_days += 1
@@ -250,7 +291,7 @@ for d in days:
         print(
             f"{BOLD}Day total: {fmt(day_seconds)}{RESET}  "
             f"{DIM}(= {workdays:.2f}d @8h){RESET}  "
-            f"{day_tasks} task(s) in {len(projects)} project(s)"
+            f"{day_tasks} task(s) in {proj_count} project(s)"
         )
         print()
 
@@ -273,7 +314,7 @@ if multi:
     print()
 else:
     workdays = grand_seconds / 28800
-    proj_count = len(by_day[anchor])
+    proj_count = len(by_day[anchor]["all"])
     print(
         f"{BOLD}Total: {fmt(grand_seconds)}{RESET}  "
         f"{DIM}(= {workdays:.2f}d @8h){RESET}  "
