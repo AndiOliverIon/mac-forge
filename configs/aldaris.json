@@ -1,0 +1,7 @@
+{
+  "model": "qwen3-coder:30b",
+  "ollamaUrl": "http://localhost:11434",
+  "contextLength": 65536,
+  "maxLevel": "trivial",
+  "callers": ["artanis", "argus", "aegis"]
+}

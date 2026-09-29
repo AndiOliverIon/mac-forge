@@ -261,6 +261,7 @@ alias argus="claude"
 alias aegis="copilot"
 alias karax="grok"
 alias aldaris="~/mac-forge/scripts/aldaris.sh"
+alias aldaris-ask="~/mac-forge/scripts/aldaris-ask.sh"
 alias team-work="~/mac-forge/scripts/team-work.sh"
 alias tw="~/mac-forge/scripts/team-work.sh"
 
