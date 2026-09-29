@@ -19,10 +19,10 @@ opens a picker: choose "All" to run the standard cleanup, or select specific
 segments with TAB and clean only those.
 
 Options:
-  --full      Run standard cleanup plus full-only chapters (Xcode iPhone/iPad
-              simulators and real-device symbol packs). Skip those chapters
-              during an Xcode work stretch; pick them when you will be away
-              for days or weeks.
+  --full      Run standard cleanup plus full-only chapters (Xcode real-device
+              symbol packs and the full uv cache). Skip device-support during
+              an Xcode work stretch; pick it when you will be away for days
+              or weeks.
   --list      Show all approved cleanup scripts and their classification.
   -v, --verbose  Stream each cleaner's full output live (default: quiet, with
                  output shown only when a cleaner fails).
@@ -79,7 +79,7 @@ describe() {
     mac-clean-playwright-browsers.sh)  echo "Playwright — downloaded browser binaries" ;;
     mac-clean-stale-temp.sh)           echo "Stale temp — old /tmp, TMPDIR & handoff review files" ;;
     mac-clean-xcode-derived-data.sh)   echo "Xcode DerivedData — build products & indexes" ;;
-    mac-clean-xcode-simulators.sh)     echo "Xcode simulators — iPhone/iPad devices, clones & runtimes (full-only)" ;;
+    mac-clean-xcode-simulators.sh)     echo "Xcode simulator cache — CoreSimulator caches & temp" ;;
     mac-clean-xcode-device-support.sh) echo "Xcode real devices — iPhone & Charon symbol packs (full-only)" ;;
     mac-clean-xcode-test-clones.sh)    echo "Xcode test clones — leftover clone data" ;;
     *)                                 echo "$1" ;;
@@ -107,10 +107,10 @@ STANDARD_CLEANERS=(
   "$SCRIPT_DIR/mac-clean-playwright-browsers.sh"
   "$SCRIPT_DIR/mac-clean-stale-temp.sh"
   "$SCRIPT_DIR/mac-clean-xcode-derived-data.sh"
+  "$SCRIPT_DIR/mac-clean-xcode-simulators.sh"
 )
 
 FULL_CLEANERS=(
-  "$SCRIPT_DIR/mac-clean-xcode-simulators.sh"
   "$SCRIPT_DIR/mac-clean-xcode-device-support.sh"
   "$SCRIPT_DIR/mac-clean-uv-cache-all.sh"
 )

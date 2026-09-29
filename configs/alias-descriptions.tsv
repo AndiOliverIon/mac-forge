@@ -256,7 +256,7 @@ script	mac-clean-yarn-cache	mac-clean-yarn-cache — Clear Yarn v1's downloaded 
 script	mac-clean-swiftpm-cache	mac-clean-swiftpm-cache — Purge SwiftPM's global repository cache while preserving package resolution, project builds, configuration, security fingerprints, and credentials.
 script	mac-clean-stale-temp	mac-clean-stale-temp — Delete current-user temporary entries older than seven days, or recognized AI-tool entries older than 24 hours, while preserving open, recently modified, or macOS-protected content.
 script	mac-clean-xcode-derived-data	mac-clean-xcode-derived-data — Delete Xcode DerivedData entries whose entire contents are older than seven days while preserving archives, configuration, and recent build data.
-script	mac-clean-xcode-simulators	mac-clean-xcode-simulators — Quit Simulator, shut down and erase all devices, and delete unavailable devices.
+script	mac-clean-xcode-simulators	mac-clean-xcode-simulators — Clear CoreSimulator caches and temp while preserving simulator devices, runtime images, archives, and DeviceSupport.
 script	mac-clean-xcode-test-clones	mac-clean-xcode-test-clones — Delete verified Xcode parallel-test simulator clones older than seven days.
 script	linux-clean	linux-clean — Run approved reconstructible Linux cache cleaners; use --dry-run to preview and --full for desktop caches.
 script	linux-clean-browser-caches	linux-clean-browser-caches — Clear Chrome disk and code caches while preserving credentials, sessions, profiles, browsing data, and configuration.
