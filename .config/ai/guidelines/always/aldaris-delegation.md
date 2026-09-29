@@ -6,6 +6,8 @@ fully accountable for every result it uses.
 
 ## Who and when
 
+- Delegation is allowed by default. When Oliver's prompt says not to use Aldaris, do not delegate
+  any step of that task until Oliver allows it again.
 - Only the callers listed in `~/mac-forge/configs/aldaris.json` may delegate (currently Artanis,
   Argus, and Aegis). The same file sets `maxLevel`; only Oliver changes it.
 - Delegate a step only when you have high confidence Aldaris will handle it correctly and checking
@@ -20,8 +22,9 @@ fully accountable for every result it uses.
 
 Run `~/mac-forge/scripts/aldaris-ask.sh --caller <you> --level <level> --task "<instruction>"
 [--file <path> ...]` (`--file -` reads piped stdin). Give it a precise, self-contained instruction.
-If the script fails, Ollama is unavailable, or Aldaris replies `ALDARIS_DECLINE`, do the step
-yourself without retrying at a higher level.
+If the script fails, Ollama is offline, or Aldaris replies `ALDARIS_DECLINE`, do the step yourself
+and continue the task without stopping, retrying at a higher level, or starting Ollama; mention the
+fallback in one line.
 
 ## Visibility and verdict
 
