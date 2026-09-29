@@ -53,8 +53,8 @@ alias	workset	workset — Switch the active SQL Docker data and snapshot storage
 alias	ws	ws — Switch the active SQL Docker data and snapshot storage paths (short for workset).
 alias	workinfo	workinfo — Show the current active SQL Docker and snapshot storage paths.
 alias	wi	wi — Show the current active SQL Docker and snapshot storage paths (short for workinfo).
-alias	work-today	work-today — Report Jira tasks you logged work on for a day (default today; --log N for N days ago, 1 = yesterday), grouped by project with per-task time, per-project subtotals and a grand total.
-alias	wt	wt — Report Jira tasks you logged work on for a day, grouped by project with a total (short for work-today; --log N picks N days ago).
+alias	work-today	work-today — Report Jira tasks you logged work on, grouped by project with per-task time, per-project subtotals and a grand total. Default today; --log N for N days ago (1 = yesterday); --span N covers today plus the previous N days, each day segmented (--span 1 = yesterday and today, handy for standup).
+alias	wt	wt — Report Jira tasks you logged work on, grouped by project with a total (short for work-today; --log N picks N days ago, --span N segments today plus the previous N days).
 alias	ardis-migrate	ardis-migrate — Run Ardis migrations against a selected local SQL database. Optional --version YEAR selects a parallel SQL container.
 alias	am	am — Run Ardis migrations against a selected local SQL database (short for ardis-migrate). Optional --version YEAR selects a parallel SQL container.
 alias	ram	ram — Run Ardis migrations against a database on a configured remote SQL Server target.
