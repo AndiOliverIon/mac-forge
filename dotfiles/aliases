@@ -151,6 +151,7 @@ alias switch="~/mac-forge/scripts/git-switch.sh"
 alias sw=switch
 alias gbd="~/mac-forge/scripts/branch-delete.sh"
 alias gdel="~/mac-forge/scripts/git-del.sh"
+alias gdelf="~/mac-forge/scripts/git-del-fzf.sh"
 alias branch-clean="~/mac-forge/scripts/branch-local-clean.sh"
 alias bc=branch-clean
 alias gre="~/mac-forge/scripts/git-reset-ext.sh"
