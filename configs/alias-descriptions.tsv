@@ -372,6 +372,8 @@ alias	vps1-optimize	vps1-optimize — Long form of v1opt: shrink/optimize a vps1
 alias	vps1-status	vps1-status — Show vps1 host health plus storage per app keyword (web dirs + databases), endpoints, CPU, and recent history.
 alias	v1-bl-publish	v1-bl-publish — Build and publish the BookingLounge API to a vps1 endpoint (development, or gated production: main + clean tree).
 alias	vps1-bl-publish	vps1-bl-publish — Long form of v1-bl-publish: publish the BookingLounge API to a vps1 endpoint.
+alias	bl-support	bl-support — Browse BookingLounge owner-support threads and safely reply or change thread state.
+alias	bls	bls — Short form of bl-support.
 alias	v1-bl-tunnel-up	v1-bl-tunnel-up — Open the SSH tunnel so localhost:5081 reaches the private BookingLounge dev API on vps1.
 alias	v1-bl-tunnel-down	v1-bl-tunnel-down — Close the BookingLounge dev API SSH tunnel (localhost:5081).
 alias	v1-bl-tunnel-status	v1-bl-tunnel-status — Show whether the BookingLounge dev API SSH tunnel is up (localhost:5081) + dev health.

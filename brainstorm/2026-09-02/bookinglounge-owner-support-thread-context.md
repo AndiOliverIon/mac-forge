@@ -8,7 +8,7 @@ BookingLounge repository: `/Users/oliver/projects/bookinglounge`
 
 BookingLounge now has the owner side of an in-app conversation with BookingLounge Support. The iOS app, API, SQL schema, and owner push notification path are shipped. There is intentionally no support/operator UI. Oliver is the only support operator for now, so the next work belongs in `mac-forge` as small operator scripts.
 
-When Oliver later asks for the support scripts, interpret the request as: provide a safe command-line workflow in Mac Forge to find owner conversations, read their messages and diagnostics, and send a support reply through the BookingLounge API. Do not build a second app or a web support portal unless Oliver changes the scope.
+The first support operator script now lives at `scripts/vps1/bookinglounge-support.sh`, with the aliases `bl-support` and `bls`. It provides the safe command-line workflow in Mac Forge to find owner conversations, read their messages and diagnostics, send a support reply through the BookingLounge API, and explicitly change an active thread's state. Do not build a second app or a web support portal unless Oliver changes the scope.
 
 ## What is already implemented
 
@@ -65,7 +65,7 @@ Important semantics:
 - A support reply sets it to `engaged`.
 - The three-message limit counts owner messages after the latest support message.
 - When the owner fetches the active thread, all unread support messages receive `ReadAt = SYSUTCDATETIME()`.
-- Owner messages are not marked read by any support-side workflow yet. Do not treat their null `ReadAt` as an operator unread flag.
+- The backend exposes a support-side read endpoint. The initial Mac Forge script does not mark messages read automatically; it treats the unanswered count as the primary queue signal.
 - The schema supports `closed`, but the application currently has no close operation or close endpoint. Active-thread fetches ignore closed threads.
 
 ## Existing backend interfaces
@@ -84,7 +84,20 @@ Relevant implementation files:
 - `BookingLounge/BookingLounge/Core/DataContract/Support/BLSupportDataContract.swift`
 - `BookingLounge/BookingLounge/Features/Owner/OwnerSupportView.swift`
 
-### Support reply endpoint
+### Support automation endpoints
+
+The backend exposes authenticated support automation operations for listing active threads, showing one active thread, marking owner messages read, and replying:
+
+```text
+GET  /v1/support/threads
+GET  /v1/support/threads/{threadId}
+POST /v1/support/threads/{threadId}/read
+POST /v1/support/threads/{threadId}/messages
+```
+
+The initial Mac Forge script uses database reads because it also needs owner/shop navigation and closed history. It uses the protected reply endpoint for writes that must invoke application behavior.
+
+Operational check on 2026-10-04: the development endpoint authenticates successfully and is ready for script testing. Production database browsing works, but the production service currently returns `404` for the support route and its environment file has no `BookingLounge__SupportAutomation__Token` key. Production replies therefore remain unavailable until the BookingLounge support-operator endpoint commits are deployed and a production token is configured; the script fails closed in that situation.
 
 Support replies already have a purpose-built automation endpoint:
 
@@ -168,9 +181,22 @@ For production data safety:
 - A routine API reply is an application operation and does not require a database snapshot.
 - Any direct SQL mutation, close/reopen feature, repair, cleanup, migration, or backfill must be called out before execution. Create or verify a fresh production snapshot first when there is meaningful risk. VPS1 snapshots live in `/srv/tnisoft/mssql/snapshots`.
 
-## Expected Mac Forge operator workflow
+## Implemented Mac Forge operator workflow
 
-The first useful version should remain one explicit Bash tool, likely under `scripts/vps1/`, with a short alias only if Oliver asks for one. Suggested capabilities:
+Run `bl-support` or `bls` for the interactive workflow. It first selects development or production, then allows navigation through the pending queue or owners/shops, into an owner's active and historical threads, and finally into the conversation and its actions.
+
+The same tool also supports explicit commands:
+
+```bash
+bls list --env development --status pending
+bls owners --env production
+bls threads --env production --owner <owner-guid|email|shop-identifier>
+bls show --env production <thread-guid>
+bls reply --env development <thread-guid> [--file path|--stdin]
+bls state --env development <thread-guid> <pending|engaged|closed>
+```
+
+Implemented capabilities:
 
 1. **List active conversations**
    - Default to actionable/pending threads, newest activity first.
@@ -190,11 +216,17 @@ The first useful version should remain one explicit Bash tool, likely under `scr
    - Never log the bearer token.
    - On success, show the returned message ID/time and then refresh the conversation from SQL.
 
-4. **Optional watch/poll mode**
+4. **Change one active thread's state**
+   - Supports `pending`, `engaged`, and `closed`.
+   - Shows the exact environment, owner, shop, thread, and transition before changing anything.
+   - Development requires `y`; production requires typing `production`.
+   - This is currently a row-scoped SQL transaction because the API has no state endpoint. It is deliberate short-term technical debt; replace it with an authenticated backend state endpoint when the workflow stabilizes.
+
+5. **Optional watch/poll mode**
    - Poll read-only for newly pending owner messages because no inbound operator notification exists.
    - Add this only when Oliver explicitly asks; do not create a daemon or scheduler by assumption.
 
-Do not implement `close` by silently updating SQL in the first version. Closing semantics and whether the owner should see history or start a new thread need an explicit product decision. The cleaner long-term implementation is a dedicated authenticated backend endpoint, followed by a Mac Forge command that calls it.
+Closing is never silent: the script presents the target and applies the same environment-specific write confirmation as replies. Closing makes the thread historical; the owner's next message creates a new active thread. The cleaner long-term implementation remains a dedicated authenticated backend state endpoint, followed by changing the Mac Forge command to call it.
 
 ## Useful joins for operator queries
 
@@ -214,10 +246,10 @@ Only show owner PII needed for the operator action. Never dump unrelated profile
 ## Current gaps and deliberate non-goals
 
 - No support-side UI exists or is planned for this phase.
-- No support list/detail API exists; safe SQL reads are the intended short-term operator source.
+- Support list/detail/read APIs exist for active threads, while safe SQL reads remain the short-term operator source for owner/shop navigation and closed history.
 - No inbound alert to Support exists when an owner writes.
-- No close/reopen backend operation exists.
+- No close/reopen backend endpoint exists. The initial script can close an active thread through a guarded row-scoped SQL transaction; reopening remains unsupported.
 - No multi-operator assignment, notes, escalation, attachments, or ticket categories exist.
 - The client role cannot create these support conversations.
 
-Keep the scripts narrow around the workflow above. If the requested workflow later needs server-side mutation beyond replying, change BookingLounge's backend contract first rather than accumulating business rules in Mac Forge SQL.
+Keep the script narrow around the workflow above. Do not add further server-side mutations in Mac Forge; move the existing state transition behind a BookingLounge backend endpoint when its semantics are settled.
