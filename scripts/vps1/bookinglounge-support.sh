@@ -408,6 +408,103 @@ bl_print_threads() {
   } | column -t -s $'\t'
 }
 
+bl_card_width() {
+  local width="${COLUMNS:-80}"
+  [[ "$width" =~ ^[0-9]+$ ]] || width=80
+  ((width > 96)) && width=96
+  ((width < 56)) && width=56
+  printf '%s' "$width"
+}
+
+bl_card_rule() {
+  local edge="$1"
+  local width rule
+  width="$(bl_card_width)"
+  printf -v rule '%*s' "$((width - 1))" ''
+  rule="${rule// /─}"
+  printf '%s%s\n' "$edge" "$rule"
+}
+
+bl_print_wrapped_body() {
+  local body="$1"
+  local width
+  width="$(($(bl_card_width) - 5))"
+  printf '%s' "$body" | python3 -c '
+import sys
+import textwrap
+
+width = int(sys.argv[1])
+text = sys.stdin.read()
+lines = text.splitlines() or [""]
+for source in lines:
+    if not source.strip():
+        print("│")
+        continue
+    wrapped = textwrap.wrap(
+        source,
+        width=width,
+        break_long_words=True,
+        break_on_hyphens=False,
+        replace_whitespace=False,
+    ) or [""]
+    for line in wrapped:
+        print("│  " + line)
+' "$width"
+}
+
+bl_print_message_card() {
+  local message="$1"
+  local ordinal="$2"
+  local total="$3"
+  local sender body created context app_version app_build read_at
+  local label color reset muted diagnostic=""
+  sender="$(jq -r '.sender' <<<"$message")"
+  body="$(jq -r '.body' <<<"$message")"
+  created="$(jq -r '.createdAtUtc' <<<"$message")"
+  context="$(jq -r '.contextScreen // empty' <<<"$message")"
+  app_version="$(jq -r '.appVersion // empty' <<<"$message")"
+  app_build="$(jq -r '.appBuild // empty' <<<"$message")"
+  read_at="$(jq -r '.readAtUtc // empty' <<<"$message")"
+
+  color=""
+  reset=""
+  muted=""
+  if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
+    reset=$'\033[0m'
+    muted=$'\033[2m'
+    if [[ "$sender" == "owner" ]]; then
+      color=$'\033[1;33m'
+    else
+      color=$'\033[1;36m'
+    fi
+  fi
+
+  if [[ "$sender" == "owner" ]]; then
+    label="OWNER"
+    [[ -n "$context" ]] && diagnostic="Screen: $context"
+    if [[ -n "$app_version" ]]; then
+      [[ -n "$diagnostic" ]] && diagnostic+=" · "
+      diagnostic+="App: $app_version"
+      [[ -n "$app_build" ]] && diagnostic+=" ($app_build)"
+    fi
+  else
+    label="YOU / SUPPORT"
+    if [[ -n "$read_at" ]]; then
+      diagnostic="Read by owner: $read_at UTC"
+    else
+      diagnostic="Not read by owner yet"
+    fi
+  fi
+
+  echo
+  printf '%s┌─ %s%s · MESSAGE %s OF %s\n' "$color" "$label" "$reset" "$ordinal" "$total"
+  printf '│  %s%s UTC%s\n' "$muted" "$created" "$reset"
+  [[ -n "$diagnostic" ]] && printf '│  %s%s%s\n' "$muted" "$diagnostic" "$reset"
+  bl_card_rule '├'
+  bl_print_wrapped_body "$body"
+  bl_card_rule '└'
+}
+
 bl_display_thread_json() {
   local json="$1"
   [[ "$(jq -r 'type' <<<"$json")" == "object" ]] ||
@@ -430,35 +527,14 @@ bl_display_thread_json() {
   ' <<<"$json"
   echo "────────────────────────────────────────────────────────────────"
 
-  if [[ "$(jq '.messages | length' <<<"$json")" == "0" ]]; then
+  local message_count message_number=0
+  message_count="$(jq '.messages | length' <<<"$json")"
+  if [[ "$message_count" == "0" ]]; then
     echo "(no messages)"
   else
     while IFS= read -r message; do
-      local sender body created context app_version app_build read_at
-      sender="$(jq -r '.sender' <<<"$message")"
-      body="$(jq -r '.body' <<<"$message")"
-      created="$(jq -r '.createdAtUtc' <<<"$message")"
-      context="$(jq -r '.contextScreen // empty' <<<"$message")"
-      app_version="$(jq -r '.appVersion // empty' <<<"$message")"
-      app_build="$(jq -r '.appBuild // empty' <<<"$message")"
-      read_at="$(jq -r '.readAtUtc // empty' <<<"$message")"
-
-      if [[ "$sender" == "owner" ]]; then
-        printf '\nOWNER · %s UTC' "$created"
-        [[ -n "$context" ]] && printf ' · %s' "$context"
-        if [[ -n "$app_version" ]]; then
-          printf ' · app %s' "$app_version"
-          [[ -n "$app_build" ]] && printf ' (%s)' "$app_build"
-        fi
-      else
-        printf '\nSUPPORT · %s UTC' "$created"
-        if [[ -n "$read_at" ]]; then
-          printf ' · read %s UTC' "$read_at"
-        else
-          printf ' · unread'
-        fi
-      fi
-      printf '\n%s\n' "$body"
+      ((message_number += 1))
+      bl_print_message_card "$message" "$message_number" "$message_count"
     done < <(jq -c '.messages[]' <<<"$json")
   fi
   echo
@@ -686,7 +762,7 @@ bl_pick_owner() {
 
 bl_display_thread_compact_json() {
   local json="$1"
-  local latest_support_sequence latest_support_at waiting_count
+  local latest_support_sequence latest_support_at waiting_count message_number=0
   latest_support_sequence="$(jq '[.messages[] | select(.sender == "support") | .sequenceNumber] | max // 0' <<<"$json")"
   latest_support_at="$(jq -r '[.messages[] | select(.sender == "support")][-1].createdAtUtc // empty' <<<"$json")"
   waiting_count="$(jq --argjson after "$latest_support_sequence" '[.messages[] | select(.sender == "owner" and .sequenceNumber > $after)] | length' <<<"$json")"
@@ -703,9 +779,10 @@ bl_display_thread_compact_json() {
   ' <<<"$json"
   echo "────────────────────────────────────────────────────────────────"
   if [[ -n "$latest_support_at" ]]; then
-    printf 'Owner messages since your last reply (%s UTC): %s\n' "$latest_support_at" "$waiting_count"
+    printf '▶ OWNER MESSAGES SINCE YOUR LAST REPLY · %s\n' "$waiting_count"
+    printf '  Last reply: %s UTC\n' "$latest_support_at"
   else
-    printf 'Owner messages in this new thread: %s\n' "$waiting_count"
+    printf '▶ OWNER MESSAGES IN THIS NEW THREAD · %s\n' "$waiting_count"
   fi
 
   if ((waiting_count == 0)); then
@@ -713,20 +790,8 @@ bl_display_thread_compact_json() {
     echo "(No owner messages since your last reply.)"
   else
     while IFS= read -r message; do
-      local body created context app_version app_build
-      body="$(jq -r '.body' <<<"$message")"
-      created="$(jq -r '.createdAtUtc' <<<"$message")"
-      context="$(jq -r '.contextScreen // empty' <<<"$message")"
-      app_version="$(jq -r '.appVersion // empty' <<<"$message")"
-      app_build="$(jq -r '.appBuild // empty' <<<"$message")"
-
-      printf '\nOWNER · %s UTC' "$created"
-      [[ -n "$context" ]] && printf ' · %s' "$context"
-      if [[ -n "$app_version" ]]; then
-        printf ' · app %s' "$app_version"
-        [[ -n "$app_build" ]] && printf ' (%s)' "$app_build"
-      fi
-      printf '\n%s\n' "$body"
+      ((message_number += 1))
+      bl_print_message_card "$message" "$message_number" "$waiting_count"
     done < <(jq -c --argjson after "$latest_support_sequence" '
       [.messages[] | select(.sender == "owner" and .sequenceNumber > $after)][-3:][]
     ' <<<"$json")
