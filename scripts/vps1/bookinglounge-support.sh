@@ -609,8 +609,11 @@ bl_read_reply() {
   elif ((BL_REPLY_STDIN == 1)); then
     message="$(cat)"
   else
-    echo "Enter the support reply on one line. Use --file or --stdin for multiline text."
-    read -r -p "> " message </dev/tty
+    printf '\nType the support reply, then press Return. Enter /back to cancel.\n' >/dev/tty
+    if ! read -r -p "Reply > " message </dev/tty; then
+      return 1
+    fi
+    [[ "$message" != "/back" ]] || return 1
   fi
 
   local normalized
@@ -908,7 +911,7 @@ bl_interactive_thread() {
 
     case "$command" in
       1)
-        message="$(bl_read_reply)"
+        message="$(bl_read_reply)" || continue
         bl_send_reply "$thread_id" "$message"
         read -r -p "Press Return to refresh the conversation..." _
         ;;
