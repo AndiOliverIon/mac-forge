@@ -28,6 +28,7 @@ BL_STATUS_FILTER="pending"
 BL_OWNER_SELECTOR=""
 BL_REPLY_FILE=""
 BL_REPLY_STDIN=0
+BL_PREVIEW_FILE=""
 declare -a BL_POSITIONAL=()
 
 usage() {
@@ -46,6 +47,22 @@ bl_trim() {
   value="${value%"${value##*[![:space:]]}"}"
   printf '%s' "$value"
 }
+
+bl_cleanup_preview() {
+  if [[ -n "$BL_PREVIEW_FILE" && -f "$BL_PREVIEW_FILE" ]]; then
+    rm -f -- "$BL_PREVIEW_FILE"
+  fi
+  BL_PREVIEW_FILE=""
+}
+
+bl_create_preview() {
+  bl_cleanup_preview
+  BL_PREVIEW_FILE="$(mktemp "${TMPDIR:-/tmp}/bookinglounge-support.XXXXXX")" ||
+    bl_die "Could not create a temporary conversation preview."
+  chmod 600 "$BL_PREVIEW_FILE"
+}
+
+trap bl_cleanup_preview EXIT
 
 bl_require_uuid() {
   local value="$1"
@@ -469,7 +486,7 @@ bl_print_message_card() {
   color=""
   reset=""
   muted=""
-  if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
+  if { [[ -t 1 ]] || [[ "${BL_FORCE_COLOR:-0}" == "1" ]]; } && [[ -z "${NO_COLOR:-}" ]]; then
     reset=$'\033[0m'
     muted=$'\033[2m'
     if [[ "$sender" == "owner" ]]; then
@@ -800,17 +817,38 @@ bl_display_thread_compact_json() {
   echo "────────────────────────────────────────────────────────────────"
 }
 
+bl_fzf_with_conversation_preview() {
+  local preview_file="$1"
+  local prompt="$2"
+  BL_SUPPORT_PREVIEW_FILE="$preview_file" fzf \
+    --layout=reverse \
+    --border \
+    --no-sort \
+    --ansi \
+    --prompt="$prompt" \
+    --header='Scroll messages: PgUp/PgDn or Ctrl-U/Ctrl-D · Enter chooses action' \
+    --preview='cat -- "$BL_SUPPORT_PREVIEW_FILE"' \
+    --preview-window='up,65%,wrap,border-bottom' \
+    --preview-label=' Conversation ' \
+    --bind='ctrl-u:preview-half-page-up,ctrl-d:preview-half-page-down,pgup:preview-page-up,pgdn:preview-page-down'
+}
+
 bl_show_full_history_interactive() {
   local thread_json="$1"
   local action
   clear 2>/dev/null || true
-  bl_display_thread_json "$thread_json"
+  bl_create_preview
+  BL_FORCE_COLOR=1 bl_display_thread_json "$thread_json" >"$BL_PREVIEW_FILE"
   action="$(printf '%s\n' \
     '← Back to conversation' \
     '← Back to owners' \
     '← Back to environments' \
     'Quit' |
-    fzf --height=35% --layout=reverse --border --no-sort --prompt='Full history > ')" || return 0
+    bl_fzf_with_conversation_preview "$BL_PREVIEW_FILE" 'Full history > ')" || {
+    bl_cleanup_preview
+    return 0
+  }
+  bl_cleanup_preview
   case "$action" in
     '← Back to owners') BL_NAVIGATION="owners" ;;
     '← Back to environments') BL_NAVIGATION="environment" ;;
@@ -829,7 +867,8 @@ bl_interactive_thread() {
       BL_NAVIGATION="owners"
       return 0
     }
-    bl_display_thread_compact_json "$thread_json"
+    bl_create_preview
+    BL_FORCE_COLOR=1 bl_display_thread_compact_json "$thread_json" >"$BL_PREVIEW_FILE"
 
     action="$(printf '%s\n' \
       'Reply' \
@@ -838,10 +877,12 @@ bl_interactive_thread() {
       '← Back to owners' \
       '← Back to environments' \
       'Quit' |
-      fzf --height=45% --layout=reverse --border --no-sort --prompt='Conversation > ')" || {
+      bl_fzf_with_conversation_preview "$BL_PREVIEW_FILE" 'Conversation > ')" || {
+      bl_cleanup_preview
       BL_NAVIGATION="owners"
       return 0
     }
+    bl_cleanup_preview
 
     case "$action" in
       'Reply')
