@@ -817,48 +817,74 @@ bl_display_thread_compact_json() {
   echo "────────────────────────────────────────────────────────────────"
 }
 
-bl_fzf_with_conversation_preview() {
+bl_read_preview_command() {
   local preview_file="$1"
-  local prompt="$2"
-  BL_SUPPORT_PREVIEW_FILE="$preview_file" fzf \
-    --layout=reverse \
-    --border \
-    --no-sort \
-    --ansi \
-    --prompt="$prompt" \
-    --header='Scroll messages: PgUp/PgDn or Ctrl-U/Ctrl-D · Enter chooses action' \
-    --preview='cat -- "$BL_SUPPORT_PREVIEW_FILE"' \
-    --preview-window='up,65%,wrap,border-bottom' \
-    --preview-label=' Conversation ' \
-    --bind='ctrl-u:preview-half-page-up,ctrl-d:preview-half-page-down,pgup:preview-page-up,pgdn:preview-page-down'
+  local commands="$2"
+  local expected_keys="$3"
+  local result
+  result="$(printf '%s\n' "$commands" |
+    BL_SUPPORT_PREVIEW_FILE="$preview_file" fzf \
+      --layout=reverse \
+      --border \
+      --no-sort \
+      --no-info \
+      --no-scrollbar \
+      --disabled \
+      --ansi \
+      --expect="$expected_keys" \
+      --prompt='Command number > ' \
+      --preview='cat -- "$BL_SUPPORT_PREVIEW_FILE"' \
+      --preview-window='up,78%,wrap,border-bottom' \
+      --preview-label=' Conversation · Scroll: PgUp/PgDn or Ctrl-U/Ctrl-D ' \
+      --bind='ctrl-u:preview-half-page-up,ctrl-d:preview-half-page-down,pgup:preview-page-up,pgdn:preview-page-down')" || return 1
+  printf '%s' "${result%%$'\n'*}"
+}
+
+bl_choose_state_interactive() {
+  local thread_json="$1"
+  local command
+  bl_create_preview
+  BL_FORCE_COLOR=1 bl_display_thread_compact_json "$thread_json" >"$BL_PREVIEW_FILE"
+  command="$(bl_read_preview_command \
+    "$BL_PREVIEW_FILE" \
+    '1 Pending · 2 Engaged · 3 Closed · 0 Back' \
+    '1,2,3,0')" || {
+    bl_cleanup_preview
+    return 1
+  }
+  bl_cleanup_preview
+  case "$command" in
+    1) printf 'pending' ;;
+    2) printf 'engaged' ;;
+    3) printf 'closed' ;;
+    *) return 1 ;;
+  esac
 }
 
 bl_show_full_history_interactive() {
   local thread_json="$1"
-  local action
+  local command
   clear 2>/dev/null || true
   bl_create_preview
   BL_FORCE_COLOR=1 bl_display_thread_json "$thread_json" >"$BL_PREVIEW_FILE"
-  action="$(printf '%s\n' \
-    '← Back to conversation' \
-    '← Back to owners' \
-    '← Back to environments' \
-    'Quit' |
-    bl_fzf_with_conversation_preview "$BL_PREVIEW_FILE" 'Full history > ')" || {
+  command="$(bl_read_preview_command \
+    "$BL_PREVIEW_FILE" \
+    '1 Conversation · 2 Owners · 3 Environments · 0 Quit' \
+    '1,2,3,0')" || {
     bl_cleanup_preview
     return 0
   }
   bl_cleanup_preview
-  case "$action" in
-    '← Back to owners') BL_NAVIGATION="owners" ;;
-    '← Back to environments') BL_NAVIGATION="environment" ;;
-    'Quit') BL_NAVIGATION="quit" ;;
+  case "$command" in
+    2) BL_NAVIGATION="owners" ;;
+    3) BL_NAVIGATION="environment" ;;
+    0) BL_NAVIGATION="quit" ;;
   esac
 }
 
 bl_interactive_thread() {
   local thread_id="$1"
-  local thread_json active action message new_status
+  local thread_json active command message new_status
   while true; do
     clear 2>/dev/null || true
     thread_json="$(bl_thread_json "$thread_id")"
@@ -870,34 +896,24 @@ bl_interactive_thread() {
     bl_create_preview
     BL_FORCE_COLOR=1 bl_display_thread_compact_json "$thread_json" >"$BL_PREVIEW_FILE"
 
-    action="$(printf '%s\n' \
-      'Reply' \
-      'Show entire thread history' \
-      'Change state' \
-      '← Back to owners' \
-      '← Back to environments' \
-      'Quit' |
-      bl_fzf_with_conversation_preview "$BL_PREVIEW_FILE" 'Conversation > ')" || {
+    command="$(bl_read_preview_command \
+      "$BL_PREVIEW_FILE" \
+      '1 Reply · 2 Change state · 3 History · 4 Owners · 5 Envs · 0 Quit' \
+      '1,2,3,4,5,0')" || {
       bl_cleanup_preview
       BL_NAVIGATION="owners"
       return 0
     }
     bl_cleanup_preview
 
-    case "$action" in
-      'Reply')
+    case "$command" in
+      1)
         message="$(bl_read_reply)"
         bl_send_reply "$thread_id" "$message"
         read -r -p "Press Return to refresh the conversation..." _
         ;;
-      'Show entire thread history')
-        bl_show_full_history_interactive "$thread_json"
-        [[ -z "$BL_NAVIGATION" ]] || return 0
-        ;;
-      'Change state')
-        new_status="$(printf 'pending\nengaged\nclosed\n← Back to conversation\n' |
-          fzf --height=30% --layout=reverse --border --no-sort --prompt='New state > ')" || continue
-        [[ "$new_status" != '← Back to conversation' ]] || continue
+      2)
+        new_status="$(bl_choose_state_interactive "$thread_json")" || continue
         bl_change_state "$thread_id" "$new_status"
         if [[ "$new_status" == "closed" ]]; then
           BL_NAVIGATION="owners"
@@ -906,15 +922,19 @@ bl_interactive_thread() {
         fi
         read -r -p "Press Return to refresh the conversation..." _
         ;;
-      '← Back to owners')
+      3)
+        bl_show_full_history_interactive "$thread_json"
+        [[ -z "$BL_NAVIGATION" ]] || return 0
+        ;;
+      4)
         BL_NAVIGATION="owners"
         return 0
         ;;
-      '← Back to environments')
+      5)
         BL_NAVIGATION="environment"
         return 0
         ;;
-      'Quit')
+      0)
         BL_NAVIGATION="quit"
         return 0
         ;;
