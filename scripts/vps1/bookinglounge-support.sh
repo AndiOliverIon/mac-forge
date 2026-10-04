@@ -10,7 +10,7 @@
 #   bookinglounge-support.sh threads --env production --owner <owner-guid|email|shop-identifier>
 #   bookinglounge-support.sh show --env production <thread-guid>
 #   bookinglounge-support.sh reply --env development <thread-guid> [--file path|--stdin]
-#   bookinglounge-support.sh state --env development <thread-guid> <pending|engaged|closed>
+#   bookinglounge-support.sh state --env development <thread-guid> closed
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -28,6 +28,8 @@ BL_STATUS_FILTER="pending"
 BL_OWNER_SELECTOR=""
 BL_REPLY_FILE=""
 BL_REPLY_STDIN=0
+BL_REPLY_DRAFT=""
+BL_REPLY_DRAFT_THREAD_ID=""
 BL_PREVIEW_FILE=""
 declare -a BL_POSITIONAL=()
 
@@ -141,7 +143,14 @@ bl_sql_json() {
   [[ -n "$output" ]] || output='[]'
   jq -e . >/dev/null 2>&1 <<<"$output" ||
     bl_die "The database returned an unexpected non-JSON response."
-  printf '%s' "$output"
+  jq -c '
+    walk(
+      if type == "string"
+      then gsub("[\u0000-\u0008\u000B-\u001F\u007F]"; "")
+      else .
+      end
+    )
+  ' <<<"$output"
 }
 
 bl_verify_schema() {
@@ -602,12 +611,22 @@ sys.stdout.write(value)
 }
 
 bl_compose_reply() {
+  local initial="${1:-}"
   local line joined last_index line_number
   local -a lines=()
 
   printf '\nCompose the support reply. Return starts a new line.\n' >/dev/tty
   printf 'Commands: /send · /undo · /cancel\n' >/dev/tty
   printf '────────────────────────────────────────────────────────────────\n' >/dev/tty
+
+  if [[ -n "$initial" ]]; then
+    printf 'Restored draft:\n' >/dev/tty
+    while IFS= read -r line; do
+      lines+=("$line")
+      printf '%3d │ %s\n' "${#lines[@]}" "$line" >/dev/tty
+    done <<<"$initial"
+    printf 'Continue the draft below, or use /undo, /send, or /cancel.\n' >/dev/tty
+  fi
 
   while true; do
     line_number=$((${#lines[@]} + 1))
@@ -649,6 +668,7 @@ bl_compose_reply() {
 }
 
 bl_read_reply() {
+  local initial="${1:-}"
   local message=""
   if [[ -n "$BL_REPLY_FILE" ]]; then
     [[ -f "$BL_REPLY_FILE" ]] || bl_die "Reply file not found: $BL_REPLY_FILE"
@@ -656,7 +676,7 @@ bl_read_reply() {
   elif ((BL_REPLY_STDIN == 1)); then
     message="$(cat)"
   else
-    message="$(bl_compose_reply)" || return 1
+    message="$(bl_compose_reply "$initial")" || return 1
   fi
 
   local normalized
@@ -693,8 +713,10 @@ bl_send_reply() {
   echo "────────────────────────────────────────────────────────────────"
   printf '%s\n' "$message"
   echo "────────────────────────────────────────────────────────────────"
-  bl_confirm_write "send this support reply" "$owner" "$shop" "$thread_id" ||
-    bl_die "Cancelled (no reply sent)."
+  if ! bl_confirm_write "send this support reply" "$owner" "$shop" "$thread_id"; then
+    echo "Cancelled (no reply sent)."
+    return 1
+  fi
 
   payload="$(jq -nc \
     --arg body "$message" \
@@ -716,16 +738,28 @@ curl -sS --connect-timeout 10 --max-time 30 \\
   -w '\\n%{http_code}' \\
   'http://127.0.0.1:$BL_API_PORT/v1/support/threads/$thread_id/messages'
 "
-  response="$(printf '%s' "$payload" | vps1_ssh "$remote_command")" ||
-    bl_die "Support reply request failed before the API returned a response."
-  [[ "$response" == *$'\n'* ]] || bl_die "Support reply API returned an unexpected response."
+  if ! response="$(printf '%s' "$payload" | vps1_ssh "$remote_command")"; then
+    echo "Support reply request failed before the API returned a response." >&2
+    return 3
+  fi
+  if [[ "$response" != *$'\n'* ]]; then
+    echo "Support reply API returned an unexpected response." >&2
+    return 3
+  fi
   http_status="${response##*$'\n'}"
   response_body="${response%$'\n'*}"
 
   if [[ "$http_status" != "200" ]]; then
+    if [[ "$http_status" == "409" ]] &&
+      jq -e '.status == "changed" and .field == "expectedLatestSequenceNumber"' \
+        >/dev/null 2>&1 <<<"$response_body"; then
+      echo "The owner added a message while you were replying. Refresh before sending." >&2
+      return 2
+    fi
     echo "API response ($http_status):" >&2
     jq . <<<"$response_body" 2>/dev/null || printf '%s\n' "$response_body" >&2
-    bl_die "Support reply was not accepted."
+    echo "Support reply was not accepted." >&2
+    return 3
   fi
 
   echo "✔ Reply accepted by the $BL_ENV_LABEL API."
@@ -737,15 +771,17 @@ bl_change_state() {
   local new_status="$2"
   bl_require_uuid "$thread_id"
   bl_require_status "$new_status"
-  [[ "$new_status" != "all" ]] || bl_die "State cannot be set to 'all'."
+  [[ "$new_status" == "closed" ]] ||
+    bl_die "Only closing is a manual state change; owner messages set pending and support replies set engaged."
 
-  local thread_json owner shop active current
+  local thread_json owner shop active current latest_sequence sql_output
   thread_json="$(bl_thread_json "$thread_id")"
   [[ "$(jq -r 'type' <<<"$thread_json")" == "object" ]] ||
     bl_die "Support thread was not found in $BL_ENV_LABEL."
   active="$(jq -r '.isActive' <<<"$thread_json")"
   [[ "$active" == "true" ]] || bl_die "Closed support threads are read-only; reopening is not implemented."
   current="$(jq -r '.status' <<<"$thread_json")"
+  latest_sequence="$(jq -r '[.messages[].sequenceNumber] | max // 0' <<<"$thread_json")"
   [[ "$current" != "$new_status" ]] || bl_die "Thread is already '$new_status'."
   owner="$(jq -r '.ownerName' <<<"$thread_json")"
   shop="$(jq -r '.shopName + " (" + .shopIdentifier + ")"' <<<"$thread_json")"
@@ -753,25 +789,43 @@ bl_change_state() {
   echo
   echo "State transition: $current → $new_status"
   echo "Note: this is a row-scoped SQL update because the API has no explicit state endpoint yet."
-  bl_confirm_write "change the thread state to '$new_status'" "$owner" "$shop" "$thread_id" ||
-    bl_die "Cancelled (state unchanged)."
+  if ! bl_confirm_write "change the thread state to '$new_status'" "$owner" "$shop" "$thread_id"; then
+    echo "Cancelled (state unchanged)."
+    return 1
+  fi
 
-  vps1_sqlcmd -b -d "$BL_DATABASE" -Q "
+  if ! sql_output="$(vps1_sqlcmd -b -d "$BL_DATABASE" -Q "
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
 BEGIN TRANSACTION;
 
 DECLARE @ThreadId uniqueidentifier = CAST('$thread_id' AS uniqueidentifier);
 DECLARE @NewStatus nvarchar(24) = N'$new_status';
+DECLARE @ExpectedStatus nvarchar(24) = N'$current';
+DECLARE @ExpectedLatestSequenceNumber bigint = $latest_sequence;
+DECLARE @ActualStatus nvarchar(24);
+DECLARE @ActualClosedAt datetimeoffset(0);
+DECLARE @ActualLatestSequenceNumber bigint;
 
-IF NOT EXISTS (
-  SELECT 1
-  FROM dbo.SupportThread WITH (UPDLOCK, HOLDLOCK)
-  WHERE Id = @ThreadId
-    AND ClosedAt IS NULL
-)
+SELECT
+  @ActualStatus = Status,
+  @ActualClosedAt = ClosedAt
+FROM dbo.SupportThread WITH (UPDLOCK, HOLDLOCK)
+WHERE Id = @ThreadId;
+
+IF @ActualStatus IS NULL OR @ActualClosedAt IS NOT NULL
 BEGIN
   THROW 51000, 'The active support thread was not found.', 1;
+END;
+
+SELECT @ActualLatestSequenceNumber = COALESCE(MAX(SequenceNumber), 0)
+FROM dbo.SupportMessage
+WHERE ThreadId = @ThreadId;
+
+IF @ActualStatus <> @ExpectedStatus
+   OR @ActualLatestSequenceNumber <> @ExpectedLatestSequenceNumber
+BEGIN
+  THROW 51001, 'The support thread changed since it was displayed.', 1;
 END;
 
 UPDATE dbo.SupportThread
@@ -782,7 +836,14 @@ SET
 WHERE Id = @ThreadId;
 
 COMMIT TRANSACTION;
-" >/dev/null
+" 2>&1)"; then
+    if [[ "$sql_output" == *"The support thread changed since it was displayed."* ]]; then
+      echo "The conversation changed before closure. Review it again before closing." >&2
+      return 2
+    fi
+    printf '%s\n' "$sql_output" >&2
+    bl_die "Thread state could not be changed."
+  fi
   echo "✔ Thread state changed to '$new_status' in $BL_ENV_LABEL."
 }
 
@@ -889,58 +950,43 @@ bl_read_preview_command() {
 
 bl_display_state_options_json() {
   local thread_json="$1"
-  local current_state
-  current_state="$(jq -r '.status' <<<"$thread_json")"
 
   echo
   echo "════════════════════════════════════════════════════════════════"
-  printf ' CHANGE THREAD STATE · %s\n' "$BL_ENV_LABEL"
+  printf ' CLOSE SUPPORT THREAD · %s\n' "$BL_ENV_LABEL"
   echo "════════════════════════════════════════════════════════════════"
   jq -r '
-    "Owner         : " + .ownerName + " <" + .ownerEmail + ">\n" +
+    "Owner         : " + .ownerName + "\n" +
     "Shop          : " + .shopName + " (" + .shopIdentifier + ")\n" +
     "Current state : " + .status
   ' <<<"$thread_json"
   echo "────────────────────────────────────────────────────────────────"
-  printf '1  Pending%s\n' "$([[ "$current_state" == "pending" ]] && printf ' · CURRENT' || true)"
-  echo "   Needs support attention."
-  echo
-  printf '2  Engaged%s\n' "$([[ "$current_state" == "engaged" ]] && printf ' · CURRENT' || true)"
-  echo "   Support has replied; waiting for the owner."
-  echo
-  echo "3  Closed"
+  echo "1  Close thread"
   echo "   Resolved; remove it from the open-owner list."
-  echo "   The owner may start a new thread later."
-  echo
   echo "0  Back"
-  echo "   Keep the current state unchanged."
+  echo "   Keep the thread open."
   echo "────────────────────────────────────────────────────────────────"
-  echo "Press the number for the state you want."
+  echo "Pending and Engaged are set automatically by messages."
 }
 
 bl_choose_state_interactive() {
   local thread_json="$1"
-  local command current_state new_state
-  current_state="$(jq -r '.status' <<<"$thread_json")"
+  local command
   bl_create_preview
   bl_display_state_options_json "$thread_json" >"$BL_PREVIEW_FILE"
   command="$(bl_read_preview_command \
     "$BL_PREVIEW_FILE" \
-    '1 Pending · 2 Engaged · 3 Closed · 0 Back' \
-    '1,2,3,0' \
-    'Change thread state')" || {
+    '1 Close thread · 0 Back' \
+    '1,0' \
+    'Close support thread')" || {
     bl_cleanup_preview
     return 1
   }
   bl_cleanup_preview
   case "$command" in
-    1) new_state='pending' ;;
-    2) new_state='engaged' ;;
-    3) new_state='closed' ;;
+    1) printf 'closed' ;;
     *) return 1 ;;
   esac
-  [[ "$new_state" != "$current_state" ]] || return 1
-  printf '%s' "$new_state"
 }
 
 bl_show_full_history_interactive() {
@@ -966,7 +1012,11 @@ bl_show_full_history_interactive() {
 
 bl_interactive_thread() {
   local thread_id="$1"
-  local thread_json active command message new_status
+  local thread_json active command message new_status reply_status state_status
+  if [[ "$BL_REPLY_DRAFT_THREAD_ID" != "$thread_id" ]]; then
+    BL_REPLY_DRAFT=""
+    BL_REPLY_DRAFT_THREAD_ID=""
+  fi
   while true; do
     clear 2>/dev/null || true
     thread_json="$(bl_thread_json "$thread_id")"
@@ -980,7 +1030,7 @@ bl_interactive_thread() {
 
     command="$(bl_read_preview_command \
       "$BL_PREVIEW_FILE" \
-      '1 Reply · 2 State · 3 History · 4 Owners · 5 Envs · 0 Quit' \
+      '1 Reply · 2 Close · 3 History · 4 Owners · 5 Envs · 0 Quit' \
       '1,2,3,4,5,0')" || {
       bl_cleanup_preview
       BL_NAVIGATION="owners"
@@ -990,19 +1040,42 @@ bl_interactive_thread() {
 
     case "$command" in
       1)
-        message="$(bl_read_reply)" || continue
-        bl_send_reply "$thread_id" "$message"
-        read -r -p "Press Return to refresh the conversation..." _
+        message="$(bl_read_reply "$BL_REPLY_DRAFT")" || {
+          BL_REPLY_DRAFT=""
+          BL_REPLY_DRAFT_THREAD_ID=""
+          continue
+        }
+        if bl_send_reply "$thread_id" "$message"; then
+          BL_REPLY_DRAFT=""
+          BL_REPLY_DRAFT_THREAD_ID=""
+          read -r -p "Press Return to refresh the conversation..." _
+        else
+          reply_status=$?
+          BL_REPLY_DRAFT="$message"
+          BL_REPLY_DRAFT_THREAD_ID="$thread_id"
+          if ((reply_status == 2)); then
+            echo "Draft kept. The conversation will refresh before you try again."
+          else
+            echo "Draft kept. Choose Reply to continue editing it."
+          fi
+          read -r -p "Press Return to return to the conversation..." _
+        fi
         ;;
       2)
         new_status="$(bl_choose_state_interactive "$thread_json")" || continue
-        bl_change_state "$thread_id" "$new_status"
-        if [[ "$new_status" == "closed" ]]; then
+        if bl_change_state "$thread_id" "$new_status"; then
+          BL_REPLY_DRAFT=""
+          BL_REPLY_DRAFT_THREAD_ID=""
           BL_NAVIGATION="owners"
           read -r -p "Thread closed. Press Return to go back to open owners..." _
           return 0
+        else
+          state_status=$?
+          if ((state_status == 2)); then
+            echo "The conversation will refresh so you can review the new activity."
+          fi
+          read -r -p "Press Return to return to the conversation..." _
         fi
-        read -r -p "Press Return to refresh the conversation..." _
         ;;
       3)
         bl_show_full_history_interactive "$thread_json"
@@ -1133,7 +1206,7 @@ bl_run_command() {
       bl_fetch_and_display_thread "$thread_id"
       ;;
     state)
-      ((${#BL_POSITIONAL[@]} == 2)) || bl_die "state requires a thread UUID and pending|engaged|closed."
+      ((${#BL_POSITIONAL[@]} == 2)) || bl_die "state requires a thread UUID and closed."
       thread_id="${BL_POSITIONAL[0]}"
       state_value="${BL_POSITIONAL[1]}"
       bl_change_state "$thread_id" "$state_value"
@@ -1143,13 +1216,17 @@ bl_run_command() {
   esac
 }
 
-for command in fzf jq python3 sqlcmd ssh curl column; do
+bl_parse_args "$@"
+for command in jq python3 sqlcmd ssh; do
   vps1_require_cmd "$command"
 done
 
-bl_parse_args "$@"
 if [[ -z "$BL_COMMAND" ]]; then
+  vps1_require_cmd fzf
   bl_interactive
 else
+  case "$BL_COMMAND" in
+    list | owners | threads) vps1_require_cmd column ;;
+  esac
   bl_run_command
 fi
