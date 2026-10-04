@@ -139,19 +139,20 @@ Relevant Mac Forge files:
 
 - `scripts/vps1/vps1.sh` — shared connection, tunnel, SQL, SSH, and safety helpers
 - `scripts/vps1/vps1-sql-tunnel.sh` — forwards local port `14333` to private VPS1 SQL at `127.0.0.1:1433`
-- `config-local/local-store.json` — ignored secret store containing the `VPS1` connection
+- `config-local/local-store.json` — ignored secret store containing the generic `VPS1` connection and the distinct `BookingLounge Production (VPS1)` and `BookingLounge Development (VPS1)` profiles
 - `dotfiles/aliases-vps1` — existing `v1-sql-tunnel-*` operator aliases
 
-A new Bash script should source `scripts/vps1/vps1.sh`, require `sqlcmd`, call `vps1_load_connection`, and execute queries through `vps1_sqlcmd`:
+A new Bash script should select the environment-specific profile, source `scripts/vps1/vps1.sh`, require `sqlcmd`, call `vps1_load_connection`, and execute queries through `vps1_sqlcmd`:
 
 ```bash
+VPS1_CONNECTION_NAME="BookingLounge Production (VPS1)"
 source "$repo_root/scripts/vps1/vps1.sh"
 vps1_require_cmd sqlcmd
 vps1_load_connection
 vps1_sqlcmd -b -d bookinglounge ...
 ```
 
-`vps1_load_connection` reads the `VPS1` profile without printing its credentials and automatically raises the SQL tunnel when the configured local endpoint is unavailable.
+Use `BookingLounge Development (VPS1)` with `bookinglounge-dev` for development. Both profiles use the established private VPS1 tunnel endpoint but keep the credentials and target database explicit. `vps1_load_connection` reads the selected profile without printing its credentials and automatically raises the SQL tunnel when the configured local endpoint is unavailable.
 
 Database names:
 
