@@ -3,7 +3,6 @@
 #
 # Interactive:
 #   bookinglounge-support.sh
-#   bookinglounge-support.sh --env development
 #
 # Scriptable:
 #   bookinglounge-support.sh list --env production [--status pending|engaged|closed|all]
@@ -32,7 +31,8 @@ BL_REPLY_STDIN=0
 declare -a BL_POSITIONAL=()
 
 usage() {
-  sed -n '2,14p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,/^set -euo pipefail$/p' "${BASH_SOURCE[0]}" |
+    sed '$d; s/^# \{0,1\}//'
 }
 
 bl_die() {
@@ -64,16 +64,19 @@ bl_choose_environment() {
   local selection
   selection="$({
     printf 'dev\tDevelopment\tbookinglounge-dev\n'
-    printf 'prod\tProduction\tbookinglounge\n'
+    printf 'prod\tProduction ⚠ live data\tbookinglounge\n'
+    printf '__QUIT__\tQuit\t\n'
   } | fzf \
     --height=35% \
     --layout=reverse \
     --border \
+    --no-sort \
     --delimiter=$'\t' \
     --with-nth=2,3 \
     --prompt='BookingLounge environment > ' \
     --header='Development is private · production contains real owner data')" || return 1
   BL_ENV="${selection%%$'\t'*}"
+  [[ "$BL_ENV" != "__QUIT__" ]] || return 1
 }
 
 bl_configure_environment() {
@@ -208,42 +211,38 @@ SELECT
   o.email AS ownerEmail,
   s.name AS shopName,
   s.identifier AS shopIdentifier,
-  active_thread.Id AS activeThreadID,
-  active_thread.Status AS activeStatus,
+  st.Id AS activeThreadID,
+  st.Status AS activeStatus,
+  CONVERT(varchar(19), st.UpdatedAt, 120) AS updatedAtUtc,
   COALESCE((
     SELECT COUNT_BIG(1)
     FROM dbo.SupportMessage AS owner_message
-    WHERE owner_message.ThreadId = active_thread.Id
+    WHERE owner_message.ThreadId = st.Id
       AND owner_message.Sender = N'owner'
       AND owner_message.SequenceNumber > COALESCE((
         SELECT MAX(support_message.SequenceNumber)
         FROM dbo.SupportMessage AS support_message
-        WHERE support_message.ThreadId = active_thread.Id
+        WHERE support_message.ThreadId = st.Id
           AND support_message.Sender = N'support'
       ), 0)
   ), 0) AS unansweredOwnerMessages,
-  (SELECT COUNT_BIG(1)
-   FROM dbo.SupportThread AS history
-   WHERE history.OwnerProfileId = o.id
-     AND history.ClosedAt IS NOT NULL) AS closedThreadCount
-FROM dbo.ownerprofiles AS o
+  (SELECT TOP (1) last_message.AppVersion
+   FROM dbo.SupportMessage AS last_message
+   WHERE last_message.ThreadId = st.Id
+     AND last_message.Sender = N'owner'
+   ORDER BY last_message.SequenceNumber DESC) AS appVersion,
+  (SELECT TOP (1) last_message.AppBuild
+   FROM dbo.SupportMessage AS last_message
+   WHERE last_message.ThreadId = st.Id
+     AND last_message.Sender = N'owner'
+   ORDER BY last_message.SequenceNumber DESC) AS appBuild
+FROM dbo.SupportThread AS st
+INNER JOIN dbo.ownerprofiles AS o ON o.id = st.OwnerProfileId
 INNER JOIN dbo.shops AS s ON s.ownerprofileid = o.id
-OUTER APPLY (
-  SELECT TOP (1) st.Id, st.Status
-  FROM dbo.SupportThread AS st
-  WHERE st.OwnerProfileId = o.id
-    AND st.ClosedAt IS NULL
-  ORDER BY st.UpdatedAt DESC
-) AS active_thread
-WHERE EXISTS (
-  SELECT 1
-  FROM dbo.SupportThread AS any_thread
-  WHERE any_thread.OwnerProfileId = o.id
-)
+WHERE st.ClosedAt IS NULL
 ORDER BY
-  CASE WHEN active_thread.Status = N'pending' THEN 0
-       WHEN active_thread.Status = N'engaged' THEN 1
-       ELSE 2 END,
+  CASE WHEN st.Status = N'pending' THEN 0 ELSE 1 END,
+  st.UpdatedAt DESC,
   o.fullname
 FOR JSON PATH, INCLUDE_NULL_VALUES;"
 }
@@ -315,7 +314,20 @@ FOR JSON PATH, INCLUDE_NULL_VALUES, WITHOUT_ARRAY_WRAPPER;"
 bl_resolve_owner_id() {
   local selector="$1"
   local owners_json matches count
-  owners_json="$(bl_owners_json)"
+  owners_json="$(bl_sql_json "
+SET NOCOUNT ON;
+SELECT
+  o.id AS ownerProfileID,
+  o.email AS ownerEmail,
+  s.identifier AS shopIdentifier
+FROM dbo.ownerprofiles AS o
+INNER JOIN dbo.shops AS s ON s.ownerprofileid = o.id
+WHERE EXISTS (
+  SELECT 1
+  FROM dbo.SupportThread AS st
+  WHERE st.OwnerProfileId = o.id
+)
+FOR JSON PATH, INCLUDE_NULL_VALUES;")"
   matches="$(
     jq -c --arg selector "$selector" '
       [.[] | select(
@@ -356,19 +368,20 @@ bl_print_owners() {
   local json
   json="$(bl_owners_json)"
   if [[ "$(jq 'length' <<<"$json")" == "0" ]]; then
-    echo "No owners with support-thread history in $BL_ENV_LABEL."
+    echo "No owners have an open support thread in $BL_ENV_LABEL."
     return 0
   fi
   {
-    printf 'OWNER ID\tOWNER\tEMAIL\tSHOP\tACTIVE\tWAITING\tCLOSED\n'
+    printf 'OWNER ID\tOWNER\tEMAIL\tSHOP\tSTATE\tWAITING\tAPP\tUPDATED UTC\n'
     jq -r '.[] | [
       .ownerProfileID,
       .ownerName,
       .ownerEmail,
       (.shopName + " (" + .shopIdentifier + ")"),
-      (.activeStatus // "—"),
+      .activeStatus,
       (.unansweredOwnerMessages | tostring),
-      (.closedThreadCount | tostring)
+      (if .appVersion then .appVersion + (if .appBuild then " (" + .appBuild + ")" else "" end) else "—" end),
+      .updatedAtUtc
     ] | @tsv' <<<"$json"
   } | column -t -s $'\t'
 }
@@ -635,114 +648,135 @@ COMMIT TRANSACTION;
 }
 
 bl_pick_owner() {
-  local owners_json lines selection
+  local owners_json lines selection header
   owners_json="$(bl_owners_json)"
-  [[ "$(jq 'length' <<<"$owners_json")" != "0" ]] || return 1
+  if [[ "$(jq 'length' <<<"$owners_json")" == "0" ]]; then
+    header="No owners have an open support thread in $BL_ENV_LABEL"
+  else
+    header='OWNER · SHOP · STATE · WAITING · APP'
+  fi
   lines="$(
-    jq -r '.[] | [
-      .ownerProfileID,
-      .ownerName,
-      .ownerEmail,
-      .shopName,
-      .shopIdentifier,
-      (.activeStatus // "no active thread"),
-      (.unansweredOwnerMessages | tostring),
-      (.closedThreadCount | tostring)
+    {
+      printf '__BACK__\t← Back to environments\n'
+      jq -r '.[] | [
+      .activeThreadID,
+      (
+        .ownerName + " · " + .shopName + " (" + .shopIdentifier + ")" +
+        " · " + .activeStatus +
+        " · " + (.unansweredOwnerMessages | tostring) + " waiting" +
+        (if .appVersion then " · app " + .appVersion else "" end)
+      )
     ] | @tsv' <<<"$owners_json"
+    }
   )"
   selection="$(printf '%s\n' "$lines" | fzf \
     --height=80% \
     --layout=reverse \
     --border \
+    --no-sort \
     --delimiter=$'\t' \
-    --with-nth=2,3,4,5,6,7,8 \
-    --prompt="$BL_ENV_LABEL owner/shop > " \
-    --header=$'OWNER · EMAIL · SHOP · IDENTIFIER · ACTIVE STATE · WAITING · CLOSED')" || return 1
+    --with-nth=2 \
+    --prompt="$BL_ENV_LABEL · open owner > " \
+    --header="$header")" || {
+    printf '__BACK__'
+    return 0
+  }
   printf '%s' "${selection%%$'\t'*}"
 }
 
-bl_pick_queue_thread() {
-  local json lines selection
-  json="$(bl_active_threads_json pending)"
-  [[ "$(jq 'length' <<<"$json")" != "0" ]] || return 1
-  lines="$(
-    jq -r '.[] | [
-      .threadID,
-      .ownerName,
-      .ownerEmail,
-      .shopName,
-      .shopIdentifier,
-      (.unansweredOwnerMessages | tostring),
-      (.appVersion // "—"),
-      (.appBuild // "—"),
-      .updatedAtUtc
-    ] | @tsv' <<<"$json"
-  )"
-  selection="$(printf '%s\n' "$lines" | fzf \
-    --height=80% \
-    --layout=reverse \
-    --border \
-    --delimiter=$'\t' \
-    --with-nth=2,3,4,5,6,7,8,9 \
-    --prompt="$BL_ENV_LABEL pending > " \
-    --header=$'OWNER · EMAIL · SHOP · IDENTIFIER · WAITING · VERSION · BUILD · UPDATED UTC')" || return 1
-  printf '%s' "${selection%%$'\t'*}"
+bl_display_thread_compact_json() {
+  local json="$1"
+  local latest_support_sequence latest_support_at waiting_count
+  latest_support_sequence="$(jq '[.messages[] | select(.sender == "support") | .sequenceNumber] | max // 0' <<<"$json")"
+  latest_support_at="$(jq -r '[.messages[] | select(.sender == "support")][-1].createdAtUtc // empty' <<<"$json")"
+  waiting_count="$(jq --argjson after "$latest_support_sequence" '[.messages[] | select(.sender == "owner" and .sequenceNumber > $after)] | length' <<<"$json")"
+
+  echo
+  echo "════════════════════════════════════════════════════════════════"
+  printf ' BookingLounge Support · %s\n' "$BL_ENV_LABEL"
+  echo "════════════════════════════════════════════════════════════════"
+  jq -r '
+    "Owner    : " + .ownerName + " <" + .ownerEmail + ">\n" +
+    "Shop     : " + .shopName + " (" + .shopIdentifier + ")\n" +
+    "State    : " + .status + "\n" +
+    "Updated  : " + .updatedAtUtc + " UTC"
+  ' <<<"$json"
+  echo "────────────────────────────────────────────────────────────────"
+  if [[ -n "$latest_support_at" ]]; then
+    printf 'Owner messages since your last reply (%s UTC): %s\n' "$latest_support_at" "$waiting_count"
+  else
+    printf 'Owner messages in this new thread: %s\n' "$waiting_count"
+  fi
+
+  if ((waiting_count == 0)); then
+    echo
+    echo "(No owner messages since your last reply.)"
+  else
+    while IFS= read -r message; do
+      local body created context app_version app_build
+      body="$(jq -r '.body' <<<"$message")"
+      created="$(jq -r '.createdAtUtc' <<<"$message")"
+      context="$(jq -r '.contextScreen // empty' <<<"$message")"
+      app_version="$(jq -r '.appVersion // empty' <<<"$message")"
+      app_build="$(jq -r '.appBuild // empty' <<<"$message")"
+
+      printf '\nOWNER · %s UTC' "$created"
+      [[ -n "$context" ]] && printf ' · %s' "$context"
+      if [[ -n "$app_version" ]]; then
+        printf ' · app %s' "$app_version"
+        [[ -n "$app_build" ]] && printf ' (%s)' "$app_build"
+      fi
+      printf '\n%s\n' "$body"
+    done < <(jq -c --argjson after "$latest_support_sequence" '
+      [.messages[] | select(.sender == "owner" and .sequenceNumber > $after)][-3:][]
+    ' <<<"$json")
+  fi
+  echo
+  echo "────────────────────────────────────────────────────────────────"
 }
 
-bl_pick_thread_for_owner() {
-  local owner_id="$1"
-  local json lines selection
-  json="$(bl_threads_json "$owner_id")"
-  [[ "$(jq 'length' <<<"$json")" != "0" ]] || return 1
-  lines="$(
-    jq -r '.[] | [
-      .threadID,
-      .status,
-      (if .isActive then "active" else "history" end),
-      (.messageCount | tostring),
-      .createdAtUtc,
-      .updatedAtUtc,
-      (.closedAtUtc // "—")
-    ] | @tsv' <<<"$json"
-  )"
-  selection="$(printf '%s\n' "$lines" | fzf \
-    --height=70% \
-    --layout=reverse \
-    --border \
-    --delimiter=$'\t' \
-    --with-nth=2,3,4,5,6,7 \
-    --prompt='Support thread > ' \
-    --header=$'STATE · ACTIVE/HISTORY · MESSAGES · CREATED UTC · UPDATED UTC · CLOSED UTC')" || return 1
-  printf '%s' "${selection%%$'\t'*}"
+bl_show_full_history_interactive() {
+  local thread_json="$1"
+  local action
+  clear 2>/dev/null || true
+  bl_display_thread_json "$thread_json"
+  action="$(printf '%s\n' \
+    '← Back to conversation' \
+    '← Back to owners' \
+    '← Back to environments' \
+    'Quit' |
+    fzf --height=35% --layout=reverse --border --no-sort --prompt='Full history > ')" || return 0
+  case "$action" in
+    '← Back to owners') BL_NAVIGATION="owners" ;;
+    '← Back to environments') BL_NAVIGATION="environment" ;;
+    'Quit') BL_NAVIGATION="quit" ;;
+  esac
 }
 
 bl_interactive_thread() {
   local thread_id="$1"
-  local owner_id="$2"
   local thread_json active action message new_status
   while true; do
     clear 2>/dev/null || true
     thread_json="$(bl_thread_json "$thread_id")"
-    bl_display_thread_json "$thread_json"
     active="$(jq -r '.isActive' <<<"$thread_json")"
+    [[ "$active" == "true" ]] || {
+      BL_NAVIGATION="owners"
+      return 0
+    }
+    bl_display_thread_compact_json "$thread_json"
 
-    if [[ "$active" == "true" ]]; then
-      action="$(printf '%s\n' \
-        'Reply' \
-        'Change state' \
-        'Back to this owner’s threads' \
-        'Choose another owner' \
-        'Switch environment' \
-        'Quit' |
-        fzf --height=45% --layout=reverse --border --prompt='Thread action > ')" || return 0
-    else
-      action="$(printf '%s\n' \
-        'Back to this owner’s threads' \
-        'Choose another owner' \
-        'Switch environment' \
-        'Quit' |
-        fzf --height=35% --layout=reverse --border --prompt='History action > ')" || return 0
-    fi
+    action="$(printf '%s\n' \
+      'Reply' \
+      'Show entire thread history' \
+      'Change state' \
+      '← Back to owners' \
+      '← Back to environments' \
+      'Quit' |
+      fzf --height=45% --layout=reverse --border --no-sort --prompt='Conversation > ')" || {
+      BL_NAVIGATION="owners"
+      return 0
+    }
 
     case "$action" in
       'Reply')
@@ -750,22 +784,27 @@ bl_interactive_thread() {
         bl_send_reply "$thread_id" "$message"
         read -r -p "Press Return to refresh the conversation..." _
         ;;
+      'Show entire thread history')
+        bl_show_full_history_interactive "$thread_json"
+        [[ -z "$BL_NAVIGATION" ]] || return 0
+        ;;
       'Change state')
-        new_status="$(printf 'pending\nengaged\nclosed\n' |
-          fzf --height=30% --layout=reverse --border --prompt='New state > ')" || continue
+        new_status="$(printf 'pending\nengaged\nclosed\n← Back to conversation\n' |
+          fzf --height=30% --layout=reverse --border --no-sort --prompt='New state > ')" || continue
+        [[ "$new_status" != '← Back to conversation' ]] || continue
         bl_change_state "$thread_id" "$new_status"
+        if [[ "$new_status" == "closed" ]]; then
+          BL_NAVIGATION="owners"
+          read -r -p "Thread closed. Press Return to go back to open owners..." _
+          return 0
+        fi
         read -r -p "Press Return to refresh the conversation..." _
         ;;
-      'Back to this owner’s threads')
-        BL_NAVIGATION="threads"
-        BL_NAV_OWNER_ID="$owner_id"
-        return 0
-        ;;
-      'Choose another owner')
+      '← Back to owners')
         BL_NAVIGATION="owners"
         return 0
         ;;
-      'Switch environment')
+      '← Back to environments')
         BL_NAVIGATION="environment"
         return 0
         ;;
@@ -778,86 +817,21 @@ bl_interactive_thread() {
 }
 
 bl_interactive() {
-  local browse owner_id thread_id
+  local thread_id
   BL_NAVIGATION=""
-  BL_NAV_OWNER_ID=""
-
-  if [[ -n "$BL_ENV" ]]; then
-    bl_configure_environment
-  fi
+  BL_ENV=""
 
   while true; do
-    if [[ -z "$BL_ENV" || "$BL_NAVIGATION" == "environment" ]]; then
-      BL_NAVIGATION=""
-      bl_choose_environment || {
-        echo "Cancelled."
-        return 0
-      }
-      bl_configure_environment
-    fi
-
-    if [[ "$BL_NAVIGATION" == "threads" ]]; then
-      owner_id="$BL_NAV_OWNER_ID"
-      BL_NAVIGATION=""
-    else
-      browse="$(printf '%s\n' \
-        'Pending queue' \
-        'Owners / shops' \
-        'Switch environment' \
-        'Quit' |
-        fzf \
-          --height=40% \
-          --layout=reverse \
-          --border \
-          --prompt="$BL_ENV_LABEL support > ")" || return 0
-
-      case "$browse" in
-        'Pending queue')
-          thread_id="$(bl_pick_queue_thread)" || {
-            echo "No pending support threads in $BL_ENV_LABEL."
-            read -r -p "Press Return to continue..." _
-            continue
-          }
-          owner_id="$(jq -r '.ownerProfileID' <<<"$(bl_thread_json "$thread_id")")"
-          bl_interactive_thread "$thread_id" "$owner_id"
-          case "$BL_NAVIGATION" in
-            threads)
-              owner_id="$BL_NAV_OWNER_ID"
-              BL_NAVIGATION=""
-              ;;
-            owners)
-              BL_NAVIGATION=""
-              continue
-              ;;
-            environment) continue ;;
-            quit) return 0 ;;
-            *) continue ;;
-          esac
-          ;;
-        'Owners / shops')
-          owner_id="$(bl_pick_owner)" || continue
-          ;;
-        'Switch environment')
-          BL_NAVIGATION="environment"
-          continue
-          ;;
-        'Quit') return 0 ;;
-      esac
-    fi
+    BL_NAVIGATION=""
+    bl_choose_environment || return 0
+    bl_configure_environment
 
     while true; do
-      thread_id="$(bl_pick_thread_for_owner "$owner_id")" || break
-      bl_interactive_thread "$thread_id" "$owner_id"
+      thread_id="$(bl_pick_owner)"
+      [[ "$thread_id" != "__BACK__" ]] || break
+      bl_interactive_thread "$thread_id"
       case "$BL_NAVIGATION" in
-        threads)
-          owner_id="$BL_NAV_OWNER_ID"
-          BL_NAVIGATION=""
-          continue
-          ;;
-        owners)
-          BL_NAVIGATION=""
-          break
-          ;;
+        owners) BL_NAVIGATION="" ;;
         environment) break ;;
         quit) return 0 ;;
       esac

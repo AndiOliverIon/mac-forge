@@ -183,7 +183,9 @@ For production data safety:
 
 ## Implemented Mac Forge operator workflow
 
-Run `bl-support` or `bls` for the interactive workflow. It first selects development or production, then allows navigation through the pending queue or owners/shops, into an owner's active and historical threads, and finally into the conversation and its actions.
+Run `bl-support` or `bls` for the interactive workflow. It behaves as a small drill-down browser: select development or production, select an owner/shop that currently has an open thread, then work with that conversation. Every deeper screen provides explicit navigation back to owners or environments.
+
+The owner list never shows closed threads. Because the data model permits only one open thread per owner, selecting an owner opens that conversation directly without an unnecessary thread-selection level. The default conversation view shows at most the three owner messages sent since the latest support reply. `Show entire thread history` reveals every message in the current thread.
 
 The same tool also supports explicit commands:
 
