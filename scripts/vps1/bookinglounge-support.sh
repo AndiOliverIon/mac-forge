@@ -898,7 +898,7 @@ bl_interactive_thread() {
 
     command="$(bl_read_preview_command \
       "$BL_PREVIEW_FILE" \
-      '1 Reply · 2 Change state · 3 History · 4 Owners · 5 Envs · 0 Quit' \
+      '1 Reply · 2 State · 3 History · 4 Owners · 5 Envs · 0 Quit' \
       '1,2,3,4,5,0')" || {
       bl_cleanup_preview
       BL_NAVIGATION="owners"
