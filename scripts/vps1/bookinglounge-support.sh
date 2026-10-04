@@ -30,6 +30,8 @@ BL_REPLY_FILE=""
 BL_REPLY_STDIN=0
 BL_REPLY_DRAFT=""
 BL_REPLY_DRAFT_THREAD_ID=""
+BL_REPLY_MESSAGE=""
+BL_REPLY_ERROR=""
 BL_PREVIEW_FILE=""
 declare -a BL_POSITIONAL=()
 
@@ -146,7 +148,7 @@ bl_sql_json() {
   jq -c '
     walk(
       if type == "string"
-      then gsub("[\u0000-\u0008\u000B-\u001F\u007F]"; "")
+      then gsub("[\u0000-\u0008\u000B-\u001F\u007F-\u009F]"; "")
       else .
       end
     )
@@ -335,6 +337,10 @@ INNER JOIN dbo.ownerprofiles AS o ON o.id = st.OwnerProfileId
 INNER JOIN dbo.shops AS s ON s.ownerprofileid = st.OwnerProfileId
 WHERE st.Id = CAST('$thread_id' AS uniqueidentifier)
 FOR JSON PATH, INCLUDE_NULL_VALUES, WITHOUT_ARRAY_WRAPPER;"
+}
+
+bl_latest_sequence_from_json() {
+  jq -er '[.messages[]?.sequenceNumber] | max // 0' <<<"$1"
 }
 
 bl_resolve_owner_id() {
@@ -669,44 +675,71 @@ bl_compose_reply() {
 
 bl_read_reply() {
   local initial="${1:-}"
-  local message=""
+  local message="" normalized validation_status
+  BL_REPLY_MESSAGE=""
+  BL_REPLY_ERROR=""
+
   if [[ -n "$BL_REPLY_FILE" ]]; then
-    [[ -f "$BL_REPLY_FILE" ]] || bl_die "Reply file not found: $BL_REPLY_FILE"
+    if [[ ! -f "$BL_REPLY_FILE" ]]; then
+      BL_REPLY_ERROR="Reply file not found: $BL_REPLY_FILE"
+      return 2
+    fi
     message="$(<"$BL_REPLY_FILE")"
   elif ((BL_REPLY_STDIN == 1)); then
-    message="$(cat)"
+    if ! message="$(cat)"; then
+      BL_REPLY_ERROR="Reply could not be read from standard input."
+      return 2
+    fi
   else
     message="$(bl_compose_reply "$initial")" || return 1
   fi
+  BL_REPLY_MESSAGE="$message"
 
-  local normalized
   if normalized="$(printf '%s' "$message" | bl_normalize_reply)"; then
-    :
+    BL_REPLY_MESSAGE="$normalized"
+    return 0
   else
-    local validation_status=$?
+    validation_status=$?
     case "$validation_status" in
-      2) bl_die "Reply cannot be blank." ;;
-      3) bl_die "Reply exceeds 4000 UTF-16 code units." ;;
-      *) bl_die "Reply could not be validated." ;;
+      2) BL_REPLY_ERROR="Reply cannot be blank." ;;
+      3) BL_REPLY_ERROR="Reply exceeds 4000 UTF-16 code units." ;;
+      *) BL_REPLY_ERROR="Reply could not be validated." ;;
     esac
+    return 2
   fi
-  printf '%s' "$normalized"
 }
 
 bl_send_reply() {
   local thread_id="$1"
   local message="$2"
+  local expected_sequence="$3"
   bl_require_uuid "$thread_id"
+  [[ "$expected_sequence" =~ ^[0-9]+$ ]] || bl_die "Reply baseline is invalid."
 
   local thread_json owner shop active latest_sequence payload remote_command response http_status response_body
-  thread_json="$(bl_thread_json "$thread_id")"
-  [[ "$(jq -r 'type' <<<"$thread_json")" == "object" ]] ||
-    bl_die "Support thread was not found in $BL_ENV_LABEL."
-  active="$(jq -r '.isActive' <<<"$thread_json")"
-  [[ "$active" == "true" ]] || bl_die "Closed support threads are read-only."
-  owner="$(jq -r '.ownerName' <<<"$thread_json")"
-  shop="$(jq -r '.shopName + " (" + .shopIdentifier + ")"' <<<"$thread_json")"
-  latest_sequence="$(jq -r '[.messages[].sequenceNumber] | max // 0' <<<"$thread_json")"
+  if ! thread_json="$(bl_thread_json "$thread_id")"; then
+    echo "The conversation could not be refreshed before replying." >&2
+    return 3
+  fi
+  if ! jq -e 'type == "object"' >/dev/null 2>&1 <<<"$thread_json"; then
+    echo "Support thread was not found in $BL_ENV_LABEL." >&2
+    return 4
+  fi
+  if ! active="$(jq -er '.isActive | tostring' <<<"$thread_json")" ||
+    ! owner="$(jq -er '.ownerName' <<<"$thread_json")" ||
+    ! shop="$(jq -er '.shopName + " (" + .shopIdentifier + ")"' <<<"$thread_json")" ||
+    ! latest_sequence="$(bl_latest_sequence_from_json "$thread_json")"; then
+    echo "The refreshed conversation could not be interpreted safely." >&2
+    return 3
+  fi
+  if [[ "$active" != "true" ]]; then
+    echo "The support thread was closed before the reply was sent." >&2
+    return 4
+  fi
+  if [[ "$latest_sequence" != "$expected_sequence" ]]; then
+    echo "The conversation changed after it was displayed. Refresh before sending." >&2
+    return 2
+  fi
 
   echo
   echo "Reply preview:"
@@ -720,7 +753,7 @@ bl_send_reply() {
 
   payload="$(jq -nc \
     --arg body "$message" \
-    --argjson expectedLatestSequenceNumber "$latest_sequence" \
+    --argjson expectedLatestSequenceNumber "$expected_sequence" \
     '{body: $body, expectedLatestSequenceNumber: $expectedLatestSequenceNumber}')"
   remote_command="
 set -euo pipefail
@@ -763,28 +796,54 @@ curl -sS --connect-timeout 10 --max-time 30 \\
   fi
 
   echo "✔ Reply accepted by the $BL_ENV_LABEL API."
-  jq -r '"  message: " + .messageID + "\n  created: " + .createdAt' <<<"$response_body"
+  if ! jq -er '
+    if (.messageID | type) == "string" and (.createdAt | type) == "string"
+    then "  message: " + .messageID + "\n  created: " + .createdAt
+    else error("missing reply metadata")
+    end
+  ' <<<"$response_body" 2>/dev/null; then
+    echo "  The API returned HTTP 200, but its reply metadata was unreadable." >&2
+    echo "  Refresh the conversation before considering another send." >&2
+  fi
+  return 0
 }
 
 bl_change_state() {
   local thread_id="$1"
   local new_status="$2"
+  local expected_status="$3"
+  local expected_sequence="$4"
   bl_require_uuid "$thread_id"
   bl_require_status "$new_status"
   [[ "$new_status" == "closed" ]] ||
     bl_die "Only closing is a manual state change; owner messages set pending and support replies set engaged."
+  [[ "$expected_sequence" =~ ^[0-9]+$ ]] || bl_die "Closure baseline is invalid."
 
   local thread_json owner shop active current latest_sequence sql_output
-  thread_json="$(bl_thread_json "$thread_id")"
-  [[ "$(jq -r 'type' <<<"$thread_json")" == "object" ]] ||
-    bl_die "Support thread was not found in $BL_ENV_LABEL."
-  active="$(jq -r '.isActive' <<<"$thread_json")"
-  [[ "$active" == "true" ]] || bl_die "Closed support threads are read-only; reopening is not implemented."
-  current="$(jq -r '.status' <<<"$thread_json")"
-  latest_sequence="$(jq -r '[.messages[].sequenceNumber] | max // 0' <<<"$thread_json")"
-  [[ "$current" != "$new_status" ]] || bl_die "Thread is already '$new_status'."
-  owner="$(jq -r '.ownerName' <<<"$thread_json")"
-  shop="$(jq -r '.shopName + " (" + .shopIdentifier + ")"' <<<"$thread_json")"
+  if ! thread_json="$(bl_thread_json "$thread_id")"; then
+    echo "The conversation could not be refreshed before closure." >&2
+    return 3
+  fi
+  if ! jq -e 'type == "object"' >/dev/null 2>&1 <<<"$thread_json"; then
+    echo "Support thread was not found in $BL_ENV_LABEL." >&2
+    return 4
+  fi
+  if ! active="$(jq -er '.isActive | tostring' <<<"$thread_json")" ||
+    ! current="$(jq -er '.status' <<<"$thread_json")" ||
+    ! owner="$(jq -er '.ownerName' <<<"$thread_json")" ||
+    ! shop="$(jq -er '.shopName + " (" + .shopIdentifier + ")"' <<<"$thread_json")" ||
+    ! latest_sequence="$(bl_latest_sequence_from_json "$thread_json")"; then
+    echo "The refreshed conversation could not be interpreted safely." >&2
+    return 3
+  fi
+  if [[ "$active" != "true" ]]; then
+    echo "The support thread was already closed." >&2
+    return 4
+  fi
+  if [[ "$current" != "$expected_status" || "$latest_sequence" != "$expected_sequence" ]]; then
+    echo "The conversation changed after it was displayed. Review it again before closing." >&2
+    return 2
+  fi
 
   echo
   echo "State transition: $current → $new_status"
@@ -801,8 +860,8 @@ BEGIN TRANSACTION;
 
 DECLARE @ThreadId uniqueidentifier = CAST('$thread_id' AS uniqueidentifier);
 DECLARE @NewStatus nvarchar(24) = N'$new_status';
-DECLARE @ExpectedStatus nvarchar(24) = N'$current';
-DECLARE @ExpectedLatestSequenceNumber bigint = $latest_sequence;
+DECLARE @ExpectedStatus nvarchar(24) = N'$expected_status';
+DECLARE @ExpectedLatestSequenceNumber bigint = $expected_sequence;
 DECLARE @ActualStatus nvarchar(24);
 DECLARE @ActualClosedAt datetimeoffset(0);
 DECLARE @ActualLatestSequenceNumber bigint;
@@ -841,8 +900,13 @@ COMMIT TRANSACTION;
       echo "The conversation changed before closure. Review it again before closing." >&2
       return 2
     fi
+    if [[ "$sql_output" == *"The active support thread was not found."* ]]; then
+      echo "The support thread was closed before this change completed." >&2
+      return 4
+    fi
     printf '%s\n' "$sql_output" >&2
-    bl_die "Thread state could not be changed."
+    echo "Thread state could not be changed." >&2
+    return 3
   fi
   echo "✔ Thread state changed to '$new_status' in $BL_ENV_LABEL."
 }
@@ -1012,7 +1076,8 @@ bl_show_full_history_interactive() {
 
 bl_interactive_thread() {
   local thread_id="$1"
-  local thread_json active command message new_status reply_status state_status
+  local thread_json active command message new_status expected_status expected_sequence
+  local reply_read_status reply_status state_status
   if [[ "$BL_REPLY_DRAFT_THREAD_ID" != "$thread_id" ]]; then
     BL_REPLY_DRAFT=""
     BL_REPLY_DRAFT_THREAD_ID=""
@@ -1025,6 +1090,8 @@ bl_interactive_thread() {
       BL_NAVIGATION="owners"
       return 0
     }
+    expected_status="$(jq -r '.status' <<<"$thread_json")"
+    expected_sequence="$(bl_latest_sequence_from_json "$thread_json")"
     bl_create_preview
     BL_FORCE_COLOR=1 bl_display_thread_compact_json "$thread_json" >"$BL_PREVIEW_FILE"
 
@@ -1040,12 +1107,23 @@ bl_interactive_thread() {
 
     case "$command" in
       1)
-        message="$(bl_read_reply "$BL_REPLY_DRAFT")" || {
-          BL_REPLY_DRAFT=""
-          BL_REPLY_DRAFT_THREAD_ID=""
+        if bl_read_reply "$BL_REPLY_DRAFT"; then
+          message="$BL_REPLY_MESSAGE"
+        else
+          reply_read_status=$?
+          if ((reply_read_status == 1)); then
+            BL_REPLY_DRAFT=""
+            BL_REPLY_DRAFT_THREAD_ID=""
+            continue
+          fi
+          BL_REPLY_DRAFT="$BL_REPLY_MESSAGE"
+          BL_REPLY_DRAFT_THREAD_ID="$thread_id"
+          echo "$BL_REPLY_ERROR" >&2
+          echo "Draft kept. Choose Reply to correct it."
+          read -r -p "Press Return to return to the conversation..." _
           continue
-        }
-        if bl_send_reply "$thread_id" "$message"; then
+        fi
+        if bl_send_reply "$thread_id" "$message" "$expected_sequence"; then
           BL_REPLY_DRAFT=""
           BL_REPLY_DRAFT_THREAD_ID=""
           read -r -p "Press Return to refresh the conversation..." _
@@ -1055,15 +1133,23 @@ bl_interactive_thread() {
           BL_REPLY_DRAFT_THREAD_ID="$thread_id"
           if ((reply_status == 2)); then
             echo "Draft kept. The conversation will refresh before you try again."
+          elif ((reply_status == 4)); then
+            echo "The thread is no longer active. Your unsent draft was:"
+            echo "────────────────────────────────────────────────────────────────"
+            printf '%s\n' "$message"
+            echo "────────────────────────────────────────────────────────────────"
+            BL_NAVIGATION="owners"
+            read -r -p "Press Return to go back to open owners..." _
+            return 0
           else
-            echo "Draft kept. Choose Reply to continue editing it."
+            echo "Draft kept. Refresh and check the conversation before resending."
           fi
           read -r -p "Press Return to return to the conversation..." _
         fi
         ;;
       2)
         new_status="$(bl_choose_state_interactive "$thread_json")" || continue
-        if bl_change_state "$thread_id" "$new_status"; then
+        if bl_change_state "$thread_id" "$new_status" "$expected_status" "$expected_sequence"; then
           BL_REPLY_DRAFT=""
           BL_REPLY_DRAFT_THREAD_ID=""
           BL_NAVIGATION="owners"
@@ -1073,6 +1159,10 @@ bl_interactive_thread() {
           state_status=$?
           if ((state_status == 2)); then
             echo "The conversation will refresh so you can review the new activity."
+          elif ((state_status == 4)); then
+            BL_NAVIGATION="owners"
+            read -r -p "The thread is already closed. Press Return to go back to open owners..." _
+            return 0
           fi
           read -r -p "Press Return to return to the conversation..." _
         fi
@@ -1173,7 +1263,8 @@ bl_parse_args() {
 }
 
 bl_run_command() {
-  local owner_id thread_id message state_value
+  local owner_id thread_id message state_value thread_json expected_status expected_sequence
+  local reply_read_status action_status
   bl_require_status "$BL_STATUS_FILTER"
   [[ -n "$BL_ENV" ]] || bl_die "Non-interactive commands require --env development|production."
   bl_configure_environment
@@ -1201,15 +1292,44 @@ bl_run_command() {
       [[ -z "$BL_REPLY_FILE" || "$BL_REPLY_STDIN" -eq 0 ]] ||
         bl_die "Choose only one reply source: --file or --stdin."
       thread_id="${BL_POSITIONAL[0]}"
-      message="$(bl_read_reply)"
-      bl_send_reply "$thread_id" "$message"
+      thread_json="$(bl_thread_json "$thread_id")"
+      [[ "$(jq -r 'type' <<<"$thread_json")" == "object" ]] ||
+        bl_die "Support thread was not found in $BL_ENV_LABEL."
+      bl_display_thread_compact_json "$thread_json"
+      expected_sequence="$(bl_latest_sequence_from_json "$thread_json")"
+      if bl_read_reply; then
+        message="$BL_REPLY_MESSAGE"
+      else
+        reply_read_status=$?
+        if ((reply_read_status == 1)); then
+          bl_die "Cancelled (no reply sent)."
+        fi
+        bl_die "$BL_REPLY_ERROR"
+      fi
+      if bl_send_reply "$thread_id" "$message" "$expected_sequence"; then
+        :
+      else
+        action_status=$?
+        return "$action_status"
+      fi
       bl_fetch_and_display_thread "$thread_id"
       ;;
     state)
       ((${#BL_POSITIONAL[@]} == 2)) || bl_die "state requires a thread UUID and closed."
       thread_id="${BL_POSITIONAL[0]}"
       state_value="${BL_POSITIONAL[1]}"
-      bl_change_state "$thread_id" "$state_value"
+      thread_json="$(bl_thread_json "$thread_id")"
+      [[ "$(jq -r 'type' <<<"$thread_json")" == "object" ]] ||
+        bl_die "Support thread was not found in $BL_ENV_LABEL."
+      bl_display_thread_compact_json "$thread_json"
+      expected_status="$(jq -r '.status' <<<"$thread_json")"
+      expected_sequence="$(bl_latest_sequence_from_json "$thread_json")"
+      if bl_change_state "$thread_id" "$state_value" "$expected_status" "$expected_sequence"; then
+        :
+      else
+        action_status=$?
+        return "$action_status"
+      fi
       bl_fetch_and_display_thread "$thread_id"
       ;;
     *) bl_die "Unknown command: $BL_COMMAND" ;;
