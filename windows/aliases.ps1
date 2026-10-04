@@ -323,6 +323,8 @@ $sharedCommands = @{
   "v1opt" = "scripts/vps1/vps1-db-optimize.sh"
   "v1attr" = "scripts/vps1/vps1-db-attr.sh"
   "v1-bl-publish" = "scripts/vps1/vps1-bl-publish.sh"
+  "bl-support" = "scripts/vps1/bookinglounge-support.sh"
+  "bls" = "scripts/vps1/bookinglounge-support.sh"
 }
 $sharedCommands.GetEnumerator() | ForEach-Object {
   Register-ForgeBashCommand -Name $_.Key -Script $_.Value
