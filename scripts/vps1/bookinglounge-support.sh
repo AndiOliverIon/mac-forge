@@ -867,6 +867,7 @@ bl_read_preview_command() {
   local preview_file="$1"
   local commands="$2"
   local expected_keys="$3"
+  local preview_label="${4:-Conversation · Scroll: PgUp/PgDn or Ctrl-U/Ctrl-D}"
   local result
   result="$(printf '%s\n' "$commands" |
     BL_SUPPORT_PREVIEW_FILE="$preview_file" fzf \
@@ -881,30 +882,65 @@ bl_read_preview_command() {
       --prompt='Command number > ' \
       --preview='cat -- "$BL_SUPPORT_PREVIEW_FILE"' \
       --preview-window='up,78%,wrap,border-bottom' \
-      --preview-label=' Conversation · Scroll: PgUp/PgDn or Ctrl-U/Ctrl-D ' \
+      --preview-label=" $preview_label " \
       --bind='ctrl-u:preview-half-page-up,ctrl-d:preview-half-page-down,pgup:preview-page-up,pgdn:preview-page-down')" || return 1
   printf '%s' "${result%%$'\n'*}"
 }
 
+bl_display_state_options_json() {
+  local thread_json="$1"
+  local current_state
+  current_state="$(jq -r '.status' <<<"$thread_json")"
+
+  echo
+  echo "════════════════════════════════════════════════════════════════"
+  printf ' CHANGE THREAD STATE · %s\n' "$BL_ENV_LABEL"
+  echo "════════════════════════════════════════════════════════════════"
+  jq -r '
+    "Owner         : " + .ownerName + " <" + .ownerEmail + ">\n" +
+    "Shop          : " + .shopName + " (" + .shopIdentifier + ")\n" +
+    "Current state : " + .status
+  ' <<<"$thread_json"
+  echo "────────────────────────────────────────────────────────────────"
+  printf '1  Pending%s\n' "$([[ "$current_state" == "pending" ]] && printf ' · CURRENT' || true)"
+  echo "   Needs support attention."
+  echo
+  printf '2  Engaged%s\n' "$([[ "$current_state" == "engaged" ]] && printf ' · CURRENT' || true)"
+  echo "   Support has replied; waiting for the owner."
+  echo
+  echo "3  Closed"
+  echo "   Resolved; remove it from the open-owner list."
+  echo "   The owner may start a new thread later."
+  echo
+  echo "0  Back"
+  echo "   Keep the current state unchanged."
+  echo "────────────────────────────────────────────────────────────────"
+  echo "Press the number for the state you want."
+}
+
 bl_choose_state_interactive() {
   local thread_json="$1"
-  local command
+  local command current_state new_state
+  current_state="$(jq -r '.status' <<<"$thread_json")"
   bl_create_preview
-  BL_FORCE_COLOR=1 bl_display_thread_compact_json "$thread_json" >"$BL_PREVIEW_FILE"
+  bl_display_state_options_json "$thread_json" >"$BL_PREVIEW_FILE"
   command="$(bl_read_preview_command \
     "$BL_PREVIEW_FILE" \
     '1 Pending · 2 Engaged · 3 Closed · 0 Back' \
-    '1,2,3,0')" || {
+    '1,2,3,0' \
+    'Change thread state')" || {
     bl_cleanup_preview
     return 1
   }
   bl_cleanup_preview
   case "$command" in
-    1) printf 'pending' ;;
-    2) printf 'engaged' ;;
-    3) printf 'closed' ;;
+    1) new_state='pending' ;;
+    2) new_state='engaged' ;;
+    3) new_state='closed' ;;
     *) return 1 ;;
   esac
+  [[ "$new_state" != "$current_state" ]] || return 1
+  printf '%s' "$new_state"
 }
 
 bl_show_full_history_interactive() {

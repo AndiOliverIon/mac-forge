@@ -189,6 +189,8 @@ The owner list never shows closed threads. Because the data model permits only o
 
 Interactive replies use a multiline composer. Return starts another line; `/send` finishes the draft and opens the existing reply preview and confirmation, `/undo` removes the previous line, and `/cancel` returns to the conversation without sending. Prefix a command with another slash when it must be sent literally, such as `//send`. Scripted multiline replies continue to use `--file` or `--stdin`.
 
+Choosing `2 State` opens a dedicated state screen rather than silently replacing the conversation command bar. It identifies the current state and explains all available choices: `Pending` needs support attention, `Engaged` means support has replied and is waiting for the owner, and `Closed` resolves the conversation and removes it from the open-owner list. The state is changed only after choosing its number and passing the environment-specific confirmation.
+
 The same tool also supports explicit commands:
 
 ```bash
