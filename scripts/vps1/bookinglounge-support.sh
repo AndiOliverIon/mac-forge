@@ -601,6 +601,53 @@ sys.stdout.write(value)
 '
 }
 
+bl_compose_reply() {
+  local line joined last_index line_number
+  local -a lines=()
+
+  printf '\nCompose the support reply. Return starts a new line.\n' >/dev/tty
+  printf 'Commands: /send · /undo · /cancel\n' >/dev/tty
+  printf '────────────────────────────────────────────────────────────────\n' >/dev/tty
+
+  while true; do
+    line_number=$((${#lines[@]} + 1))
+    printf '%3d │ ' "$line_number" >/dev/tty
+    if ! IFS= read -r line </dev/tty; then
+      return 1
+    fi
+
+    case "$line" in
+      /send)
+        printf -v joined '%s\n' "${lines[@]}"
+        if [[ -z "$(bl_trim "$joined")" ]]; then
+          printf 'Nothing to send yet. Add text or enter /cancel.\n' >/dev/tty
+          continue
+        fi
+        printf '%s' "${joined%$'\n'}"
+        return 0
+        ;;
+      /undo)
+        if ((${#lines[@]} == 0)); then
+          printf 'Nothing to undo.\n' >/dev/tty
+        else
+          last_index=$((${#lines[@]} - 1))
+          unset "lines[$last_index]"
+          printf 'Removed the previous line.\n' >/dev/tty
+        fi
+        ;;
+      /cancel)
+        return 1
+        ;;
+      //send | //undo | //cancel)
+        lines+=("${line#/}")
+        ;;
+      *)
+        lines+=("$line")
+        ;;
+    esac
+  done
+}
+
 bl_read_reply() {
   local message=""
   if [[ -n "$BL_REPLY_FILE" ]]; then
@@ -609,11 +656,7 @@ bl_read_reply() {
   elif ((BL_REPLY_STDIN == 1)); then
     message="$(cat)"
   else
-    printf '\nType the support reply, then press Return. Enter /back to cancel.\n' >/dev/tty
-    if ! read -r -p "Reply > " message </dev/tty; then
-      return 1
-    fi
-    [[ "$message" != "/back" ]] || return 1
+    message="$(bl_compose_reply)" || return 1
   fi
 
   local normalized

@@ -187,6 +187,8 @@ Run `bl-support` or `bls` for the interactive workflow. It behaves as a small dr
 
 The owner list never shows closed threads. Because the data model permits only one open thread per owner, selecting an owner opens that conversation directly without an unnecessary thread-selection level. The default conversation view shows at most the three owner messages sent since the latest support reply. Messages are rendered as wrapped, numbered cards with distinct owner/support labels and terminal colors; `NO_COLOR` disables color without removing the visual structure. Conversation actions use a full-screen FZF layout with the messages in a dedicated scrollable preview, so small terminals do not push content into inaccessible scrollback. Page Up/Page Down or Ctrl-U/Ctrl-D scroll the message pane. Commands occupy one numbered line beneath the preview (`1 Reply`, `2 State`, and so on) and are invoked directly with their number keys. `Show entire thread history` reveals every message in the current thread using the same scrollable layout and numbered command bar.
 
+Interactive replies use a multiline composer. Return starts another line; `/send` finishes the draft and opens the existing reply preview and confirmation, `/undo` removes the previous line, and `/cancel` returns to the conversation without sending. Prefix a command with another slash when it must be sent literally, such as `//send`. Scripted multiline replies continue to use `--file` or `--stdin`.
+
 The same tool also supports explicit commands:
 
 ```bash
