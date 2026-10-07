@@ -243,11 +243,11 @@ forced = {}
 if mock_cs and Path(mock_cs).is_file():
     mock_text = Path(mock_cs).read_text(encoding="utf-8-sig")
     for match in re.finditer(
-        r'EnsureModule\(\s*(?:CLI\.)?([A-Za-z0-9_]+)\s*,\s*(\d+)\s*\)',
+        r'EnsureModule\(\s*(?:(?:CLI\.)?([A-Za-z0-9_]+)|"([^"]+)")\s*,\s*(\d+)\s*\)',
         mock_text,
     ):
-        module_id = const_values.get(match.group(1), match.group(1))
-        forced[module_id] = int(match.group(2))
+        module_id = match.group(2) or const_values.get(match.group(1), match.group(1))
+        forced[module_id] = int(match.group(3))
 
 current = {}
 records = []
