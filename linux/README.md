@@ -196,7 +196,9 @@ unavailable, install it later with `omarchy pkg aur add mssql-tools18`. Remote
 SQL credentials remain machine-local and are not created or copied by
 bootstrap.
 
-Use `rdown` to choose one of the same remote SQL connections as `rdbsn`, then
+Use `rlist` to choose one of the same remote SQL connections as `rdbsn` and
+print the snapshots in that connection's backup path. Use `rdown` to choose
+one of the same remote SQL connections as `rdbsn`, then
 select a `.bak` or `.bkp` file from that connection's backup path and download
 it to one of the destinations configured in `configs/work-state.json`. The
 backup path is matched to the SMB share for that server. On Linux, `rdown`

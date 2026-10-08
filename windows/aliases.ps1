@@ -299,6 +299,7 @@ $sharedCommands = @{
   "rdbsndrop" = "scripts/db-remote-snapshot-drop.sh"
   "rdown" = "scripts/db-remote-download.sh"
   "rup" = "scripts/db-remote-upload.sh"
+  "rlist" = "scripts/db-remote-list.sh"
   "dbc" = "scripts/db-clear.sh"
   "dbo" = "scripts/db-optimize.sh"
   "dbfix" = "scripts/db-fix.sh"

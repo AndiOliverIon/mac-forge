@@ -8,7 +8,7 @@
 #   1. lists .bak snapshots in the server's backup path (with size shown),
 #   2. lets you multi-select which ones to delete (TAB to mark),
 #   3. requires typing 'delete' to confirm,
-#   4. removes them on the server via master.sys.xp_delete_files,
+#   4. removes them on the SMB share with the stored share credentials,
 #   5. reports how much space was freed.
 #
 # Safety: nothing is deleted until you type 'delete'. Only files whose
@@ -29,7 +29,16 @@ require_cmd() { command -v "$1" >/dev/null 2>&1 || die "Required command '$1' no
 
 require_cmd fzf
 require_cmd jq
+require_cmd python3
 require_cmd sqlcmd
+require_cmd stat
+
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/backup-share-path.sh"
+
+FORGE_ROOT="${FORGE_ROOT:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
+RUNTIME_CONFIG_FILE="${FORGE_ROOT}/linux/config/runtime.json"
+[[ -f "$RUNTIME_CONFIG_FILE" ]] || die "Missing runtime config: $RUNTIME_CONFIG_FILE"
 
 SQLCMD_BIN="${FORGE_SQLCMD_BIN:-$(command -v sqlcmd)}"
 SQLCMD_GODEBUG="${FORGE_SQLCMD_GODEBUG:-x509negativeserial=1}"
@@ -57,6 +66,108 @@ is_truthy() {
   local v="${1:-}"
   v="${v,,}"
   [[ "$v" == "1" || "$v" == "true" || "$v" == "yes" || "$v" == "on" ]]
+}
+
+expand_home() {
+  local path="$1"
+
+  case "$path" in
+    "~") printf '%s\n' "$HOME" ;;
+    "~/"*) printf '%s/%s\n' "$HOME" "${path#"~/"}" ;;
+    *) printf '%s\n' "$path" ;;
+  esac
+}
+
+is_mounted() {
+  local target="$1"
+
+  if command -v mountpoint >/dev/null 2>&1; then
+    mountpoint -q "$target"
+    return
+  fi
+  mount | grep -F " on ${target} (" >/dev/null 2>&1
+}
+
+ensure_linux_mount() {
+  local source="$1" target="$2" credentials="$3" extra_options="$4"
+  local options
+
+  is_mounted "$target" && return 0
+
+  require_cmd mount.cifs
+  require_cmd sudo
+  require_cmd timeout
+
+  echo "Share not mounted. Mounting $source at $target..."
+  if [[ ! -d "$target" ]]; then
+    sudo mkdir -p -- "$target"
+  fi
+
+  options="uid=$(id -u),gid=$(id -g),credentials=$credentials"
+  [[ -z "$extra_options" ]] || options+=",$extra_options"
+  timeout --foreground 30s sudo mount -t cifs "$source" "$target" -o "$options" \
+    || die "Failed to mount $source at $target."
+  is_mounted "$target" || die "Mount command completed but $target is not mounted."
+}
+
+mount_backup_share() {
+  local match_host="$1"
+  local mount_row mount_id mount_source share_host
+
+  case "$(uname -s)" in
+    Darwin)
+      mount_row="$(
+        jq -r --arg host "$match_host" '
+          .mounts // []
+          | .[]
+          | select(.id and .source)
+          | select((.source | ascii_downcase) | contains($host | ascii_downcase))
+          | [.id, .source]
+          | @tsv
+        ' "$RUNTIME_CONFIG_FILE"
+      )"
+      [[ -n "${mount_row//$'\n'/}" ]] || die "No SMB mount matches host '$match_host'."
+      [[ "$mount_row" != *$'\n'* ]] || die "Several SMB mounts match host '$match_host'."
+      IFS=$'\t' read -r mount_id mount_source <<< "$mount_row"
+      share_name="$(backup_share_name "$mount_source")"
+      share_host="$(backup_share_host "$mount_source")"
+      scan_mount="$(find_mounted_share "$share_host" "$share_name")"
+      if [[ -z "$scan_mount" ]]; then
+        echo "Mount not found. Connecting [$mount_id]..."
+        "${SCRIPT_DIR}/mount.sh" "$mount_id"
+        scan_mount="$(find_mounted_share "$share_host" "$share_name")"
+      fi
+      ;;
+    Linux)
+      # shellcheck disable=SC1091
+      source "${FORGE_ROOT}/linux/scripts/smb-credentials.sh"
+      mount_row="$(
+        jq -r --arg host "$match_host" '
+          .mounts // []
+          | .[]
+          | select(.source and .mountpoint and .credentials.chapter and .credentials.remote)
+          | select((.source | ascii_downcase) | contains($host | ascii_downcase))
+          | [.source, .mountpoint, .credentials.chapter, .credentials.remote, (.options // "")]
+          | @tsv
+        ' "$RUNTIME_CONFIG_FILE"
+      )"
+      [[ -n "${mount_row//$'\n'/}" ]] || die "No SMB mount matches host '$match_host'."
+      [[ "$mount_row" != *$'\n'* ]] || die "Several SMB mounts match host '$match_host'."
+      IFS=$'\t' read -r mount_source mountpoint_raw credentials_chapter credentials_remote mount_options <<< "$mount_row"
+      scan_mount="$(expand_home "$mountpoint_raw")"
+      share_name="$(backup_share_name "$mount_source")"
+      credentials_file="$(forge_smb_materialize_credentials "$credentials_chapter" "$credentials_remote")"
+      trap 'rm -f -- "$credentials_file"' EXIT
+      ensure_linux_mount "$mount_source" "$scan_mount" "$credentials_file" "$mount_options"
+      ;;
+    *)
+      die "Unsupported operating system: $(uname -s)"
+      ;;
+  esac
+
+  [[ -n "${scan_mount:-}" && -d "$scan_mount" ]] || die "SMB share for '$server_name' is not mounted."
+  scan_dir="$(resolve_backup_scan_dir "$scan_mount" "$share_name" "$backup_dir")" \
+    || die "Could not find backup path '$backup_dir' on $scan_mount."
 }
 
 human_file_size() {
@@ -279,8 +390,12 @@ echo "Type 'delete' to confirm."
 read -r -p "> " answer
 [[ "$answer" == "delete" ]] || die "Confirmation mismatch. Aborted (nothing was deleted)."
 
+match_host="$server_host"
+[[ -n "$match_host" ]] || match_host="$server_url"
+mount_backup_share "$match_host"
+
 #######################################
-# Delete + verify, tallying freed space
+# Delete through the SMB share, then verify the file is gone
 #######################################
 freed_bytes=0
 deleted_count=0
@@ -289,40 +404,29 @@ failed_count=0
 for i in "${!SELECTED_NAMES[@]}"; do
   name="${SELECTED_NAMES[$i]}"
   bytes="${SELECTED_BYTES[$i]}"
-  full_path="$(join_backup_path "$name")"
-  full_path_sql="$(escape_tsql_string "$full_path")"
+  target="${scan_dir}/${name}"
 
   echo "-> Deleting [$name] on $server_name..."
 
+  if [[ "$name" == */* || "$name" == *\\* || "$name" == "." || "$name" == ".." || ! -f "$target" ]]; then
+    failed_count=$((failed_count + 1))
+    echo "   ✖ Could not delete [$name]." >&2
+    echo "     Snapshot is not a file in $scan_dir." >&2
+    continue
+  fi
+
   set +e
-  del_out="$(
-    run_sqlcmd_raw \
-      -S "$connect_server" -U "$server_user" -P "$server_pwd" \
-      -C -b <<SQL_EOF 2>&1
-SET NOCOUNT ON;
-BEGIN TRY
-  EXEC master.sys.xp_delete_files N'$full_path_sql';
-END TRY
-BEGIN CATCH
-  PRINT CONCAT('DELETE FAILED (', ERROR_NUMBER(), '): ', ERROR_MESSAGE());
-  THROW;
-END CATCH
-SQL_EOF
-  )"
-  del_rc=$?
+  rm -f -- "$target"
+  rm_rc=$?
   set -e
 
-  # Verify the file is actually gone before counting it as freed space.
-  still_exists="$(run_q_scalar "SET NOCOUNT ON; DECLARE @e int; EXEC master.dbo.xp_fileexist N'$full_path_sql', @e OUTPUT; SELECT @e;")"
-
-  if ((del_rc == 0)) && [[ "$still_exists" != "1" ]]; then
+  if ((rm_rc == 0)) && [[ ! -e "$target" ]]; then
     freed_bytes=$((freed_bytes + bytes))
     deleted_count=$((deleted_count + 1))
   else
     failed_count=$((failed_count + 1))
     echo "   ✖ Could not delete [$name]." >&2
-    msg="$(printf '%s' "$del_out" | tr -d '\r' | sed '/^$/d' | tail -n 4)"
-    [[ -n "$msg" ]] && printf '     %s\n' "$msg" >&2
+    echo "     The SMB share denied the delete." >&2
   fi
 done
 

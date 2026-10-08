@@ -128,9 +128,10 @@ alias	db-index	db-index — Rebuild all indexes in a selected local Docker SQL d
 alias	dbsn	dbsn — Create a SQL backup snapshot from a selected database. Optional --version YEAR selects a parallel SQL container.
 alias	rdbsn	rdbsn — Create a backup from a configured remote SQL Server target.
 alias	rdbr	rdbr — Restore a snapshot back into a remote SQL Server, overriding an existing database or cloning into a new one with mdf/ldf collision protection.
-alias	rdbsndrop	rdbsndrop — Delete .bak snapshot file(s) from a remote SQL Server target's backup path (multi-select, with size shown and space freed reported).
+alias	rdbsndrop	rdbsndrop — Delete .bak snapshot file(s) from a remote SQL backup path through the SMB share credentials (multi-select, with size shown and space freed reported).
 alias	rdown	rdown — Choose a remote SQL connection, then a .bak from that connection's backup path, then a local destination.
 alias	rup	rup — Upload a .bak from the current directory to a remote SQL backup path chosen like rdown.
+alias	rlist	rlist — Choose a remote SQL connection, then list the snapshots in that connection's backup path.
 alias	dbc	dbc — Clear SQL databases; default hard mode removes container/data after typed confirmation. Optional --version YEAR targets a parallel SQL container.
 alias	dbo	dbo — Run configured SQL table cleanup and shrink; data loss is possible.
 alias	dbfix	dbfix — Run SQL fix scripts from the repo sqls folder against a chosen database.
@@ -279,6 +280,7 @@ script	db-optimize	db-optimize — Run configured SQL table cleanup and shrink; 
 script	db-remote-backup	db-remote-backup — Create a backup from a configured remote SQL Server target.
 script	db-remote-download	db-remote-download — Choose a remote .bak with its size shown, then download it to a selected local destination.
 script	db-remote-upload	db-remote-upload — Upload a .bak from the current directory to a remote SQL backup path chosen like rdown.
+script	db-remote-list	db-remote-list — Choose a remote SQL connection, then list the snapshots in that connection's backup path.
 script	db-restore	db-restore — Restore a selected .bak into the forge SQL Server container. Optional --version YEAR creates/uses a parallel SQL container.
 script	db-restore-files	db-restore-files — Attach a database from a selected .mdf (+ optional matching .ldf) into the forge SQL Server container, proposing a name extracted from the file. Optional --version YEAR creates/uses a parallel SQL container.
 script	db-snapshot	db-snapshot — Create a SQL backup snapshot from a selected database. Optional --version YEAR selects a parallel SQL container.
