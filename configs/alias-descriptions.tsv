@@ -359,8 +359,8 @@ alias	v1down	v1down — Download vps1 .bak snapshots into the current directory;
 alias	vps1-download	vps1-download — Long form of v1down: download vps1 snapshots into the current directory.
 alias	v1up	v1up — Upload a local .bak into the vps1 snapshots folder for later restore.
 alias	vps1-upload	vps1-upload — Long form of v1up: upload a local .bak into the vps1 snapshots folder.
-alias	rdown-to-v1	rdown-to-v1 — Choose a remote .bak with its size shown, then relay it from the portainer share straight to vps1 snapshots without touching the Mac SSD.
-alias	vps1-relay-download	vps1-relay-download — Long form of rdown-to-v1: choose a remote .bak with its size shown and stream it from the share to vps1 with no local copy.
+alias	rdown-to-v1	rdown-to-v1 — Choose a remote SQL connection, then a .bak from that connection's backup path, and relay it straight to vps1 snapshots without a local copy.
+alias	vps1-relay-download	vps1-relay-download — Long form of rdown-to-v1: choose a remote SQL connection, then stream a .bak from that connection's backup path to vps1 with no local copy.
 alias	v1drop	v1drop — Drop live user database(s) on vps1 (multi-select, confirm with 'delete').
 alias	vps1-drop	vps1-drop — Long form of v1drop: drop live user database(s) on vps1.
 alias	v1sndrop	v1sndrop — Delete .bak snapshot file(s) from the vps1 snapshots folder (multi-select).
