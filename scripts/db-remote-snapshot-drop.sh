@@ -1,4 +1,4 @@
-#!/opt/homebrew/bin/bash
+#!/usr/bin/env bash
 # db-remote-snapshot-drop.sh (alias: rdbsndrop)
 #
 # Delete .bak snapshot file(s) from a configured remote SQL Server target's
@@ -7,12 +7,15 @@
 # selection, then:
 #   1. lists .bak snapshots in the server's backup path (with size shown),
 #   2. lets you multi-select which ones to delete (TAB to mark),
-#   3. requires typing 'delete' to confirm,
-#   4. removes them on the SMB share with the stored share credentials,
-#   5. reports how much space was freed.
+#   3. mounts the SMB share and shows the local file next to each SQL path,
+#   4. requires typing 'delete' to confirm,
+#   5. removes the regular file when its size still matches the SQL listing,
+#   6. reports how much space was freed.
 #
-# Safety: nothing is deleted until you type 'delete'. Only files whose
+# Safety: nothing is deleted until you type 'delete'. A symlink, a missing
+# file, or a size mismatch aborts before that prompt. Only files whose
 # post-delete existence check confirms removal count toward "space freed".
+# macOS and Linux only.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -25,6 +28,11 @@ elif [[ -f "$HOME/mac-forge/scripts/forge.sh" ]]; then
 fi
 
 die() { echo "✖ $*" >&2; exit 1; }
+
+case "$(uname -s)" in
+  Darwin|Linux) ;;
+  *) die "rdbsndrop runs on macOS and Linux. This station reported $(uname -s)." ;;
+esac
 require_cmd() { command -v "$1" >/dev/null 2>&1 || die "Required command '$1' not found."; }
 
 require_cmd fzf
@@ -116,16 +124,7 @@ mount_backup_share() {
 
   case "$(uname -s)" in
     Darwin)
-      mount_row="$(
-        jq -r --arg host "$match_host" '
-          .mounts // []
-          | .[]
-          | select(.id and .source)
-          | select((.source | ascii_downcase) | contains($host | ascii_downcase))
-          | [.id, .source]
-          | @tsv
-        ' "$RUNTIME_CONFIG_FILE"
-      )"
+      mount_row="$(runtime_mount_rows "$match_host" mac)"
       [[ -n "${mount_row//$'\n'/}" ]] || die "No SMB mount matches host '$match_host'."
       [[ "$mount_row" != *$'\n'* ]] || die "Several SMB mounts match host '$match_host'."
       IFS=$'\t' read -r mount_id mount_source <<< "$mount_row"
@@ -141,16 +140,7 @@ mount_backup_share() {
     Linux)
       # shellcheck disable=SC1091
       source "${FORGE_ROOT}/linux/scripts/smb-credentials.sh"
-      mount_row="$(
-        jq -r --arg host "$match_host" '
-          .mounts // []
-          | .[]
-          | select(.source and .mountpoint and .credentials.chapter and .credentials.remote)
-          | select((.source | ascii_downcase) | contains($host | ascii_downcase))
-          | [.source, .mountpoint, .credentials.chapter, .credentials.remote, (.options // "")]
-          | @tsv
-        ' "$RUNTIME_CONFIG_FILE"
-      )"
+      mount_row="$(runtime_mount_rows "$match_host" linux)"
       [[ -n "${mount_row//$'\n'/}" ]] || die "No SMB mount matches host '$match_host'."
       [[ "$mount_row" != *$'\n'* ]] || die "Several SMB mounts match host '$match_host'."
       IFS=$'\t' read -r mount_source mountpoint_raw credentials_chapter credentials_remote mount_options <<< "$mount_row"
@@ -168,6 +158,45 @@ mount_backup_share() {
   [[ -n "${scan_mount:-}" && -d "$scan_mount" ]] || die "SMB share for '$server_name' is not mounted."
   scan_dir="$(resolve_backup_scan_dir "$scan_mount" "$share_name" "$backup_dir")" \
     || die "Could not find backup path '$backup_dir' on $scan_mount."
+}
+
+file_size_bytes() {
+  local file="$1"
+  case "$(uname -s)" in
+    Darwin) stat -f '%z' -- "$file" ;;
+    Linux) stat -c '%s' -- "$file" ;;
+  esac
+}
+
+# Returns 0 when name is a single file whose SMB path is a regular file of
+# the same size SQL listed.
+snapshot_target_ok() {
+  local name="$1"
+  local expected="$2"
+  local target="$3"
+  local actual
+
+  if [[ "$name" == */* || "$name" == *\\* || "$name" == "." || "$name" == ".." ]]; then
+    echo "   ✖ [$name] is not a single snapshot file name." >&2
+    return 1
+  fi
+  if [[ -L "$target" ]]; then
+    echo "   ✖ [$name] is a symlink at $target." >&2
+    return 1
+  fi
+  if [[ ! -f "$target" ]]; then
+    echo "   ✖ [$name] is not a file at $target." >&2
+    return 1
+  fi
+  actual="$(file_size_bytes "$target")" || {
+    echo "   ✖ [$name] size could not be read at $target." >&2
+    return 1
+  }
+  if [[ "$actual" != "$expected" ]]; then
+    echo "   ✖ [$name] size mismatch at $target: SMB ${actual} bytes, SQL ${expected} bytes." >&2
+    return 1
+  fi
+  return 0
 }
 
 human_file_size() {
@@ -373,13 +402,31 @@ for row in "${SELECTED_ROWS[@]}"; do
 done
 
 #######################################
+# Resolve the SMB path before asking to delete
+#######################################
+match_host="$server_host"
+[[ -n "$match_host" ]] || match_host="$server_url"
+mount_backup_share "$match_host"
+
+preflight_failed=0
+for i in "${!SELECTED_NAMES[@]}"; do
+  if ! snapshot_target_ok "${SELECTED_NAMES[$i]}" "${SELECTED_BYTES[$i]}" "${scan_dir}/${SELECTED_NAMES[$i]}"; then
+    preflight_failed=1
+  fi
+done
+if ((preflight_failed != 0)); then
+  die "Refusing to delete. The SMB file does not match the SQL listing. Nothing was deleted."
+fi
+
+#######################################
 # Strict confirmation
 #######################################
 total_selected_bytes=0
 echo
-echo "⚠ You are about to PERMANENTLY DELETE these snapshot file(s) on the remote server:"
+echo "⚠ You are about to PERMANENTLY DELETE these snapshot file(s) on the SMB share:"
 for i in "${!SELECTED_NAMES[@]}"; do
   echo "    [$(human_file_size "${SELECTED_BYTES[$i]}")]  $(join_backup_path "${SELECTED_NAMES[$i]}")"
+  echo "        SMB: ${scan_dir}/${SELECTED_NAMES[$i]}"
   total_selected_bytes=$((total_selected_bytes + SELECTED_BYTES[$i]))
 done
 echo "  Server: $server_name ($connect_server)"
@@ -389,10 +436,6 @@ echo
 echo "Type 'delete' to confirm."
 read -r -p "> " answer
 [[ "$answer" == "delete" ]] || die "Confirmation mismatch. Aborted (nothing was deleted)."
-
-match_host="$server_host"
-[[ -n "$match_host" ]] || match_host="$server_url"
-mount_backup_share "$match_host"
 
 #######################################
 # Delete through the SMB share, then verify the file is gone
@@ -406,12 +449,10 @@ for i in "${!SELECTED_NAMES[@]}"; do
   bytes="${SELECTED_BYTES[$i]}"
   target="${scan_dir}/${name}"
 
-  echo "-> Deleting [$name] on $server_name..."
+  echo "-> Deleting [$name] at $target..."
 
-  if [[ "$name" == */* || "$name" == *\\* || "$name" == "." || "$name" == ".." || ! -f "$target" ]]; then
+  if ! snapshot_target_ok "$name" "$bytes" "$target"; then
     failed_count=$((failed_count + 1))
-    echo "   ✖ Could not delete [$name]." >&2
-    echo "     Snapshot is not a file in $scan_dir." >&2
     continue
   fi
 

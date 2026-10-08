@@ -13,6 +13,11 @@ if [[ -f "$SCRIPT_DIR/forge.sh" ]]; then
 fi
 
 die() { echo "✖ $*" >&2; exit 1; }
+
+case "$(uname -s)" in
+  Darwin|Linux) ;;
+  *) die "rlist runs on macOS and Linux. This station reported $(uname -s)." ;;
+esac
 require_cmd() { command -v "$1" >/dev/null 2>&1 || die "Required command '$1' not found."; }
 
 require_cmd find
@@ -164,16 +169,7 @@ match_host="$server_host"
 
 case "$(uname -s)" in
   Darwin)
-    mount_row="$(
-      jq -r --arg host "$match_host" '
-        .mounts // []
-        | .[]
-        | select(.id and .source)
-        | select((.source | ascii_downcase) | contains($host | ascii_downcase))
-        | [.id, .source]
-        | @tsv
-      ' "$RUNTIME_CONFIG_FILE"
-    )"
+    mount_row="$(runtime_mount_rows "$match_host" mac)"
     [[ -n "${mount_row//$'\n'/}" ]] || die "No SMB mount matches host '$match_host'."
     [[ "$mount_row" != *$'\n'* ]] || die "Several SMB mounts match host '$match_host'."
     IFS=$'\t' read -r mount_id mount_source <<< "$mount_row"
@@ -189,16 +185,7 @@ case "$(uname -s)" in
   Linux)
     # shellcheck disable=SC1091
     source "${FORGE_ROOT}/linux/scripts/smb-credentials.sh"
-    mount_row="$(
-      jq -r --arg host "$match_host" '
-        .mounts // []
-        | .[]
-        | select(.source and .mountpoint and .credentials.chapter and .credentials.remote)
-        | select((.source | ascii_downcase) | contains($host | ascii_downcase))
-        | [.source, .mountpoint, .credentials.chapter, .credentials.remote, (.options // "")]
-        | @tsv
-      ' "$RUNTIME_CONFIG_FILE"
-    )"
+    mount_row="$(runtime_mount_rows "$match_host" linux)"
     [[ -n "${mount_row//$'\n'/}" ]] || die "No SMB mount matches host '$match_host'."
     [[ "$mount_row" != *$'\n'* ]] || die "Several SMB mounts match host '$match_host'."
     IFS=$'\t' read -r mount_source mountpoint_raw credentials_chapter credentials_remote mount_options <<< "$mount_row"

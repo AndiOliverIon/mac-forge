@@ -197,8 +197,11 @@ SQL credentials remain machine-local and are not created or copied by
 bootstrap.
 
 Use `rlist` to choose one of the same remote SQL connections as `rdbsn` and
-print the snapshots in that connection's backup path. Use `rdown` to choose
-one of the same remote SQL connections as `rdbsn`, then
+print the snapshots in that connection's backup path. `rlist` and `rdbsndrop`
+run on macOS and Linux. `rdbsndrop` shows the SMB path beside each SQL path
+and deletes only a regular file whose size matches the SQL listing.
+
+Use `rdown` to choose one of the same remote SQL connections as `rdbsn`, then
 select a `.bak` or `.bkp` file from that connection's backup path and download
 it to one of the destinations configured in `configs/work-state.json`. The
 backup path is matched to the SMB share for that server. On Linux, `rdown`
@@ -225,8 +228,10 @@ allocation, state, and recovery model.
 Use `mnt` to select and mount a saved network share by friendly title. Mounts
 are configured under `mounts` in `linux/config/runtime.json`. The picker shows
 the title, remote source, and local mountpoint, and supports type-to-filter.
-On macOS, `mnt` opens entries that set `macos.source`. `ardis-sql04-backups`
-opens `smb://ard-sql04.ard.local/SQL%20BU`, the `SQL BU` share for `D:\SQL BU`.
+On macOS, `mnt` uses `mount_smbfs` for entries that have credentials.
+`ardis-sql04-backups` mounts `smb://ard-sql04.ard.local/SQL%20BU` at
+`~/mnt/ardis-sql04-backups`, the `SQL BU` share for `D:\SQL BU`. Entries
+without credentials open in Finder.
 
 SMB passwords are not stored in the tracked mount configuration. They live in
 the ignored `config-local/smb-credentials.json`, which is copied with

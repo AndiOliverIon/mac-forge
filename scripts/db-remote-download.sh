@@ -106,16 +106,7 @@ match_host="$server_host"
 [[ -n "$match_host" ]] || match_host="$server_url"
 [[ -n "$match_host" && -n "$backup_dir" ]] || die "Selected remote_sql entry is missing a host or backup path."
 
-mount_row="$(
-  jq -r --arg host "$match_host" '
-    .mounts // []
-    | .[]
-    | select(.id and .source)
-    | select((.source | ascii_downcase) | contains($host | ascii_downcase))
-    | [.id, .source]
-    | @tsv
-  ' "$RUNTIME_CONFIG_FILE"
-)"
+mount_row="$(runtime_mount_rows "$match_host" mac)"
 [[ -n "${mount_row//$'\n'/}" ]] || die "No SMB mount in $RUNTIME_CONFIG_FILE matches host '$match_host'."
 [[ "$mount_row" != *$'\n'* ]] || die "Several SMB mounts match host '$match_host'."
 
