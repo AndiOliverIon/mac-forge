@@ -222,22 +222,34 @@ allocation, state, and recovery model.
 Use `mnt` to select and mount a saved network share by friendly title. Mounts
 are configured under `mounts` in `linux/config/runtime.json`. The picker shows
 the title, remote source, and local mountpoint, and supports type-to-filter.
+On macOS, `mnt` opens entries that set `macos.source`. `ardis-sql04-backups`
+opens `smb://ard-sql04.ard.local/SQL%20BU`, the `SQL BU` share for `D:\SQL BU`.
 
-SMB passwords are not stored in the JSON configuration. Create the credential
-file named by each mount with owner-only permissions, using this format:
+SMB passwords are not stored in the tracked mount configuration. They live in
+the ignored `config-local/smb-credentials.json`, which is copied with
+`config-local/` to each station. Chapters separate credential collections.
+Inside a chapter, each key is a remote target. Hades and MasterChief use the
+same entry for that remote. A mount selects it with `credentials.chapter` and
+`credentials.remote`. `ardis` / `portainer` is the Ardis SQL backup share,
+`ardis` / `sql04prod` is the Ardis SQL04 backup share, and `personal` / `local`
+is the Hades work share. Fill in the username and password for each remote and
+keep the file owner-only:
 
-```text
-username=your-user
-password=your-password
+```json
+{
+  "ardis": {
+    "sql04prod": { "username": "", "password": "" },
+    "portainer": { "username": "", "password": "" }
+  },
+  "personal": {
+    "local": { "username": "", "password": "" },
+    "vps1": { "username": "", "password": "" }
+  }
+}
 ```
 
-For the Ardis SQL backup share, use `~/.smbcredentials-ardis`; the Hades work
-share uses `~/.smbcredentials`. Then secure the file, reload the shell, and
-mount the selected share:
-
 ```bash
-chmod 600 ~/.smbcredentials-ardis
-reloadterm
+chmod 600 config-local/smb-credentials.json
 mnt
 ```
 

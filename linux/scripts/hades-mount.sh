@@ -42,16 +42,21 @@ Examples:
 EOF
 }
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+FORGE_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/smb-credentials.sh"
+
 HOST="${FORGE_HADES_HOST:-hadesw}"
 USER_NAME="${FORGE_HADES_USER:-oliver}"
 MOUNTPOINT="${FORGE_HADES_MOUNTPOINT:-$HOME/hades}"
 PROTOCOL="${FORGE_HADES_PROTOCOL:-smb}"
 SMB_SHARE="${FORGE_HADES_SMB_SHARE:-shared}"
-DEFAULT_SMB_OPTS="username=${USER_NAME},uid=$(id -u),gid=$(id -g),iocharset=utf8,file_mode=0644,dir_mode=0755,vers=3.0,mfsymlinks"
-if [[ -f "${HOME}/.smbcredentials" ]]; then
-  DEFAULT_SMB_OPTS="credentials=${HOME}/.smbcredentials,uid=$(id -u),gid=$(id -g),iocharset=utf8,file_mode=0644,dir_mode=0755,vers=3.0,mfsymlinks"
+SMB_OPTS="${FORGE_HADES_SMB_OPTS:-}"
+SMB_OPTS_EXPLICIT=0
+if [[ -n "$SMB_OPTS" ]]; then
+  SMB_OPTS_EXPLICIT=1
 fi
-SMB_OPTS="${FORGE_HADES_SMB_OPTS:-$DEFAULT_SMB_OPTS}"
 NFS_EXPORT="${FORGE_HADES_NFS_EXPORT:-/Users/oliver}"
 NFS_OPTS="${FORGE_HADES_NFS_OPTS:-defaults}"
 MOUNT_TIMEOUT_SECS="${FORGE_HADES_MOUNT_TIMEOUT_SECS:-15}"
@@ -93,6 +98,7 @@ while [[ $# -gt 0 ]]; do
       shift
       [[ $# -gt 0 ]] || die "--smb-options requires a value."
       SMB_OPTS="$1"
+      SMB_OPTS_EXPLICIT=1
       ;;
     --nfs-options)
       shift
@@ -122,6 +128,11 @@ case "$PROTOCOL" in
     require_cmd sudo
     require_cmd mount
     require_cmd mount.cifs
+    if [[ "$SMB_OPTS_EXPLICIT" -eq 0 ]]; then
+      credentials_file="$(forge_smb_materialize_credentials personal local)"
+      trap 'rm -f -- "$credentials_file"' EXIT
+      SMB_OPTS="credentials=${credentials_file},uid=$(id -u),gid=$(id -g),iocharset=utf8,file_mode=0644,dir_mode=0755,vers=3.0,mfsymlinks"
+    fi
     echo "Mounting SMB //${HOST}/${SMB_SHARE} to ${MOUNTPOINT}"
     run_with_timeout "$MOUNT_TIMEOUT_SECS" sudo mount -t cifs "//${HOST}/${SMB_SHARE}" "$MOUNTPOINT" -o "$SMB_OPTS"
     ;;

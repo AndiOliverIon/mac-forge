@@ -291,6 +291,7 @@ alias mcbt=mcboot
 alias mb=mcboot
 
 alias wake='~/mac-forge/scripts/wake.sh'
+alias mnt="~/mac-forge/scripts/mount.sh"
 
 # ------------------------------------------------------------------------------
 # Apps & Utilities

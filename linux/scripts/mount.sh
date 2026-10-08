@@ -3,6 +3,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+FORGE_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
 # shellcheck disable=SC1091
 source "${SCRIPT_DIR}/forge.sh"
 
@@ -18,6 +19,9 @@ expand_home() {
     *) printf '%s\n' "$path" ;;
   esac
 }
+
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/smb-credentials.sh"
 
 is_mounted() {
   local mountpoint="$1"
@@ -46,7 +50,12 @@ mount_rows="$(
         .protocol,
         .source,
         .mountpoint,
-        (.credentials_file // "-"),
+        (
+          if ((.credentials.chapter // "") != "" and (.credentials.remote // "") != "")
+          then "\(.credentials.chapter)/\(.credentials.remote)"
+          else "-"
+          end
+        ),
         (.options // "-")
       ]
     | @tsv
@@ -66,23 +75,28 @@ selected="$(
         --reverse
 )" || die "No mount selected."
 
-IFS=$'\t' read -r title protocol source mountpoint_raw credentials_raw extra_options <<< "$selected"
-[[ "$credentials_raw" == "-" ]] && credentials_raw=""
+IFS=$'\t' read -r title protocol source mountpoint_raw credentials_ref extra_options <<< "$selected"
+credentials_chapter=""
+credentials_remote=""
+if [[ -n "$credentials_ref" && "$credentials_ref" != "-" ]]; then
+  credentials_chapter="${credentials_ref%%/*}"
+  credentials_remote="${credentials_ref#*/}"
+fi
 [[ "$extra_options" == "-" ]] && extra_options=""
 
 mountpoint="$(expand_home "$mountpoint_raw")"
-credentials_file=""
-if [[ -n "$credentials_raw" ]]; then
-  credentials_file="$(expand_home "$credentials_raw")"
-  [[ -f "$credentials_file" ]] \
-    || die "Credentials file not found: $credentials_file"
-fi
 
 [[ "$mountpoint" == /* ]] || die "Mountpoint must resolve to an absolute path: $mountpoint"
 
 if is_mounted "$mountpoint"; then
   echo "Already mounted: [$title] $mountpoint"
   exit 0
+fi
+
+credentials_file=""
+if [[ -n "$credentials_chapter" && -n "$credentials_remote" ]]; then
+  credentials_file="$(forge_smb_materialize_credentials "$credentials_chapter" "$credentials_remote")"
+  trap 'rm -f -- "$credentials_file"' EXIT
 fi
 
 if [[ ! -d "$mountpoint" ]]; then

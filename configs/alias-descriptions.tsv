@@ -218,7 +218,7 @@ alias	vw	vw — Run the read-only MasterChief workstation and agent-universe rep
 alias	workspace-primary	workspace-primary — Load the primary Linux workspace layout.
 alias	wp	wp — Load the primary Linux workspace layout (short for workspace-primary).
 alias	display	display — Set Linux display scaling.
-alias	mnt	mnt — Select and mount a saved Linux network share.
+alias	mnt	mnt — Select and mount a saved network share. macOS opens the SMB URL in Finder; Linux uses mount.cifs.
 alias	mnthadesw	mnthadesw — Mount the Hades work share on Linux.
 alias	mnthw	mnthw — Mount the Hades work share on Linux (short for mnthadesw).
 alias	umnthadesw	umnthadesw — Unmount the Hades work share on Linux.

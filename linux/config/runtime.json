@@ -28,8 +28,25 @@
       "protocol": "smb",
       "source": "//portainer.ardis.eu/shared-files",
       "mountpoint": "/mnt/shared-files",
-      "credentials_file": "~/.smbcredentials-ardis",
-      "options": "vers=3.0,iocharset=utf8,file_mode=0644,dir_mode=0755"
+      "credentials": { "chapter": "ardis", "remote": "portainer" },
+      "options": "vers=3.0,iocharset=utf8,file_mode=0644,dir_mode=0755",
+      "macos": {
+        "source": "smb://portainer.ardis.eu/shared-files",
+        "mountpoint": "~/mnt/shared-files"
+      }
+    },
+    {
+      "id": "ardis-sql04-backups",
+      "title": "Ardis SQL04 backups",
+      "protocol": "smb",
+      "source": "//ard-sql04.ard.local/SQL BU",
+      "mountpoint": "/mnt/ardis-sql04-backups",
+      "credentials": { "chapter": "ardis", "remote": "sql04prod" },
+      "options": "vers=3.0,iocharset=utf8,file_mode=0644,dir_mode=0755",
+      "macos": {
+        "source": "smb://ard-sql04.ard.local/SQL%20BU",
+        "mountpoint": "~/mnt/ardis-sql04-backups"
+      }
     },
     {
       "id": "hades-work",
@@ -37,7 +54,7 @@
       "protocol": "smb",
       "source": "//hadesw/shared",
       "mountpoint": "~/hades",
-      "credentials_file": "~/.smbcredentials",
+      "credentials": { "chapter": "personal", "remote": "local" },
       "options": "vers=3.0,iocharset=utf8,file_mode=0644,dir_mode=0755,mfsymlinks"
     }
   ],

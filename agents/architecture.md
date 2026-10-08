@@ -12,6 +12,9 @@ switching, snapshots, or database workflow scripts.
 - `configs/stations.json`: canonical non-secret station, VM, server, and attached-device inventory.
 - `config-local/stations.json`: ignored overlay for sensitive station identifiers and networking.
 - `config-local/local-store.json`: ignored local connection store, including the VPS1 SQL profile.
+- `config-local/smb-credentials.json`: ignored SMB credentials. Chapters such as `ardis`
+  and `personal` each hold one username and password per remote target. Hades and
+  MasterChief share an entry. Copy this file with `config-local/` to other stations.
 - `dotfiles/aliases`: primary operator command surface; `dotfiles/aliases-vps1` exposes VPS1 helpers.
 - `profiles/`: optional shell/profile presets.
 
