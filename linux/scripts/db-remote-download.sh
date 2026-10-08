@@ -20,6 +20,17 @@ expand_home() {
   esac
 }
 
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/smb-credentials.sh"
+
+credentials_file=""
+transfer_log=""
+cleanup_runtime_files() {
+  [[ -z "${credentials_file:-}" ]] || rm -f -- "$credentials_file"
+  [[ -z "${transfer_log:-}" ]] || rm -f -- "$transfer_log"
+}
+trap cleanup_runtime_files EXIT
+
 human_file_size() {
   local bytes="$1"
   local unit_index=0
@@ -88,54 +99,100 @@ ensure_mount() {
 require_cmd find
 require_cmd fzf
 require_cmd jq
+require_cmd python3
 require_cmd smbclient
 require_cmd stat
 
-mount_row="$(
+# shellcheck disable=SC1091
+source "${FORGE_ROOT}/scripts/backup-share-path.sh"
+
+LOCAL_STORE_FILE="${FORGE_ROOT}/config-local/local-store.json"
+[[ -f "$LOCAL_STORE_FILE" ]] || die "Missing local store file: $LOCAL_STORE_FILE"
+
+selection_tsv="$(
   jq -r '
+    (.remote_sql // [])
+    | to_entries[]?
+    | select(
+        .value.name != null and
+        .value.user != null and
+        .value.pwd != null and
+        .value.backuppath != null and
+        ((.value.serverurl != null) or (.value.host != null))
+      )
+    | [
+        .value.name,
+        (.value.host // ""),
+        (.value.serverurl // ""),
+        (.value.port // ""),
+        (.value.instance // ""),
+        .value.backuppath
+      ]
+    | @tsv
+  ' "$LOCAL_STORE_FILE"
+)"
+[[ -n "${selection_tsv//$'\n'/}" ]] || die "No valid entries under remote_sql in $LOCAL_STORE_FILE."
+
+chosen_line="$(
+  printf '%s\n' "$selection_tsv" |
+    fzf --prompt='Remote SQL target > ' --delimiter=$'\t' --with-nth=1,2,3,4,5,6 --height=65%
+)" || die "No remote SQL target selected."
+
+IFS=$'\t' read -r server_name server_host server_url _server_port _server_instance backup_dir <<< "$chosen_line"
+match_host="$server_host"
+[[ -n "$match_host" ]] || match_host="$server_url"
+[[ -n "$match_host" && -n "$backup_dir" ]] || die "Selected remote_sql entry is missing a host or backup path."
+
+mount_row="$(
+  jq -r --arg host "$match_host" '
     .mounts // []
-    | map(select(.id == "ardis-sql-backups"))
-    | first
-    | select(.source and .mountpoint and .credentials_file)
-    | [.source, .mountpoint, .credentials_file, (.options // "")]
+    | .[]
+    | select(.source and .mountpoint and .credentials.chapter and .credentials.remote)
+    | select((.source | ascii_downcase) | contains($host | ascii_downcase))
+    | [.source, .mountpoint, .credentials.chapter, .credentials.remote, (.options // "")]
     | @tsv
   ' "$RUNTIME_CONFIG_FILE"
 )"
-[[ -n "$mount_row" ]] || die "Mount 'ardis-sql-backups' is not configured in $RUNTIME_CONFIG_FILE."
+[[ -n "${mount_row//$'\n'/}" ]] || die "No SMB mount in $RUNTIME_CONFIG_FILE matches host '$match_host'."
+[[ "$mount_row" != *$'\n'* ]] || die "Several SMB mounts match host '$match_host'."
 
-IFS=$'\t' read -r smb_source mountpoint_raw credentials_raw mount_options <<< "$mount_row"
+IFS=$'\t' read -r smb_source mountpoint_raw credentials_chapter credentials_remote mount_options <<< "$mount_row"
 mountpoint="${RDOWN_MOUNT_PATH:-$(expand_home "$mountpoint_raw")}"
-credentials_file="${RDOWN_CREDENTIALS_FILE:-$(expand_home "$credentials_raw")}"
-
-[[ -f "$credentials_file" ]] || die "Credentials file not found: $credentials_file"
+share_name="$(backup_share_name "$smb_source")"
+credentials_file="$(forge_smb_materialize_credentials "$credentials_chapter" "$credentials_remote")"
 
 ensure_mount "$smb_source" "$mountpoint" "$credentials_file" "$mount_options"
 
-echo "Scanning backups on $mountpoint..."
+scan_dir="$(resolve_backup_scan_dir "$mountpoint" "$share_name" "$backup_dir")" \
+  || die "Could not find backup path '$backup_dir' on $mountpoint."
+
+echo "Scanning backups for $server_name"
+echo "  Path: $scan_dir"
 
 mapfile -t backup_list < <(
-  find "$mountpoint" -maxdepth 2 -type f \( -iname '*.bak' -o -iname '*.bkp' \) \
-    -printf '%T@\t%P\0' \
+  find "$scan_dir" -maxdepth 2 -type f \( -iname '*.bak' -o -iname '*.bkp' \) \
+    -printf '%T@\t%p\0' \
     | sort -zrn \
     | cut -z -f2- \
     | tr '\0' '\n'
 )
 
-((${#backup_list[@]} > 0)) || die "No .bak or .bkp files found on the share."
+((${#backup_list[@]} > 0)) || die "No .bak or .bkp files found in $scan_dir."
 
 backup_rows=()
-for backup_rel in "${backup_list[@]}"; do
-  backup_full="${mountpoint}/${backup_rel}"
+for backup_full in "${backup_list[@]}"; do
+  backup_rel="${backup_full#"$mountpoint"/}"
+  display_rel="${backup_full#"$scan_dir"/}"
   size_bytes="$(stat -c '%s' -- "$backup_full")" || continue
-  printf -v backup_row '[%9s]  %s\t%s' "$(human_file_size "$size_bytes")" "$backup_rel" "$backup_rel"
+  printf -v backup_row '[%9s]  %s\t%s' "$(human_file_size "$size_bytes")" "$display_rel" "$backup_rel"
   backup_rows+=("$backup_row")
 done
 
-((${#backup_rows[@]} > 0)) || die "No backup metadata could be read from the share."
+((${#backup_rows[@]} > 0)) || die "No backup metadata could be read from $scan_dir."
 
 selected_row="$(
   printf '%s\n' "${backup_rows[@]}" \
-    | fzf --prompt='Select backup from share > ' --delimiter=$'\t' --with-nth=1 --height=70% --reverse
+    | fzf --prompt="Select backup from $server_name > " --delimiter=$'\t' --with-nth=1 --height=70% --reverse
 )" || die "No backup selected."
 [[ "$selected_row" == *$'\t'* ]] || die "Unexpected backup selection."
 selected_rel="${selected_row#*$'\t'}"
@@ -176,7 +233,6 @@ echo "  Destination : [$dest_title] $target_full"
 echo
 
 transfer_log="$(mktemp)"
-trap 'rm -f -- "$transfer_log"' EXIT
 
 printf 'reget "%s" "%s"\n' "$remote_escaped" "$partial_escaped" \
   | smbclient "$smb_source" -A "$credentials_file" >"$transfer_log" 2>&1 &
@@ -233,7 +289,7 @@ if [[ "$actual_size" -ne "$expected_size" ]]; then
 fi
 mv -f -- "$partial_full" "$target_full"
 rm -f -- "$transfer_log"
-trap - EXIT
+transfer_log=""
 
 echo
 echo "Transfer complete: $target_full"

@@ -196,13 +196,14 @@ unavailable, install it later with `omarchy pkg aur add mssql-tools18`. Remote
 SQL credentials remain machine-local and are not created or copied by
 bootstrap.
 
-Use `rdown` to select a `.bak` or `.bkp` file from the Portainer SMB share and
-download it to one of the destinations configured in
-`configs/work-state.json`. On Linux, `rdown` uses the mounted share for its
-file picker, then downloads through the authenticated Samba client to avoid
-the kernel CIFS guest-session limitation. If the share is not mounted yet,
-`rdown` mounts it automatically (prompting for sudo once); you can also mount
-it beforehand with `mnt`. Interrupted files
+Use `rdown` to choose one of the same remote SQL connections as `rdbsn`, then
+select a `.bak` or `.bkp` file from that connection's backup path and download
+it to one of the destinations configured in `configs/work-state.json`. The
+backup path is matched to the SMB share for that server. On Linux, `rdown`
+uses the mounted share for its file picker, then downloads through the
+authenticated Samba client to avoid the kernel CIFS guest-session limitation.
+If the share is not mounted yet, `rdown` mounts it automatically (prompting
+for sudo once); you can also mount it beforehand with `mnt`. Interrupted files
 remain with a `.part` suffix and resume on the next attempt. During transfer,
 the command shows percentage, downloaded size, total size, and current speed.
 

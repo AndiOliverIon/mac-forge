@@ -18,113 +18,157 @@ require_cmd() { command -v "$1" >/dev/null 2>&1 || die "Required command '$1' no
 
 require_cmd fzf
 require_cmd jq
+require_cmd python3
 require_cmd rsync
+require_cmd stat
 
-# Configuration
-MOUNT_PATH="/Volumes/shared-files"
-SMB_URL="smb://portainer.ardis.eu/shared-files"
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/backup-share-path.sh"
 
-# Pre-check: Is it mounted? If not, try to mount it.
-if [[ ! -d "$MOUNT_PATH" ]]; then
-  echo "📡 Mount not found. Attempting to connect to $SMB_URL..."
-  open "$SMB_URL"
-  
-  echo -n "⏳ Waiting for mount..."
-  for i in {1..10}; do
-    if [[ -d "$MOUNT_PATH" ]]; then
-      echo " OK!"
-      break
-    fi
-    echo -n "."
-    sleep 1
+LOCAL_STORE_FILE="${FORGE_CONFIG_LOCAL_DIR:-$HOME/mac-forge/config-local}/local-store.json"
+RUNTIME_CONFIG_FILE="${FORGE_ROOT:-$HOME/mac-forge}/linux/config/runtime.json"
+[[ -f "$LOCAL_STORE_FILE" ]] || die "Missing local store file: $LOCAL_STORE_FILE"
+[[ -f "$RUNTIME_CONFIG_FILE" ]] || die "Missing runtime config: $RUNTIME_CONFIG_FILE"
+
+file_size_bytes() {
+  stat -f '%z' -- "$1"
+}
+
+human_file_size() {
+  local bytes="$1"
+  local unit_index=0
+  local unit_size=1
+  local scaled_tenths
+  local -a units=(B KiB MiB GiB TiB)
+
+  while ((bytes >= unit_size * 1024 && unit_index < ${#units[@]} - 1)); do
+    unit_size=$((unit_size * 1024))
+    unit_index=$((unit_index + 1))
   done
 
-  if [[ ! -d "$MOUNT_PATH" ]]; then
-    echo
-    die "Failed to mount $MOUNT_PATH."
+  if ((unit_index == 0)); then
+    printf '%d B' "$bytes"
+    return
   fi
-fi
+
+  scaled_tenths=$(((bytes * 10 + unit_size / 2) / unit_size))
+  printf '%d.%d %s' "$((scaled_tenths / 10))" "$((scaled_tenths % 10))" "${units[$unit_index]}"
+}
 
 #######################################
-# Step 1 — Pick Local Source Category
+# Step 1 — Pick a backup in the current directory
 #######################################
-: "${FORGE_WORK_STATE_FILE:?FORGE_WORK_STATE_FILE must be set by forge.sh}"
-source_tsv="$(
-  jq -r '
-    ."download-destinations" // []
-    | .[]
-    | select(.title != null and .path != null)
-    | [.title, .path] | @tsv
-  ' "$FORGE_WORK_STATE_FILE"
-)"
-
-[[ -n "${source_tsv//$'\n'/}" ]] || die "No local source categories found in: $FORGE_WORK_STATE_FILE"
-
-chosen_source_line="$(
-  printf '%s\n' "$source_tsv" \
-    | fzf --prompt='Local Source Category > ' --delimiter=$'\t' --with-nth=1,2 --height=40%
-)" || die "No source category selected."
-
-source_title="$(printf '%s' "$chosen_source_line" | cut -f1)"
-source_path_raw="$(printf '%s' "$chosen_source_line" | cut -f2-)"
-
-# Expand ~ in source path
-eval source_path="$source_path_raw"
-
-[[ -d "$source_path" ]] || die "Source path does not exist: $source_path"
-
-#######################################
-# Step 2 — Pick Local Backup (.bak)
-#######################################
-echo "🔍 Scanning backups in [$source_title] $source_path..."
+source_path="$(pwd)"
+echo "🔍 Scanning backups in $source_path..."
 
 mapfile -t BACKUP_LIST < <(
-  find "$source_path" -maxdepth 1 -type f \( -iname "*.bak" -o -iname "*.bkp" \) -print0 | 
-  xargs -0 ls -t |
-  sed "s|^$source_path/||"
+  find "$source_path" -maxdepth 1 -type f \( -iname "*.bak" -o -iname "*.bkp" \) -print0 |
+    xargs -0 stat -f '%m%t%N' |
+    sort -nr |
+    cut -f2-
 )
 
 ((${#BACKUP_LIST[@]} > 0)) || die "No .bak files found in $source_path."
 
-SELECTED_FILE="$(
-  printf '%s\n' "${BACKUP_LIST[@]}" | fzf --prompt="Select file to upload > " --height=60% --reverse
+BACKUP_ROWS=()
+for backup_full in "${BACKUP_LIST[@]}"; do
+  [[ -f "$backup_full" ]] || continue
+  backup_name="$(basename -- "$backup_full")"
+  size_bytes="$(file_size_bytes "$backup_full")" || continue
+  printf -v backup_row '[%9s]  %s\t%s' "$(human_file_size "$size_bytes")" "$backup_name" "$backup_full"
+  BACKUP_ROWS+=("$backup_row")
+done
+
+((${#BACKUP_ROWS[@]} > 0)) || die "No readable .bak files found in $source_path."
+
+SELECTED_ROW="$(
+  printf '%s\n' "${BACKUP_ROWS[@]}" |
+    fzf --prompt="Select file to upload > " --delimiter=$'\t' --with-nth=1 --height=60% --reverse
 )" || die "No file selected."
-
-SOURCE_FULL="$source_path/$SELECTED_FILE"
+[[ "$SELECTED_ROW" == *$'\t'* ]] || die "Unexpected file selection."
+SOURCE_FULL="${SELECTED_ROW#*$'\t'}"
 
 #######################################
-# Step 3 — Pick Remote Destination Folder
+# Step 2 — Pick the remote backup path
 #######################################
-echo "🔍 Scanning destination folders on $MOUNT_PATH..."
+selection_tsv="$(
+  jq -r '
+    (.remote_sql // [])
+    | to_entries[]?
+    | select(
+        .value.name != null and
+        .value.user != null and
+        .value.pwd != null and
+        .value.backuppath != null and
+        ((.value.serverurl != null) or (.value.host != null))
+      )
+    | [
+        .value.name,
+        (.value.host // ""),
+        (.value.serverurl // ""),
+        (.value.port // ""),
+        (.value.instance // ""),
+        .value.backuppath
+      ]
+    | @tsv
+  ' "$LOCAL_STORE_FILE"
+)"
 
-# List root + first level directories
-mapfile -t DEST_FOLDERS < <(
-  echo "."
-  find "$MOUNT_PATH" -maxdepth 1 -type d ! -path "$MOUNT_PATH" -exec basename {} \;
-)
+[[ -n "${selection_tsv//$'\n'/}" ]] || die "No valid entries under remote_sql in $LOCAL_STORE_FILE"
 
-SELECTED_DEST_DIR="$(
-  printf '%s\n' "${DEST_FOLDERS[@]}" | fzf --prompt="Select destination folder on share > " --height=40%
-)" || die "No destination folder selected."
+chosen_line="$(
+  printf '%s\n' "$selection_tsv" |
+    fzf --prompt='Remote SQL target > ' --delimiter=$'\t' --with-nth=1,2,3,4,5,6 --height=65%
+)" || die "No remote SQL target selected."
 
-if [[ "$SELECTED_DEST_DIR" == "." ]]; then
-  DEST_FULL_PATH="$MOUNT_PATH"
-else
-  DEST_FULL_PATH="$MOUNT_PATH/$SELECTED_DEST_DIR"
+server_name="$(printf '%s' "$chosen_line" | cut -f1)"
+server_host="$(printf '%s' "$chosen_line" | cut -f2)"
+server_url="$(printf '%s' "$chosen_line" | cut -f3)"
+backup_dir="$(printf '%s' "$chosen_line" | cut -f6-)"
+match_host="$server_host"
+[[ -n "$match_host" ]] || match_host="$server_url"
+[[ -n "$match_host" && -n "$backup_dir" ]] || die "Selected remote_sql entry is missing a host or backup path."
+
+mount_row="$(
+  jq -r --arg host "$match_host" '
+    .mounts // []
+    | .[]
+    | select(.id and .source)
+    | select((.source | ascii_downcase) | contains($host | ascii_downcase))
+    | [.id, .source]
+    | @tsv
+  ' "$RUNTIME_CONFIG_FILE"
+)"
+[[ -n "${mount_row//$'\n'/}" ]] || die "No SMB mount in $RUNTIME_CONFIG_FILE matches host '$match_host'."
+[[ "$mount_row" != *$'\n'* ]] || die "Several SMB mounts match host '$match_host'."
+
+IFS=$'\t' read -r mount_id mount_source <<< "$mount_row"
+share_name="$(backup_share_name "$mount_source")"
+share_host="$(backup_share_host "$mount_source")"
+scan_mount="$(find_mounted_share "$share_host" "$share_name")"
+if [[ -z "$scan_mount" ]]; then
+  echo "📡 Mount not found. Connecting [$mount_id]..."
+  "${SCRIPT_DIR}/mount.sh" "$mount_id"
+  scan_mount="$(find_mounted_share "$share_host" "$share_name")"
 fi
+[[ -n "$scan_mount" && -d "$scan_mount" ]] || die "SMB share for '$server_name' is not mounted."
+
+scan_dir="$(resolve_backup_scan_dir "$scan_mount" "$share_name" "$backup_dir")" \
+  || die "Could not find backup path '$backup_dir' on $scan_mount."
 
 #######################################
-# Step 4 — Transfer with progress
+# Step 3 — Transfer with progress
 #######################################
-TARGET_FULL="${DEST_FULL_PATH}/$SELECTED_FILE"
+SELECTED_FILE="$(basename -- "$SOURCE_FULL")"
+TARGET_FULL="${scan_dir}/${SELECTED_FILE}"
 
 echo
 echo "🚀 Uploading Backup"
 echo "   Source      : $SOURCE_FULL"
-echo "   Destination : $TARGET_FULL"
+echo "   Destination : [$server_name] $TARGET_FULL"
 echo
 
-rsync -ah --progress "$SOURCE_FULL" "$DEST_FULL_PATH/"
+rsync -ah --progress "$SOURCE_FULL" "$scan_dir/"
 
 echo
 echo "✔ Upload complete: $TARGET_FULL"

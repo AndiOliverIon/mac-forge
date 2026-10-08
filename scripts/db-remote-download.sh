@@ -18,28 +18,27 @@ require_cmd() { command -v "$1" >/dev/null 2>&1 || die "Required command '$1' no
 
 require_cmd fzf
 require_cmd jq
+require_cmd python3
 require_cmd rsync
 require_cmd stat
 
-# Configuration
-case "$(uname -s)" in
-  Darwin)
-    MOUNT_PATH="${RDOWN_MOUNT_PATH:-/Volumes/shared-files}"
-    SMB_URL="${RDOWN_SMB_URL:-smb://portainer.ardis.eu/shared-files}"
-    ;;
-  Linux)
-    MOUNT_PATH="${RDOWN_MOUNT_PATH:-/mnt/shared-files}"
-    SMB_URL="${RDOWN_SMB_URL:-//portainer.ardis.eu/shared-files}"
-    ;;
-  *)
-    die "Unsupported operating system: $(uname -s)"
-    ;;
-esac
-MOUNT_WAIT_SECONDS="${RDOWN_MOUNT_WAIT_SECONDS:-120}"
-MOUNT_RECHECK_SECONDS="${RDOWN_MOUNT_RECHECK_SECONDS:-2}"
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/backup-share-path.sh"
 
-[[ "$MOUNT_WAIT_SECONDS" =~ ^[0-9]+$ && "$MOUNT_WAIT_SECONDS" -gt 0 ]] || die "RDOWN_MOUNT_WAIT_SECONDS must be a positive integer."
-[[ "$MOUNT_RECHECK_SECONDS" =~ ^[0-9]+$ && "$MOUNT_RECHECK_SECONDS" -gt 0 ]] || die "RDOWN_MOUNT_RECHECK_SECONDS must be a positive integer."
+LOCAL_STORE_FILE="${FORGE_CONFIG_LOCAL_DIR:-$HOME/mac-forge/config-local}/local-store.json"
+RUNTIME_CONFIG_FILE="${FORGE_ROOT:-$HOME/mac-forge}/linux/config/runtime.json"
+[[ -f "$LOCAL_STORE_FILE" ]] || die "Missing local store file: $LOCAL_STORE_FILE"
+[[ -f "$RUNTIME_CONFIG_FILE" ]] || die "Missing runtime config: $RUNTIME_CONFIG_FILE"
+
+expand_home() {
+  local path="$1"
+
+  case "$path" in
+    "~") printf '%s\n' "$HOME" ;;
+    "~/"*) printf '%s/%s\n' "$HOME" "${path#"~/"}" ;;
+    *) printf '%s\n' "$path" ;;
+  esac
+}
 
 file_size_bytes() {
   case "$(uname -s)" in
@@ -69,81 +68,103 @@ human_file_size() {
   printf '%d.%d %s' "$((scaled_tenths / 10))" "$((scaled_tenths % 10))" "${units[$unit_index]}"
 }
 
-is_mount_ready() {
-  [[ -d "$MOUNT_PATH" ]] || return 1
-  if command -v mountpoint >/dev/null 2>&1; then
-    mountpoint -q "$MOUNT_PATH"
-  else
-    mount | grep -F " on $MOUNT_PATH " >/dev/null 2>&1
-  fi
-}
+selection_tsv="$(
+  jq -r '
+    (.remote_sql // [])
+    | to_entries[]?
+    | select(
+        .value.name != null and
+        .value.user != null and
+        .value.pwd != null and
+        .value.backuppath != null and
+        ((.value.serverurl != null) or (.value.host != null))
+      )
+    | [
+        .value.name,
+        (.value.host // ""),
+        (.value.serverurl // ""),
+        (.value.port // ""),
+        (.value.instance // ""),
+        .value.backuppath
+      ]
+    | @tsv
+  ' "$LOCAL_STORE_FILE"
+)"
 
-wait_for_mount() {
-  local elapsed=0
+[[ -n "${selection_tsv//$'\n'/}" ]] || die "No valid entries under remote_sql in $LOCAL_STORE_FILE"
 
-  echo "⏳ Waiting up to ${MOUNT_WAIT_SECONDS}s for mount at $MOUNT_PATH."
-  echo "   If macOS asks for credentials, complete that prompt and this will continue."
+chosen_line="$(
+  printf '%s\n' "$selection_tsv" |
+    fzf --prompt='Remote SQL target > ' --delimiter=$'\t' --with-nth=1,2,3,4,5,6 --height=65%
+)" || die "No remote SQL target selected."
 
-  while ((elapsed < MOUNT_WAIT_SECONDS)); do
-    if is_mount_ready; then
-      echo "✔ Mount ready."
-      return 0
-    fi
+server_name="$(printf '%s' "$chosen_line" | cut -f1)"
+server_host="$(printf '%s' "$chosen_line" | cut -f2)"
+server_url="$(printf '%s' "$chosen_line" | cut -f3)"
+backup_dir="$(printf '%s' "$chosen_line" | cut -f6-)"
+match_host="$server_host"
+[[ -n "$match_host" ]] || match_host="$server_url"
+[[ -n "$match_host" && -n "$backup_dir" ]] || die "Selected remote_sql entry is missing a host or backup path."
 
-    sleep "$MOUNT_RECHECK_SECONDS"
-    elapsed=$((elapsed + MOUNT_RECHECK_SECONDS))
-    echo "   Rechecking mount... ${elapsed}s"
-  done
+mount_row="$(
+  jq -r --arg host "$match_host" '
+    .mounts // []
+    | .[]
+    | select(.id and .source)
+    | select((.source | ascii_downcase) | contains($host | ascii_downcase))
+    | [.id, .source]
+    | @tsv
+  ' "$RUNTIME_CONFIG_FILE"
+)"
+[[ -n "${mount_row//$'\n'/}" ]] || die "No SMB mount in $RUNTIME_CONFIG_FILE matches host '$match_host'."
+[[ "$mount_row" != *$'\n'* ]] || die "Several SMB mounts match host '$match_host'."
 
-  return 1
-}
-
-# Pre-check: Is it mounted? On macOS, try to mount it through Finder.
-if ! is_mount_ready; then
-  if [[ "$(uname -s)" == "Darwin" ]]; then
-    echo "📡 Mount not found. Attempting to connect to $SMB_URL..."
-    open "$SMB_URL"
-    wait_for_mount || die "Failed to mount $MOUNT_PATH. Please check your connection or connect manually in Finder once."
-  else
-    die "SMB share is not mounted at $MOUNT_PATH. Mount $SMB_URL there or set RDOWN_MOUNT_PATH."
-  fi
+IFS=$'\t' read -r mount_id mount_source <<< "$mount_row"
+share_name="$(backup_share_name "$mount_source")"
+share_host="$(backup_share_host "$mount_source")"
+scan_mount="$(find_mounted_share "$share_host" "$share_name")"
+if [[ -z "$scan_mount" ]]; then
+  echo "📡 Mount not found. Connecting [$mount_id]..."
+  "${SCRIPT_DIR}/mount.sh" "$mount_id"
+  scan_mount="$(find_mounted_share "$share_host" "$share_name")"
 fi
+[[ -n "$scan_mount" && -d "$scan_mount" ]] || die "SMB share for '$server_name' is not mounted."
+
+scan_dir="$(resolve_backup_scan_dir "$scan_mount" "$share_name" "$backup_dir")" \
+  || die "Could not find backup path '$backup_dir' on $scan_mount."
 
 #######################################
-# Step 1 — Pick Backup from SMB Mount
+# Step 1 — Pick Backup from the connection path
 #######################################
-echo "🔍 Scanning backups on $MOUNT_PATH..."
+echo "🔍 Scanning backups for $server_name"
+echo "   Path: $scan_dir"
 
-# Search for .bak files (case-insensitive) under the mount
-# We use -maxdepth 2 to see the root and common subfolders (like per-server folders)
-# Sort by modification time (newest first)
 mapfile -t BACKUP_LIST < <(
-  find "$MOUNT_PATH" -maxdepth 2 -type f \( -iname "*.bak" -o -iname "*.bkp" \) -print0 | 
-  xargs -0 ls -t |
-  sed "s|^$MOUNT_PATH/||"
+  find "$scan_dir" -maxdepth 2 -type f \( -iname "*.bak" -o -iname "*.bkp" \) -print0 |
+    xargs -0 stat -f '%m%t%N' |
+    sort -nr |
+    cut -f2-
 )
 
-((${#BACKUP_LIST[@]} > 0)) || die "No .bak files found on the share."
+((${#BACKUP_LIST[@]} > 0)) || die "No .bak files found in $scan_dir."
 
 BACKUP_ROWS=()
-for backup_rel in "${BACKUP_LIST[@]}"; do
-  backup_full="$MOUNT_PATH/$backup_rel"
+for backup_full in "${BACKUP_LIST[@]}"; do
   [[ -f "$backup_full" ]] || continue
+  backup_rel="${backup_full#"$scan_dir"/}"
   size_bytes="$(file_size_bytes "$backup_full")" || continue
-  printf -v backup_row '[%9s]  %s\t%s' "$(human_file_size "$size_bytes")" "$backup_rel" "$backup_rel"
+  printf -v backup_row '[%9s]  %s\t%s' "$(human_file_size "$size_bytes")" "$backup_rel" "$backup_full"
   BACKUP_ROWS+=("$backup_row")
 done
 
-((${#BACKUP_ROWS[@]} > 0)) || die "No readable .bak files found on the share."
+((${#BACKUP_ROWS[@]} > 0)) || die "No readable .bak files found in $scan_dir."
 
 SELECTED_ROW="$(
   printf '%s\n' "${BACKUP_ROWS[@]}" |
-    fzf --prompt="Select backup from share > " --delimiter=$'\t' --with-nth=1 --height=70% --reverse
+    fzf --prompt="Select backup from $server_name > " --delimiter=$'\t' --with-nth=1 --height=70% --reverse
 )" || die "No backup selected."
 [[ "$SELECTED_ROW" == *$'\t'* ]] || die "Unexpected backup selection."
-SELECTED_REL="${SELECTED_ROW#*$'\t'}"
-
-SOURCE_FULL="$MOUNT_PATH/$SELECTED_REL"
+SOURCE_FULL="${SELECTED_ROW#*$'\t'}"
 
 #######################################
 # Step 2 — Pick Local Destination
@@ -168,8 +189,7 @@ chosen_dest_line="$(
 dest_title="$(printf '%s' "$chosen_dest_line" | cut -f1)"
 dest_path_raw="$(printf '%s' "$chosen_dest_line" | cut -f2-)"
 
-# Expand ~ in destination path
-eval dest_path="$dest_path_raw"
+dest_path="$(expand_home "$dest_path_raw")"
 
 [[ -d "$dest_path" ]] || mkdir -p "$dest_path"
 
