@@ -129,7 +129,7 @@ case "$PROTOCOL" in
     require_cmd mount
     require_cmd mount.cifs
     if [[ "$SMB_OPTS_EXPLICIT" -eq 0 ]]; then
-      credentials_file="$(forge_smb_materialize_credentials personal local)"
+      credentials_file="$(forge_smb_materialize_cifs_credentials personal local)"
       trap 'rm -f -- "$credentials_file"' EXIT
       SMB_OPTS="credentials=${credentials_file},uid=$(id -u),gid=$(id -g),iocharset=utf8,file_mode=0644,dir_mode=0755,vers=3.0,mfsymlinks"
     fi

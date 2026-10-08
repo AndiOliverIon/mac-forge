@@ -185,7 +185,7 @@ case "$(uname -s)" in
     IFS=$'\t' read -r mount_source mountpoint_raw credentials_chapter credentials_remote mount_options <<< "$mount_row"
     scan_mount="${RDOWN_MOUNT_PATH:-$(expand_home "$mountpoint_raw")}"
     share_name="$(backup_share_name "$mount_source")"
-    credentials_file="$(forge_smb_materialize_credentials "$credentials_chapter" "$credentials_remote")"
+    credentials_file="$(forge_smb_materialize_cifs_credentials "$credentials_chapter" "$credentials_remote")"
     ensure_linux_mount "$mount_source" "$scan_mount" "$credentials_file" "$mount_options"
     ;;
 esac

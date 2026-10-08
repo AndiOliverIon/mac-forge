@@ -55,3 +55,37 @@ forge_smb_materialize_credentials() {
   fi
   printf '%s\n' "$tmp"
 }
+
+# mount.cifs-specific variant of forge_smb_materialize_credentials, for Linux
+# "mount -t cifs" callers only. Unlike smbclient/macOS's mount_smbfs helper,
+# mount.cifs's credentials file does not accept an embedded "DOMAIN\user"
+# username, so a backslash must be split into separate "domain="/"username="
+# lines here or the whole string is rejected as one invalid account name.
+forge_smb_materialize_cifs_credentials() {
+  local chapter="$1"
+  local remote="$2"
+  local src username password domain tmp
+
+  src="$(forge_smb_materialize_credentials "$chapter" "$remote")"
+  username="$(sed -n 's/^username=//p' "$src")"
+  password="$(sed -n 's/^password=//p' "$src")"
+  rm -f -- "$src"
+
+  domain=""
+  if [[ "$username" == *'\'* ]]; then
+    domain="${username%%\\*}"
+    username="${username#*\\}"
+  fi
+
+  tmp="$(mktemp "${TMPDIR:-/tmp}/forge-smb-credentials.XXXXXX")"
+  chmod 600 "$tmp"
+  if ! {
+    printf 'username=%s\n' "$username"
+    printf 'password=%s\n' "$password"
+    [[ -z "$domain" ]] || printf 'domain=%s\n' "$domain"
+  } > "$tmp"; then
+    rm -f -- "$tmp"
+    die "Could not write mount.cifs credentials for ${chapter}.${remote}."
+  fi
+  printf '%s\n' "$tmp"
+}

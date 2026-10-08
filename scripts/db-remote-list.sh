@@ -71,7 +71,9 @@ file_stamp() {
   if [[ "$(uname -s)" == Darwin ]]; then
     stat -f '%m%t%Sm%t%z' -t '%Y-%m-%d %H:%M' -- "$file"
   else
-    stat -c '%Y%t%y%t%s' -- "$file" | awk -F '\t' '{ printf "%s\t%s\t%s\n", $1, substr($2, 1, 16), $3 }'
+    # GNU stat's "%t" is the device type field, not a tab (unlike BSD stat
+    # above) - use a literal tab so the three fields stay delimited.
+    stat -c $'%Y\t%y\t%s' -- "$file" | awk -F '\t' '{ printf "%s\t%s\t%s\n", $1, substr($2, 1, 16), $3 }'
   fi
 }
 
@@ -191,7 +193,7 @@ case "$(uname -s)" in
     IFS=$'\t' read -r mount_source mountpoint_raw credentials_chapter credentials_remote mount_options <<< "$mount_row"
     scan_mount="$(expand_home "$mountpoint_raw")"
     share_name="$(backup_share_name "$mount_source")"
-    credentials_file="$(forge_smb_materialize_credentials "$credentials_chapter" "$credentials_remote")"
+    credentials_file="$(forge_smb_materialize_cifs_credentials "$credentials_chapter" "$credentials_remote")"
     trap 'rm -f -- "$credentials_file"' EXIT
     ensure_linux_mount "$mount_source" "$scan_mount" "$credentials_file" "$mount_options"
     ;;

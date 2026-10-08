@@ -95,7 +95,7 @@ fi
 
 credentials_file=""
 if [[ -n "$credentials_chapter" && -n "$credentials_remote" ]]; then
-  credentials_file="$(forge_smb_materialize_credentials "$credentials_chapter" "$credentials_remote")"
+  credentials_file="$(forge_smb_materialize_cifs_credentials "$credentials_chapter" "$credentials_remote")"
   trap 'rm -f -- "$credentials_file"' EXIT
 fi
 

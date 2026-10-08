@@ -150,7 +150,7 @@ mount_row="$(runtime_mount_rows "$match_host" linux)"
 IFS=$'\t' read -r smb_source mountpoint_raw credentials_chapter credentials_remote mount_options <<< "$mount_row"
 mountpoint="${RDOWN_MOUNT_PATH:-$(expand_home "$mountpoint_raw")}"
 share_name="$(backup_share_name "$smb_source")"
-credentials_file="$(forge_smb_materialize_credentials "$credentials_chapter" "$credentials_remote")"
+credentials_file="$(forge_smb_materialize_cifs_credentials "$credentials_chapter" "$credentials_remote")"
 
 ensure_mount "$smb_source" "$mountpoint" "$credentials_file" "$mount_options"
 

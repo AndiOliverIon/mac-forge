@@ -31,12 +31,16 @@ FORGE_VPN_CONFIG_FILE="${FORGE_VPN_CONFIG_FILE:-${FORGE_ROOT:-$HOME/mac-forge}/c
 choose_vpn() {
 	local selected
 	if [[ -f "$FORGE_VPN_CONFIG_FILE" ]]; then
-		selected="$(python3 - "$FORGE_VPN_CONFIG_FILE" <<'PY' | fzf --prompt='Select VPN: ' --with-nth=1,2 --delimiter=$'\t' --height=10 --border
+		# Fields are joined with \x1f (unit separator), not a tab: tab is an
+		# IFS whitespace character, so "IFS=$'\t' read" silently squeezes
+		# consecutive empty fields (e.g. an empty servercert) together,
+		# shifting every field after it.
+		selected="$(python3 - "$FORGE_VPN_CONFIG_FILE" <<'PY' | fzf --prompt='Select VPN: ' --with-nth=1,2 --delimiter=$'\x1f' --height=10 --border
 import json, sys
 with open(sys.argv[1], "r") as fp:
     state = json.load(fp)
 for entry in state.get("vpn-connections", []):
-    print(f"{entry.get('title')}\t{entry.get('url')}\t{entry.get('user')}\t{entry.get('id')}\t{entry.get('servercert','')}")
+    print("\x1f".join([entry.get('title',''), entry.get('url',''), entry.get('user',''), entry.get('id',''), entry.get('servercert',''), entry.get('dnsDomain','')]))
 PY
 		)" || return 1
 		printf '%s\n' "$selected"
@@ -47,7 +51,7 @@ PY
 # Main
 #######################################
 main() {
-	local selection title url user vpn_id cert vpn_pwd pwd_var
+	local selection title url user vpn_id cert dns_domain vpn_pwd pwd_var
 
 	command -v openconnect >/dev/null 2>&1 || {
 		echo "ERROR: openconnect is not installed." >&2
@@ -65,7 +69,7 @@ main() {
 		echo "ERROR: No VPN connection is configured in $FORGE_VPN_CONFIG_FILE." >&2
 		exit 1
 	}
-	IFS=$'\t' read -r title url user vpn_id cert <<< "$selection"
+	IFS=$'\x1f' read -r title url user vpn_id cert dns_domain <<< "$selection"
 
 	# Construct secret variable name (e.g., FORGE_VPN_ARDIS_PASSWORD)
 	pwd_var="FORGE_VPN_${vpn_id}_PASSWORD"
@@ -83,7 +87,16 @@ main() {
 	# Use --background and --passwd-on-stdin for fire-and-forget
 	# Redirecting output to a temp file to capture errors if backgrounding fails
 	local log_file="/tmp/vpn_connect.log"
-	
+
+	# Linux-only: snapshot existing tun interfaces so the one openconnect
+	# creates for this connection can be identified afterwards. "|| true"
+	# keeps a missing/failing `ip` from aborting the script under set -e/
+	# pipefail; the DNS-domain step below degrades to a warning instead.
+	local pre_tun_ifaces=""
+	if [[ "$(uname -s)" == "Linux" ]]; then
+		pre_tun_ifaces="$(ip -o link show type tun 2>/dev/null | awk -F': ' '{print $2}')" || true
+	fi
+
 	if printf "%s\n" "$vpn_pwd" | sudo openconnect \
 		--protocol=fortinet \
 		--user="$user" \
@@ -98,6 +111,35 @@ main() {
 		echo "FAILED."
 		cat "$log_file"
 		exit 1
+	fi
+
+	# Linux-only: systemd-resolved treats "*.local" as a reserved mDNS
+	# domain and refuses unicast lookups for it unless an interface
+	# explicitly claims routing authority for that domain. The Fortinet
+	# gateway only pushes DNS servers/routes, not a search domain, so
+	# claim it here when configured. macOS is untouched (scutil/openconnect
+	# handle DNS natively there).
+	if [[ "$(uname -s)" == "Linux" && -n "$dns_domain" ]] && command -v resolvectl >/dev/null 2>&1; then
+		local post_tun_ifaces new_iface_list new_iface
+		post_tun_ifaces="$(ip -o link show type tun 2>/dev/null | awk -F': ' '{print $2}')" || true
+		# Capture the full diff before taking its first line, rather than
+		# piping into `head`, so closing the read end early can't SIGPIPE
+		# `comm` under pipefail.
+		new_iface_list="$(comm -13 <(printf '%s\n' "$pre_tun_ifaces" | sort) <(printf '%s\n' "$post_tun_ifaces" | sort) 2>/dev/null)" || true
+		new_iface="${new_iface_list%%$'\n'*}"
+		if [[ -n "$new_iface" ]]; then
+			# resolvectl's SetLinkDomains is auth_admin_keep under polkit;
+			# use sudo explicitly rather than relying on any local polkit
+			# rule (e.g. a wheel-group bypass) that may not exist on every
+			# station.
+			if sudo resolvectl domain "$new_iface" "~$dns_domain" >/dev/null 2>&1; then
+				echo "DNS routing domain ~$dns_domain bound to $new_iface."
+			else
+				echo "WARNING: could not bind DNS routing domain ~$dns_domain to $new_iface; *.$dns_domain lookups may fail." >&2
+			fi
+		else
+			echo "WARNING: could not detect the new tun interface; DNS routing domain ~$dns_domain was not set." >&2
+		fi
 	fi
 }
 
