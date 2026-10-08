@@ -22,5 +22,9 @@
     {
         "name": "Timetrack staging",
         "url": "https://stag.timetrack.ardis.eu/"
+    },
+    {
+        "name": "Timetrack production",
+        "url": "https://timetrack.ardis.eu/"
     }
 ]
