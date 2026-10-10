@@ -138,7 +138,7 @@ END {
     if (count == 0) {
         print "No user databases found."
     } else {
-        printf "\n%d database%s · %s allocated\n", count, count == 1 ? "" : "s", friendly(total_bytes)
+        printf "\n%d database%s · %s allocated\n", count, (count == 1 ? "" : "s"), friendly(total_bytes)
     }
 }
 '
