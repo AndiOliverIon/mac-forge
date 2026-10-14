@@ -190,7 +190,10 @@ case "$(uname -s)" in
     ;;
 esac
 
-[[ -n "${scan_mount:-}" && -d "$scan_mount" ]] || vps1_die "SMB share for '$server_name' is not mounted."
+[[ -n "${scan_mount:-}" ]] || vps1_die "SMB share for '$server_name' is not mounted."
+share_responds "$scan_mount" \
+  || vps1_die "SMB share at $scan_mount is not responding (stale mount). Run: umount -f \"$scan_mount\", then rdown-to-v1 again."
+[[ -d "$scan_mount" ]] || vps1_die "SMB share for '$server_name' is not mounted."
 scan_dir="$(resolve_backup_scan_dir "$scan_mount" "$share_name" "$backup_dir")" \
   || vps1_die "Could not find backup path '$backup_dir' on $scan_mount."
 
