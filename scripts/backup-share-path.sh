@@ -58,6 +58,24 @@ runtime_mount_rows() {
   ' "$RUNTIME_CONFIG_FILE"
 }
 
+# A stale SMB mount blocks every filesystem call, so probe it in the background with a deadline.
+share_responds() {
+  local dir="$1"
+  local seconds="${2:-10}"
+  local pid i
+  ls -- "$dir" >/dev/null 2>&1 &
+  pid=$!
+  for ((i = 0; i < seconds * 10; i++)); do
+    if ! kill -0 "$pid" 2>/dev/null; then
+      wait "$pid"
+      return
+    fi
+    sleep 0.1
+  done
+  kill -9 "$pid" 2>/dev/null
+  return 1
+}
+
 find_mounted_share() {
   local host="$1"
   local share="$2"

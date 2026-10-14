@@ -135,7 +135,10 @@ if [[ -z "$scan_mount" ]]; then
   "${SCRIPT_DIR}/mount.sh" "$mount_id"
   scan_mount="$(find_mounted_share "$share_host" "$share_name")"
 fi
-[[ -n "$scan_mount" && -d "$scan_mount" ]] || die "SMB share for '$server_name' is not mounted."
+[[ -n "$scan_mount" ]] || die "SMB share for '$server_name' is not mounted."
+share_responds "$scan_mount" \
+  || die "SMB share at $scan_mount is not responding (stale mount). Run: umount -f \"$scan_mount\", then rdown again."
+[[ -d "$scan_mount" ]] || die "SMB share for '$server_name' is not mounted."
 
 scan_dir="$(resolve_backup_scan_dir "$scan_mount" "$share_name" "$backup_dir")" \
   || die "Could not find backup path '$backup_dir' on $scan_mount."
