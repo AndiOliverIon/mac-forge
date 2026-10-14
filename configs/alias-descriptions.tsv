@@ -356,8 +356,8 @@ alias	v1r	v1r — Restore a .bak from the vps1 snapshots folder into the vps1 SQ
 alias	vps1-restore	vps1-restore — Long form of v1r: restore a vps1 snapshot into the vps1 SQL Server.
 alias	v1dbindex	v1dbindex — Rebuild all indexes in a selected vps1 SQL database.
 alias	vps1-db-index	vps1-db-index — Long form of v1dbindex: rebuild all indexes in a selected vps1 SQL database.
-alias	v1down	v1down — Download vps1 .bak snapshots into the current directory; multiple selections become a timestamped zip archive.
-alias	vps1-download	vps1-download — Long form of v1down: download vps1 snapshots into the current directory.
+alias	v1down	v1down — Download vps1 .bak snapshots into the current directory; multiple selections become a timestamped zip archive. --d deletes those snapshots from vps1 only after every selected file downloads, once you type delete.
+alias	vps1-download	vps1-download — Long form of v1down: download vps1 snapshots into the current directory. --d deletes them from vps1 after a fully successful download, once you type delete.
 alias	v1up	v1up — Upload a local .bak into the vps1 snapshots folder for later restore.
 alias	vps1-upload	vps1-upload — Long form of v1up: upload a local .bak into the vps1 snapshots folder.
 alias	rdown-to-v1	rdown-to-v1 — Choose a remote SQL connection, then a .bak from that connection's backup path, and relay it straight to vps1 snapshots without a local copy.
