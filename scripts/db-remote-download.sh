@@ -1,6 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Usage: db-remote-download.sh [--w]
+#   (default)  Download into the current directory.
+#   --w        Choose the destination from download-destinations in work-state.json.
+
+CHOOSE_DEST=0
+case "${1:-}" in
+  "") ;;
+  --w) CHOOSE_DEST=1 ;;
+  -h|--help)
+    sed -n '4,6p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+    exit 0
+    ;;
+  *) echo "✖ Usage: $(basename "$0") [--w]" >&2; exit 1 ;;
+esac
+[[ $# -le 1 ]] || { echo "✖ Usage: $(basename "$0") [--w]" >&2; exit 1; }
+
 #######################################
 # Load forge config
 #######################################
@@ -158,31 +174,34 @@ SELECTED_ROW="$(
 SOURCE_FULL="${SELECTED_ROW#*$'\t'}"
 
 #######################################
-# Step 2 — Pick Local Destination
+# Step 2 — Local Destination
 #######################################
-: "${FORGE_WORK_STATE_FILE:?FORGE_WORK_STATE_FILE must be set by forge.sh}"
-dest_tsv="$(
-  jq -r '
-    ."download-destinations" // []
-    | .[]
-    | select(.title != null and .path != null)
-    | [.title, .path] | @tsv
-  ' "$FORGE_WORK_STATE_FILE"
-)"
+if ((CHOOSE_DEST)); then
+  : "${FORGE_WORK_STATE_FILE:?FORGE_WORK_STATE_FILE must be set by forge.sh}"
+  dest_tsv="$(
+    jq -r '
+      ."download-destinations" // []
+      | .[]
+      | select(.title != null and .path != null)
+      | [.title, .path] | @tsv
+    ' "$FORGE_WORK_STATE_FILE"
+  )"
 
-[[ -n "${dest_tsv//$'\n'/}" ]] || die "No download-destinations found in: $FORGE_WORK_STATE_FILE"
+  [[ -n "${dest_tsv//$'\n'/}" ]] || die "No download-destinations found in: $FORGE_WORK_STATE_FILE"
 
-chosen_dest_line="$(
-  printf '%s\n' "$dest_tsv" \
-    | fzf --prompt='Download Destination > ' --delimiter=$'\t' --with-nth=1,2 --height=40%
-)" || die "No destination selected."
+  chosen_dest_line="$(
+    printf '%s\n' "$dest_tsv" \
+      | fzf --prompt='Download Destination > ' --delimiter=$'\t' --with-nth=1,2 --height=40%
+  )" || die "No destination selected."
 
-dest_title="$(printf '%s' "$chosen_dest_line" | cut -f1)"
-dest_path_raw="$(printf '%s' "$chosen_dest_line" | cut -f2-)"
-
-dest_path="$(expand_home "$dest_path_raw")"
-
-[[ -d "$dest_path" ]] || mkdir -p "$dest_path"
+  dest_title="$(printf '%s' "$chosen_dest_line" | cut -f1)"
+  dest_path="$(expand_home "$(printf '%s' "$chosen_dest_line" | cut -f2-)")"
+  [[ -d "$dest_path" ]] || mkdir -p "$dest_path"
+else
+  dest_title="current directory"
+  dest_path="$PWD"
+  [[ -d "$dest_path" && -w "$dest_path" ]] || die "Destination not writable: $dest_path"
+fi
 
 #######################################
 # Step 3 — Transfer with progress
