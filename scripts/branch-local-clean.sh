@@ -57,7 +57,7 @@ detect_provider() {
     github.com)
       echo "github"
       ;;
-    bitbucket.org)
+    bitbucket.org|ssh.bitbucket.org)
       echo "bitbucket"
       ;;
     *)
