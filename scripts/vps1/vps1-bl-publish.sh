@@ -12,7 +12,8 @@
 # releases/ pool on vps1 -> repoint that endpoint's build symlink + restart only
 # that service (via Backend/deploy/vps1-deploy-instance.sh, run with sudo).
 #
-# The other endpoint is never touched. test stays gate-only (run-backend-tests.sh).
+# The other endpoint is never touched. Automated tests run only on Hades
+# (Backend/deploy/test-all.sh); vps1 has no test database or endpoint.
 #
 # Usage:
 #   vps1-bl-publish.sh                 # prompt for target
