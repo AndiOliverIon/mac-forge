@@ -23,7 +23,6 @@ field() {
 identity_from_slug() {
     case "$1" in
         artanis) printf 'Artanis' ;;
-        karax) printf 'Karax' ;;
         argus) printf 'Argus' ;;
         aegis) printf 'Aegis' ;;
         *) return 1 ;;
@@ -31,7 +30,7 @@ identity_from_slug() {
 }
 
 valid_identity() {
-    case "$1" in Artanis | Karax | Argus | Aegis) return 0 ;; *) return 1 ;; esac
+    case "$1" in Artanis | Argus | Aegis) return 0 ;; *) return 1 ;; esac
 }
 
 validate_file() {
@@ -257,7 +256,7 @@ else
     done
 fi
 
-slugs=(artanis karax argus aegis)
+slugs=(artanis argus aegis)
 
 slots_found=0
 for slug in "${slugs[@]}"; do

@@ -39,8 +39,8 @@ Options:
                          Required. The running coordinator asks for later
                          decisions directly in the same terminal; enter /stop
                          at that prompt to end the loop without approval.
-  --coworker <identity>  artanis, karax, argus, or aegis. Default: artanis.
-  --reviewer <identity>  artanis, karax, argus, or aegis. Default: argus.
+  --coworker <identity>  artanis, argus, or aegis. Default: artanis.
+  --reviewer <identity>  artanis, argus, or aegis. Default: argus.
                          When neither --coworker nor --reviewer is given, an fzf
                          chooser offers the team pairs (default first, then the
                          other Artanis/Argus pairing, then the Aegis pairings).
@@ -59,7 +59,6 @@ normalize_identity() {
 display_identity() {
 	case "$1" in
 	artanis) printf 'Artanis\n' ;;
-	karax) printf 'Karax\n' ;;
 	argus) printf 'Argus\n' ;;
 	aegis) printf 'Aegis\n' ;;
 	*) return 1 ;;
@@ -69,7 +68,6 @@ display_identity() {
 identity_command() {
 	case "$1" in
 	artanis) printf 'codex\n' ;;
-	karax) printf 'grok\n' ;;
 	argus) printf 'claude\n' ;;
 	aegis) printf 'copilot\n' ;;
 	*) return 1 ;;
@@ -703,19 +701,6 @@ run_agent() {
 				>"$raw_output" || exit_code=$?
 		fi
 		jq -r '.result // empty' "$raw_output" >"$last_message" 2>/dev/null || true
-		;;
-	karax)
-		if [[ -z "$session_id" ]]; then
-			generated_session="$(new_uuid)"
-			grok --single "$agent_prompt" --output-format json --session-id "$generated_session" \
-				--cwd "$repository" --permission-mode auto --no-subagents \
-				>"$raw_output" || exit_code=$?
-		else
-			grok --single "$agent_prompt" --output-format json --resume "$session_id" \
-				--cwd "$repository" --permission-mode auto --no-subagents \
-				>"$raw_output" || exit_code=$?
-		fi
-		jq -r '.result // .message // empty' "$raw_output" >"$last_message" 2>/dev/null || true
 		;;
 	aegis)
 		if [[ -z "$session_id" ]]; then

@@ -22,7 +22,7 @@ never read or write another context's transporter files.
 ## Linux Role Assignment
 
 The common Coworker/Reviewer protocol applies in all three lanes, with Argus as the default Reviewer
-and any of Artanis, Karax, Argus, or Aegis eligible for either role when Oliver explicitly asks.
+and any of Artanis, Argus, or Aegis eligible for either role when Oliver explicitly asks.
 The Coworker owns `request-<coworker>.md`; the pair's designated Reviewer owns the matching
 `findings-<coworker>.md`. Both files include `Coworker` and `Reviewer`.
 
@@ -64,7 +64,7 @@ Role switching never changes lane rules:
 - Coordinator state: `/home/oliver/raynor/.ai/review-handoff/team-loop-<coworker>.json`
 - Autonomous transcripts: `/home/oliver/raynor/.ai/review-handoff/transcripts/<task-slug>-<UTC timestamp>.md`
 
-`<coworker>` is the lowercase identity of the Coworker (`artanis`, `karax`, `argus`, or `aegis`). The
+`<coworker>` is the lowercase identity of the Coworker (`artanis`, `argus`, or `aegis`). The
 Reviewer is recorded in the file headers, not the filename.
 
 These lane directories are created and validated by `ai-config install`. Do not create or relocate

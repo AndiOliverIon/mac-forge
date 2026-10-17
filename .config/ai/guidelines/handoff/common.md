@@ -7,11 +7,11 @@ decision-maker.
 
 - Every handoff has exactly two participants: the **Coworker** (author who prepares the request and
   later evaluates findings) and the **Reviewer** (independent reviewer who writes findings). Any of
-  Artanis, Karax, Argus, or Aegis may hold either role for a handoff.
-- Recommended defaults, used whenever Oliver names no reviewer: Artanis or Karax is the Coworker and
-  Argus is the Reviewer. Aegis assists with bounded, lower-complexity tasks by default.
+  Artanis, Argus, or Aegis may hold either role for a handoff.
+- Recommended defaults, used whenever Oliver names no reviewer: Artanis is the Coworker and Argus is
+  the Reviewer. Aegis assists with bounded, lower-complexity tasks by default.
 - A role switch happens only when Oliver explicitly asks for it (for example "Aegis, hand off to
-  Karax for review"). Never infer it, never carry it to another cycle, and never let an agent
+  Artanis for review"). Never infer it, never carry it to another cycle, and never let an agent
   self-assign a role. A cycle with no named reviewer reverts to the defaults.
 - The Reviewer must not be the Coworker, and must not have implemented the review target, as known
   from its own session or evident from the repository. If either holds, stop and ask Oliver.
@@ -42,9 +42,9 @@ decision-maker.
   the Coworker may create a lane. A handoff never crosses lanes: both participants act inside the same
   lane, and a lane's own concurrency and isolation rules are unchanged by role switching.
 - Each Coworker has a distinct transporter pair in the active lane: `request-<coworker>.md` and
-  `findings-<coworker>.md`, with the Coworker identity in lowercase (`artanis`, `karax`, `argus`,
-  `aegis`). A file may be absent until its owner first writes it. Different Coworkers' jobs must never
-  share or overwrite each other's files.
+  `findings-<coworker>.md`, with the Coworker identity in lowercase (`artanis`, `argus`, `aegis`). A
+  file may be absent until its owner first writes it. Different Coworkers' jobs must never share or
+  overwrite each other's files.
 - Multiple lanes may run concurrently, and several pairs in one lane may be active at once, but never
   inspect, read, create, edit, clear, or replace transporter files outside the active lane or another
   job's pair, except for the header scan below.
@@ -116,8 +116,8 @@ agent is the Coworker for that cycle; the named agent, or Argus when none is nam
 - Lane: <station-flow lane value>
 - Handoff ID: <exact ID>
 - Created: <ISO-8601 timestamp>
-- Coworker: <Artanis|Karax|Argus|Aegis>
-- Reviewer: <Artanis|Karax|Argus|Aegis>
+- Coworker: <Artanis|Argus|Aegis>
+- Reviewer: <Artanis|Argus|Aegis>
 - Repository: <canonical absolute path>
 - Branch: <branch>
 - Review target: <commit, diff range, or bounded working-tree scope>
@@ -161,7 +161,7 @@ example **“Argus takeoff”**), or an unambiguous equivalent, to the agent tha
    - **Author named** (“Process Aegis's review handoff”): use `request-<coworker>.md` for that author.
      Naming the author to an agent that is not the request's `Reviewer` is Oliver's explicit
      override: proceed and record it in the findings.
-   - **Bare takeoff** (“Karax takeoff”): scan only the header lines (`Status`, `Handoff ID`,
+   - **Bare takeoff** (“Artanis takeoff”): scan only the header lines (`Status`, `Handoff ID`,
      `Coworker`, `Reviewer`) of each `request-*.md` in the lane. A request is pending for you when its
      `Reviewer` is you and no `review-complete` findings file in its pair has the same handoff ID.
      Exactly one pending request selects the pair; several means ask Oliver which job to review; none

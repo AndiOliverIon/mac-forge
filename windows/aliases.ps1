@@ -121,7 +121,6 @@ function global:copilot { & copilot.exe @args }
 function global:artanis { & codex @args }
 function global:argus { & claude @args }
 function global:aegis { copilot @args }
-function global:karax { & grok @args }
 function global:ftp {
   & (Join-Path $script:ForgeWindowsRoot "scripts\ftp.ps1") @args
 }

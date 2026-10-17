@@ -1,6 +1,6 @@
 # Shared AI Instructions
 
-This directory is the Git-tracked source of truth for shared Artanis, Karax, Argus, and Aegis
+This directory is the Git-tracked source of truth for shared Artanis, Argus, and Aegis
 instructions.
 
 On Unix stations, expose it through the conventional path:
@@ -9,8 +9,8 @@ On Unix stations, expose it through the conventional path:
 ln -s "$HOME/mac-forge/.config/ai" "$HOME/.config/ai"
 ```
 
-Do not replace complete tool-owned configuration directories such as `~/.codex`, `~/.grok`, or
-`~/.claude`. They contain local state. Their global instruction bootstrap files should load the
+Do not replace complete tool-owned configuration directories such as `~/.codex`, `~/.claude`, or
+`~/.copilot`. They contain local state. Their global instruction bootstrap files should load the
 generated canonical base instruction set from `~/.config/ai`.
 
 Start a new agent session after pulling instruction changes so the updated
@@ -20,13 +20,9 @@ global instruction chain is loaded.
 
 `ai-config install` generates each tool's global bootstrap from its tracked template and canonical
 shared sources. Codex, Claude, and Copilot embed the small, stable base set so it is available at
-session start. Grok's 10,000-character project-rules limit requires a compact native
-`~/.grok/AGENTS.md`; Karax uses it to load the canonical base sources through the resolver before
-task work. The installer also sets `[compat.claude] agents = false` in Grok's user configuration so
-Grok does not import Argus's global Claude identity; Claude-compatible skills, rules, and MCP
-settings remain available. On MasterChief the installer manages Codex, Grok, Claude, and Copilot
-bootstraps and the Work, Raynor, and Zeratul review-handoff lanes. Hades retains its single-universe
-project-lane layout.
+session start. On MasterChief the installer manages Codex, Claude, and Copilot bootstraps and the
+Work, Raynor, and Zeratul review-handoff lanes. Hades retains its single-universe project-lane
+layout.
 
 The global bootstrap invokes `bin/ai-context.sh` before task work. The resolver combines the
 canonical `configs/stations.json` inventory with the current hostname, scope path, Git metadata, and
@@ -53,8 +49,8 @@ launches an interactive experimental Claude Code session on the same model.
 
 ## Review handoff roles
 
-Default roles: Artanis or Karax prepares a review as Coworker and Argus reviews. When Oliver explicitly
-asks (for example "Aegis, hand off to Karax for review"), any of the four identities may be the
+Default roles: Artanis prepares a review as Coworker and Argus reviews. When Oliver explicitly
+asks (for example "Aegis, hand off to Artanis for review"), any of the three identities may be the
 Coworker or the Reviewer for that one handoff; both names are recorded in the request and findings
 headers. Lane structure is unchanged: MasterChief keeps `work`, `raynor`, and `zeratul`; Hades keeps a
 single universe with one project lane per repository. `bin/review-handoff-verify.sh` validates the
