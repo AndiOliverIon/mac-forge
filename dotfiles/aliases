@@ -197,6 +197,7 @@ alias sr=script-run
 # Application Test Gates
 # ------------------------------------------------------------------------------
 alias test-bl="~/mac-forge/apps/bookinglounge/test-all.sh"
+alias bl-clean="~/mac-forge/apps/bookinglounge/clean.sh"
 
 # ------------------------------------------------------------------------------
 # Workspaces & Paths
