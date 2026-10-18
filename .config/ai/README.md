@@ -39,6 +39,17 @@ target files are not yet known; identify only the missing scope and rerun it.
 
 ## Aldaris delegation
 
+Control assistant delegation with `junior on`, `junior off`, and `junior status` (or
+`scripts/aldaris-junior.sh`). The default is OFF; the non-secret switch is stored in the ignored
+`config-local/aldaris-junior.state`, separate from shared configuration and the external drive.
+Assistants check it at task start and before each dispatch. ON requires actively seeking useful
+eligible subtasks and announcing every invocation and outcome. OFF means solo work and blocks the
+text helper before inference; results arriving after OFF are discarded. It does not close Oliver's
+manual `aldaris` sessions or unload their model. An already submitted inference may finish.
+
+The current automatic ceiling remains `trivial`. This switch does not grant automatic coding-edit
+permissions: isolated coding jobs and capability approval remain separate from the manual launcher.
+
 Aldaris uses Qwen3.6-35B-A3B at 8-bit precision through LM Studio's MLX runtime on Hades.
 Run `aldaris` from a repository to start a supervised Qwen Code coding session. The launcher
 starts the localhost server and loads the model as needed, uses 64K context and a 30-minute idle

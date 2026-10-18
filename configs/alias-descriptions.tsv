@@ -429,3 +429,4 @@ alias	ttbs	ttbs — Go to the Ardis Timetrack repo and build its solution.
 alias	ttbd	ttbd — Go to the Ardis Timetrack repo and build/push its Docker image.
 alias	wk	wk — Go to the Alice in Wonder Kitchen project.
 alias	wkdata	wkdata — Go to the Alice in Wonder Kitchen data folder.
+alias	junior	junior on|off|status — Enable or disable assistant delegation to Aldaris locally; default off. Manual aldaris sessions remain available.

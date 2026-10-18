@@ -17,7 +17,7 @@ Delegate one bounded, non-agentic step to Aldaris (local LM Studio model).
 Usage:
   aldaris-ask --caller NAME --level LEVEL --task TEXT [--template NAME] [--schema NAME|PATH]
               [--file PATH|- ...]
-  aldaris-ask --verdict ID corrected|rejected [--note TEXT]
+  aldaris-ask --verdict ID accepted|corrected|rejected [--note TEXT]
   aldaris-ask --stats
   aldaris-ask --list
 
@@ -70,8 +70,8 @@ show_stats() {
         | "Delegations: \(length)",
           (group_by(.level)[] | . as $g
             | "  \($g[0].level): \($g | length) total, "
-              + (["corrected","rejected","clean"] | map(. as $k
-                  | "\($k) \([$g[] | ($v[.id] // "clean")] | map(select(. == $k)) | length)") | join(", "))
+              + (["accepted","corrected","rejected","pending"] | map(. as $k
+                  | "\($k) \([$g[] | ($v[.id] // "pending")] | map(select(. == $k)) | length)") | join(", "))
               + ", avg \(([$g[].durationSeconds] | add / length * 10 | round / 10))s"),
           "By template:",
           (group_by(.template // "none")[] | . as $g
@@ -106,6 +106,11 @@ while [[ $# -gt 0 ]]; do
         *) usage >&2; exit 2 ;;
     esac
 done
+
+if [[ -z "$verdict_id" ]]; then
+    [[ -n "$caller" && -n "$level" && -n "$task" ]] || { usage >&2; exit 2; }
+    "$SCRIPT_DIR/aldaris-junior.sh" check || die "junior is OFF. Work solo; Oliver can enable it with 'junior on'."
+fi
 
 command -v jq >/dev/null || die "jq is required."
 [[ -f "$CONFIG" ]] || die "config not found: $CONFIG"
@@ -206,6 +211,9 @@ id="$(date '+%Y%m%d-%H%M%S')-$RANDOM"
 started_at="$(date '+%Y-%m-%d %H:%M:%S')"
 start_epoch="$(perl -MTime::HiRes=time -e 'printf "%.3f", time')"
 
+"$SCRIPT_DIR/aldaris-junior.sh" check || die "junior was disabled before dispatch."
+echo "[ALDARIS ENGAGED] $caller delegated a $level text task: $id" >&2
+
 if ! curl -fsS --max-time 900 "$base_url/chat/completions" \
         -H 'Content-Type: application/json' -d @"$tmp_dir/request.json" > "$tmp_dir/response.json"; then
     die "LM Studio request failed. Do this step yourself."
@@ -214,6 +222,7 @@ fi
 end_epoch="$(perl -MTime::HiRes=time -e 'printf "%.3f", time')"
 duration="$(awk -v s="$start_epoch" -v e="$end_epoch" 'BEGIN { printf "%.1f", e - s }')"
 # MLX can route schema-constrained JSON into reasoning_content instead of content.
+"$SCRIPT_DIR/aldaris-junior.sh" check || die "junior was disabled during inference; discard this result and work solo."
 response="$(jq -er --argjson structured "$([[ "$schema_json" != null ]] && echo true || echo false)" '
     .choices[0].message
     | if (.content // "") != "" then .content
@@ -263,5 +272,5 @@ echo "  duration:  ${duration}s  (prompt ${prompt_tokens} tok, output ${output_t
 if [[ "$declined" == true ]]; then
     echo "  status:    DECLINED by Aldaris — do this step yourself"
 fi
-echo "  verdict:   clean unless flagged → aldaris-ask --verdict $id corrected|rejected"
+echo "  verdict:   pending review → aldaris-ask --verdict $id accepted|corrected|rejected"
 echo "$rule"
