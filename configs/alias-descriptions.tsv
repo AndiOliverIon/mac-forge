@@ -76,6 +76,7 @@ alias	o	o — Short shortcut for organizer.
 alias	dotnet-clean	dotnet-clean — Remove generated build output and caches from the current tree; pass --node_modules to include dependencies.
 alias	dnc	dnc — Remove generated build output and caches from the current tree; pass --node_modules to include dependencies (short for dotnet-clean).
 alias	clean	clean — Delete contents of selected configured cleanup targets.
+alias	bl-clean	bl-clean — Preview and, after confirmation, remove BookingLounge release-gate test output and regenerable build caches; preserves retained release artifacts.
 alias	mac-clean	mac-clean — Run standard macOS cleanup scripts in sequence; use --full to include full-only items.
 alias	linux-clean	linux-clean — Run approved reconstructible Linux cache cleaners; use --dry-run to preview and --full for desktop caches.
 alias	sim	sim — Cycle focus through the captured desktop apps with mouse movement; use --cycle SECONDS to save the interval.
