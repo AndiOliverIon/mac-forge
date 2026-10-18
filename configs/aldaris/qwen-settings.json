@@ -11,7 +11,7 @@
   "model": {
     "name": "aldaris",
     "generationConfig": {
-      "contextWindowSize": 65536,
+      "contextWindowSize": 131072,
       "timeout": 300000,
       "samplingParams": {
         "temperature": 0.6,

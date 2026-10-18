@@ -52,7 +52,7 @@ permissions: isolated coding jobs and capability approval remain separate from t
 
 Aldaris uses Qwen3.6-35B-A3B at 8-bit precision through LM Studio's MLX runtime on Hades.
 Run `aldaris` from a repository to start a supervised Qwen Code coding session. The launcher
-starts the localhost server and loads the model as needed, uses 64K context and a 30-minute idle
+starts the localhost server and loads the model as needed, uses 128K context and a 30-minute idle
 unload timeout, and refuses to start without `dock-ssd` mounted. Repository instructions and
 Oliver's explicit approval requirement for unit tests still apply. The model, standalone Qwen Code installation, Qwen session data, helper logs, and caches live under
 `/Volumes/dock-ssd/ai`. LM Studio and its small discovery/support files remain on the internal SSD for reliable runtime

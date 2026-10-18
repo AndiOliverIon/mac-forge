@@ -1,6 +1,6 @@
 {
   "model": "aldaris",
-  "contextLength": 65536,
+  "contextLength": 131072,
   "maxLevel": "trivial",
   "callers": [
     "artanis",

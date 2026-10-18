@@ -15,7 +15,7 @@ launcher supports Oliver's manually supervised coding assignments.
   background dispatch. Do not work around OFF through the manual launcher, another CLI, or a model
   server. Do not consume a result returned after delegation was disabled; stop retries and take over.
 - The switch governs assistant delegation. It does not terminate Oliver's manual Aldaris sessions,
-  unload his model, or change his 64K baseline. Switching OFF blocks new dispatches; an already
+  unload his model, or change his configured context. Switching OFF blocks new dispatches; an already
   submitted inference may finish, but its result must not be used by assistants.
 
 ## Use the junior when ON
