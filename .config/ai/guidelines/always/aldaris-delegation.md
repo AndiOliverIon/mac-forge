@@ -1,7 +1,8 @@
 # Aldaris Delegation
 
-Aldaris is a local Ollama text helper on Hades, not a team identity: it never reviews or edits files,
-and you stay accountable for every result you use.
+The `aldaris-ask` interface is a local LM Studio text helper on Hades, not a team identity: it never
+reviews or edits files, and you stay accountable for every result you use. The separate `aldaris`
+Qwen Code launcher is for Oliver-supervised coding assignments.
 
 - Allowed by default for the callers in `~/mac-forge/configs/aldaris/config.json`, whose `maxLevel`
   only Oliver changes. Skip it for any task where Oliver's prompt excludes it.
@@ -12,8 +13,9 @@ and you stay accountable for every result you use.
 - Rate each step honestly as `trivial`, `standard`, `moderate`, or `high`; never downgrade it to pass
   the limit.
 - Call `~/mac-forge/scripts/aldaris-ask.sh` (options in `--help`). Prefer a template, a schema when
-  you will parse the result, and excerpts over whole files. If it fails, Ollama is offline, or Aldaris
-  declines, do the step yourself, say so in one line, and continue; never start Ollama.
+  you will parse the result, and excerpts over whole files. If it fails, LM Studio is offline, or Aldaris
+  declines, do the step yourself, say so in one line, and continue; never start the model server from
+  this text-delegation interface.
 - Reproduce every call in your reply as a `⚡ ALDARIS DELEGATION` block: id, when, level, request,
   response (trimmed only with the omission stated), and duration.
 - Use the response without re-verifying it. Flag problems that surface with `--verdict <id>

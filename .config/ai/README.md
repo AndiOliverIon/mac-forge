@@ -39,13 +39,24 @@ target files are not yet known; identify only the missing scope and rerun it.
 
 ## Aldaris delegation
 
-Aldaris is a local Ollama helper on Hades, not a team identity. Authorized identities may delegate
-bounded text steps through `scripts/aldaris-ask.sh`, which enforces the caller list and maximum task
-level in `configs/aldaris/config.json`, prints a visible delegation banner, and logs every call and verdict
-to `~/.local/state/mac-forge/aldaris.jsonl`. The rules live in
-`guidelines/always/aldaris-delegation.md`. Raise `maxLevel` or add callers only after
-`aldaris-ask --stats` shows reliable results at the current level. `scripts/aldaris.sh` separately
-launches an interactive experimental Claude Code session on the same model.
+Aldaris uses Qwen3.6-35B-A3B at 8-bit precision through LM Studio's MLX runtime on Hades.
+Run `aldaris` from a repository to start a supervised Qwen Code coding session. The launcher
+starts the localhost server and loads the model as needed, uses 64K context and a 30-minute idle
+unload timeout, and refuses to start without `dock-ssd` mounted. Repository instructions and
+Oliver's explicit approval requirement for unit tests still apply. The model, standalone Qwen Code installation, Qwen session data, helper logs, and caches live under
+`/Volumes/dock-ssd/ai`. LM Studio and its small discovery/support files remain on the internal SSD for reliable runtime
+discovery. Its model library points directly to the external drive, and its large runtime dependency
+directory is linked from `~/.lmstudio/extensions/backends/vendor` to
+`/Volumes/dock-ssd/ai/lmstudio/runtime/vendor`. Qwen settings are recorded in
+`configs/aldaris/qwen-settings.json` and installed at `/Volumes/dock-ssd/ai/qwen/settings.json`.
+
+`scripts/aldaris-ask.sh` remains a bounded text-only delegation interface with templates, schemas,
+caller/level checks, and visible logging. Start `aldaris` first to load the model. Its current
+`maxLevel` remains `trivial`; only Oliver changes it. The shared delegation rules apply to that
+interface, while interactive coding sessions are separately supervised. No coding-quality acceptance
+is implied by installation. Settings live in `configs/aldaris/config.json` and the coding-session
+instructions in `configs/aldaris/instructions.md`. The text adapter handles LM Studio MLX routing
+schema-constrained JSON into `reasoning_content`, accepting it only when it parses as JSON.
 
 ## Review handoff roles
 

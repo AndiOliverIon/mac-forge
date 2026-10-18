@@ -5,14 +5,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FORGE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 ALDARIS_DIR="$FORGE_ROOT/configs/aldaris"
 CONFIG="${ALDARIS_CONFIG:-$ALDARIS_DIR/config.json}"
-LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/mac-forge"
+LOG_DIR="${XDG_STATE_HOME:-/Volumes/dock-ssd/ai/state}/mac-forge"
 LOG_FILE="$LOG_DIR/aldaris.jsonl"
 LEVELS=(trivial standard moderate high)
 VERDICTS=(accepted corrected rejected)
 
 usage() {
     cat <<'EOF'
-Delegate one bounded, non-agentic step to Aldaris (local Ollama model).
+Delegate one bounded, non-agentic step to Aldaris (local LM Studio model).
 
 Usage:
   aldaris-ask --caller NAME --level LEVEL --task TEXT [--template NAME] [--schema NAME|PATH]
@@ -36,7 +36,7 @@ Options:
 
 Aldaris only returns text; it never reads or edits files itself.
 Send only the relevant excerpt, not whole files, when a smaller input suffices.
-Log: ~/.local/state/mac-forge/aldaris.jsonl
+Log: /Volumes/dock-ssd/ai/state/mac-forge/aldaris.jsonl
 EOF
 }
 
@@ -109,6 +109,7 @@ done
 
 command -v jq >/dev/null || die "jq is required."
 [[ -f "$CONFIG" ]] || die "config not found: $CONFIG"
+/sbin/mount | grep -Fq " on /Volumes/dock-ssd (" || die "mount dock-ssd before using Aldaris."
 mkdir -p "$LOG_DIR"
 
 if [[ -n "$verdict_id" ]]; then
@@ -143,13 +144,13 @@ if [[ -n "$schema" ]]; then
 fi
 
 model="$(cfg '.model')"
-ollama_url="$(cfg '.ollamaUrl')"
-context_length="$(cfg '.contextLength')"
-keep_alive="$(cfg '.keepAlive // "5m"')"
+base_url="$(cfg '.baseUrl')"
 
-curl -fsS --max-time 3 "$ollama_url/api/version" >/dev/null 2>&1 \
-    || die "Ollama is not reachable at $ollama_url. Do this step yourself."
+curl -fsS --max-time 3 "$base_url/models" >/dev/null 2>&1 \
+    || die "LM Studio is not reachable at $base_url. Start aldaris first. Do this step yourself."
 
+export TMPDIR="$(cfg '.storageRoot')/cache/tmp"
+mkdir -p "$TMPDIR"
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
 input="$tmp_dir/input.txt"
@@ -188,33 +189,39 @@ if [[ "$schema_json" != "null" ]]; then
 fi
 
 jq -n --arg model "$model" --arg system "$system_prompt" --arg task "$task" \
-    --rawfile input "$input" --argjson ctx "$context_length" \
-    --arg keepAlive "$keep_alive" --argjson schema "$schema_json" '
+    --rawfile input "$input" --argjson schema "$schema_json" '
     {
         model: $model,
         stream: false,
-        keep_alive: $keepAlive,
-        options: {temperature: 0, num_ctx: $ctx},
+        temperature: 0,
+        max_tokens: 4096,
+        chat_template_kwargs: {enable_thinking: false},
         messages: [
             {role: "system", content: $system},
             {role: "user", content: ("TASK:\n" + $task + (if $input == "" then "" else "\n\nINPUT:\n" + $input end))}
         ]
-    } + (if $schema == null then {} else {format: $schema} end)' > "$tmp_dir/request.json"
+    } + (if $schema == null then {} else {response_format: {type: "json_schema", json_schema: {name: "aldaris_result", strict: true, schema: $schema}}} end)' > "$tmp_dir/request.json"
 
 id="$(date '+%Y%m%d-%H%M%S')-$RANDOM"
 started_at="$(date '+%Y-%m-%d %H:%M:%S')"
 start_epoch="$(perl -MTime::HiRes=time -e 'printf "%.3f", time')"
 
-if ! curl -fsS --max-time 900 "$ollama_url/api/chat" \
+if ! curl -fsS --max-time 900 "$base_url/chat/completions" \
         -H 'Content-Type: application/json' -d @"$tmp_dir/request.json" > "$tmp_dir/response.json"; then
-    die "Ollama request failed. Do this step yourself."
+    die "LM Studio request failed. Do this step yourself."
 fi
 
 end_epoch="$(perl -MTime::HiRes=time -e 'printf "%.3f", time')"
 duration="$(awk -v s="$start_epoch" -v e="$end_epoch" 'BEGIN { printf "%.1f", e - s }')"
-response="$(jq -r '.message.content // ""' "$tmp_dir/response.json")"
-prompt_tokens="$(jq -r '.prompt_eval_count // 0' "$tmp_dir/response.json")"
-output_tokens="$(jq -r '.eval_count // 0' "$tmp_dir/response.json")"
+# MLX can route schema-constrained JSON into reasoning_content instead of content.
+response="$(jq -er --argjson structured "$([[ "$schema_json" != null ]] && echo true || echo false)" '
+    .choices[0].message
+    | if (.content // "") != "" then .content
+      elif $structured then (.reasoning_content | fromjson | tojson)
+      else error("empty model response") end
+' "$tmp_dir/response.json")" || die "LM Studio returned no usable response."
+prompt_tokens="$(jq -r '.usage.prompt_tokens // 0' "$tmp_dir/response.json")"
+output_tokens="$(jq -r '.usage.completion_tokens // 0' "$tmp_dir/response.json")"
 declined=false
 [[ "$response" == ALDARIS_DECLINE:* ]] && declined=true
 

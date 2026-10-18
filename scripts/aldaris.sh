@@ -1,31 +1,37 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Experimental: Claude Code backed by a local Ollama model instead of Anthropic.
-OLLAMA_URL="${ALDARIS_OLLAMA_URL:-http://localhost:11434}"
-CONFIG="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/configs/aldaris/config.json"
-MODEL="${ALDARIS_MODEL:-$(jq -r .model "$CONFIG")}"
+FORGE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CONFIG="$FORGE_ROOT/configs/aldaris/config.json"
+command -v jq >/dev/null || { echo "jq is required." >&2; exit 1; }
+AI_ROOT="$(jq -r .storageRoot "$CONFIG")"
+BASE_URL="$(jq -r .baseUrl "$CONFIG")"
+MODEL="$(jq -r .model "$CONFIG")"
+LMS="$HOME/.lmstudio/bin/lms"
+QWEN="$AI_ROOT/tools/qwen-code/bin/qwen"
 
-command -v claude >/dev/null || { echo "claude CLI not found." >&2; exit 1; }
-command -v ollama >/dev/null || { echo "ollama not found." >&2; exit 1; }
+/sbin/mount | /usr/bin/grep -Fq " on $(dirname "$AI_ROOT") (" || {
+  echo "Mount $(dirname "$AI_ROOT") before starting Aldaris." >&2; exit 1;
+}
+[[ -x "$LMS" && -x "$QWEN" ]] || { echo "LM Studio or Qwen Code is missing." >&2; exit 1; }
 
-if ! curl -fsS --max-time 3 "$OLLAMA_URL/api/version" >/dev/null 2>&1; then
-  echo "Ollama is not reachable at $OLLAMA_URL. Start it with 'ollama serve' or the Ollama app." >&2
-  exit 1
+export QWEN_HOME="$AI_ROOT/qwen"
+export HF_HOME="$AI_ROOT/cache/huggingface"
+export HUGGINGFACE_HUB_CACHE="$HF_HOME/hub"
+export TORCH_HOME="$AI_ROOT/cache/torch"
+export TMPDIR="$AI_ROOT/cache/tmp"
+export QWEN_USAGE_STATISTICS_ENABLED=false
+mkdir -p "$QWEN_HOME" "$TMPDIR"
+
+if ! curl -fsS --max-time 2 "$BASE_URL/models" >/dev/null 2>&1; then
+  "$LMS" server start --bind 127.0.0.1 --port 1234
+fi
+if ! "$LMS" ps --json | jq -e --arg id "$MODEL" '.[] | select(.identifier == $id)' >/dev/null; then
+  "$LMS" load "$(jq -r .modelKey "$CONFIG")" --identifier "$MODEL" \
+    --context-length "$(jq -r .contextLength "$CONFIG")" --parallel 1 \
+    --ttl "$(jq -r .idleSeconds "$CONFIG")" --yes
 fi
 
-if ! ollama list | awk 'NR > 1 { print $1 }' | grep -Fxq "$MODEL"; then
-  echo "Model $MODEL is not downloaded. Pull it with: ollama pull $MODEL" >&2
-  exit 1
-fi
-
-export ANTHROPIC_BASE_URL="$OLLAMA_URL"
-export ANTHROPIC_AUTH_TOKEN="ollama"
-unset ANTHROPIC_API_KEY
-export ANTHROPIC_MODEL="$MODEL"
-export ANTHROPIC_SMALL_FAST_MODEL="$MODEL"
-export ANTHROPIC_DEFAULT_HAIKU_MODEL="$MODEL"
-export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
-export CLAUDE_CODE_MAX_CONTEXT_TOKENS="${OLLAMA_CONTEXT_LENGTH:-65536}"
-
-exec claude --model "$MODEL" "$@"
+exec "$QWEN" --auth-type openai --openai-base-url "$BASE_URL" \
+  --openai-api-key lm-studio --model "$MODEL" \
+  --append-system-prompt "$(cat "$FORGE_ROOT/configs/aldaris/instructions.md")" "$@"

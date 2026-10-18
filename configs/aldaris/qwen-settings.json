@@ -1,0 +1,41 @@
+{
+  "general": {
+    "enableAutoUpdate": false
+  },
+  "privacy": {
+    "usageStatisticsEnabled": false
+  },
+  "telemetry": {
+    "enabled": false
+  },
+  "model": {
+    "name": "aldaris",
+    "generationConfig": {
+      "contextWindowSize": 65536,
+      "timeout": 300000,
+      "samplingParams": {
+        "temperature": 0.6,
+        "top_p": 0.95,
+        "max_tokens": 8192
+      },
+      "extra_body": {
+        "top_k": 20
+      }
+    }
+  },
+  "security": {
+    "auth": {
+      "selectedType": "openai"
+    }
+  },
+  "context": {
+    "fileName": [
+      "AGENTS.md",
+      "CLAUDE.md",
+      "QWEN.md"
+    ]
+  },
+  "tools": {
+    "approvalMode": "default"
+  }
+}
