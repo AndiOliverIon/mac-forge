@@ -163,10 +163,10 @@ def main():
             junior_reading = f'{junior_cpu:.1f}%' if elapsed else '…'
             lines = [f'JUNIOR CHECK   {datetime.datetime.now():%H:%M:%S}   Ctrl+C exits', '',
                      f'{"":8} {"Total":>14} {"Junior":>14}',
-                     f'{"GPU":8} {gpu_usage():>14} {"unavailable*":>14}',
+                     f'{"GPU":8} {gpu_usage():>14} {"NSM":>14}',
                      f'{"MEM":8} {memory_used():>14} {f"{junior_rss:.1f} GiB":>14}',
                      f'{"CPU":8} {system_cpu:>14} {junior_reading:>14}', '',
-                     '* GPU: macOS exposes whole-Mac usage only.',
+                     'NSM = not separately measurable (GPU).',
                      'CPU: % of the whole Mac. Junior MEM: process RSS sum (shared pages may overlap).']
             previous_ticks = ticks
             if terminal:

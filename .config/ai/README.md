@@ -44,7 +44,7 @@ refreshing every second (`scripts/junior-check.sh`). Junior includes LM Studio, 
 descendants. CPU percentages use whole-Mac capacity (100% is all logical cores). Total memory uses
 the same anonymous/wired/compressed-page calculation as `inf`; Junior memory is the process RSS sum,
 which can count shared pages more than once. GPU utilization is whole-Mac IORegistry telemetry;
-Junior GPU is explicitly unavailable because it cannot be attributed to individual processes.
+Junior GPU shows NSM (not separately measurable) because it cannot be attributed to individual processes.
 The monitor neither starts the model nor changes delegation state and needs no sudo. `--samples 2`
 gives a bounded snapshot; `--interval 2` changes the refresh interval; Ctrl+C exits.
 
