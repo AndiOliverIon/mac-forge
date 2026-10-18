@@ -39,6 +39,14 @@ target files are not yet known; identify only the missing scope and rerun it.
 
 ## Aldaris delegation
 
+`junior-check` runs a read-only one-second process monitor (`scripts/junior-check.sh`). It identifies
+LM Studio's inference worker, supporting processes, Qwen CLI, and their descendants dynamically.
+CPU is measured from process CPU-time deltas (100% is one core); RSS is shown per process and summed
+with a shared-memory caveat. GPU device utilization from IORegistry, memory pressure, and swap are
+whole-Mac readings. It cannot attribute GPU utilization to an individual model/session. It neither
+starts the model nor changes delegation state and needs no sudo. `--samples 2` gives a bounded
+snapshot; `--interval 2` changes the refresh interval; Ctrl+C restores the terminal and exits.
+
 Control assistant delegation with `junior on`, `junior off`, and `junior status` (or
 `scripts/aldaris-junior.sh`). The default is OFF; the non-secret switch is stored in the ignored
 `config-local/aldaris-junior.state`, separate from shared configuration and the external drive.

@@ -430,3 +430,4 @@ alias	ttbd	ttbd — Go to the Ardis Timetrack repo and build/push its Docker ima
 alias	wk	wk — Go to the Alice in Wonder Kitchen project.
 alias	wkdata	wkdata — Go to the Alice in Wonder Kitchen data folder.
 alias	junior	junior on|off|status — Enable or disable assistant delegation to Aldaris locally; default off. Manual aldaris sessions remain available.
+alias	junior-check	junior-check [--interval SECONDS] [--samples COUNT] — Live read-only Aldaris process CPU/RSS monitor, whole-Mac GPU utilization, memory pressure and swap. Refreshes every second; Ctrl+C exits.
