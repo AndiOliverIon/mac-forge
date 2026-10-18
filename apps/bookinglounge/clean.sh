@@ -6,7 +6,7 @@ usage() {
 Usage: bl-clean [--dry-run]
 
 Preview and remove BookingLounge's disposable release-gate output and build
-caches after typing CLEAN. Use --dry-run to inspect without deleting anything.
+caches after typing clean. Use --dry-run to inspect without deleting anything.
 Set BL_REPO to select a different BookingLounge checkout.
 EOF
 }
@@ -79,9 +79,9 @@ if (( dry_run )); then
   exit 0
 fi
 
-printf 'Type CLEAN to remove only the listed directories: '
+printf 'Type clean to remove only the listed directories: '
 IFS= read -r answer || die 'Confirmation was not received.'
-[[ "$answer" == CLEAN ]] || die 'Cancelled.'
+[[ "$answer" == clean ]] || die 'Cancelled.'
 
 for target in "${existing[@]}"; do
   relative="${target#"$repository"/}"

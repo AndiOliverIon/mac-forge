@@ -1,7 +1,7 @@
 # BookingLounge local commands
 
 `test-bl` runs the BookingLounge test gate. `bl-clean` previews its disposable
-output and removes it after you type `CLEAN`. `bl-clean --dry-run` lists the
+output and removes it after you type `clean`. `bl-clean --dry-run` lists the
 targets and their sizes without deleting anything. Both commands use
 `~/projects/bookinglounge` by default and accept a `BL_REPO` override.
 
