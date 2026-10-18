@@ -79,9 +79,13 @@ if (( dry_run )); then
   exit 0
 fi
 
-printf 'Type clean to remove only the listed directories: '
+printf '\n%s\n' '============================================================'
+printf 'Confirm removal of %s generated directories (%s KiB).\n' "${#existing[@]}" "$total_kib"
+printf '%s\n' '============================================================'
+printf 'Type clean to confirm: '
 IFS= read -r answer || die 'Confirmation was not received.'
 [[ "$answer" == clean ]] || die 'Cancelled.'
+printf '\n'
 
 for target in "${existing[@]}"; do
   relative="${target#"$repository"/}"
@@ -96,8 +100,12 @@ for target in "${existing[@]}"; do
   fi
 done
 
+cleaned_kib=0
 for target in "${existing[@]}"; do
+  size_kib="$(du -sk "$target" | awk '{print $1}')"
   rm -rf -- "$target"
+  cleaned_kib=$((cleaned_kib + size_kib))
 done
 mkdir -p -- "$repository/release-gate/temporary"
 printf 'Removed %s generated directories; release-gate/temporary is ready for the next run.\n' "${#existing[@]}"
+printf 'Total cleaned: %s KiB (%.2f MiB).\n' "$cleaned_kib" "$(awk -v kib="$cleaned_kib" 'BEGIN { print kib / 1024 }')"

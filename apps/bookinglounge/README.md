@@ -4,6 +4,8 @@
 output and removes it after you type `clean`. `bl-clean --dry-run` lists the
 targets and their sizes without deleting anything. Both commands use
 `~/projects/bookinglounge` by default and accept a `BL_REPO` override.
+The confirmation appears below a divider, and a completed cleanup reports the
+total size of the directories removed.
 
 The cleanup allowlist is in `clean.sh`. It covers `release-gate/temporary`,
 legacy gate reports, backend `bin`/`obj` and test results, and the portal's
