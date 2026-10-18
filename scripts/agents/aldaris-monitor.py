@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """Read-only live resource monitor for the local Aldaris stack on macOS."""
 import argparse
+import ctypes
 import datetime
 import json
 import os
@@ -93,15 +94,25 @@ def gpu_usage():
     return ', '.join(readings) or 'unavailable'
 
 
-def memory_status():
+def cpu_ticks(mach, host):
+    ticks = (ctypes.c_uint32 * 4)()
+    count = ctypes.c_uint32(4)
+    if mach.host_statistics(host, 3, ticks, ctypes.byref(count)) != 0:
+        return None
+    return tuple(ticks)
+
+
+def memory_used():
     try:
-        level = command(['/usr/sbin/sysctl', '-n', 'kern.memorystatus_vm_pressure_level']).strip()
-        pressure = {'1': 'normal', '2': 'warning', '4': 'critical'}.get(level, 'unavailable')
-        swap = command(['/usr/sbin/sysctl', 'vm.swapusage'])
-        used = re.search(r'used\s*=\s*([\d.]+[MG])', swap)
-        return pressure, used.group(1) if used else 'unavailable'
-    except (RuntimeError, subprocess.TimeoutExpired):
-        return 'unavailable', 'unavailable'
+        raw = command(['/usr/bin/vm_stat'])
+        page_size = int(re.search(r'page size of (\d+) bytes', raw).group(1))
+        values = {name.strip(): int(value) for name, value in
+                  re.findall(r'^([^:\n]+):\s+(\d+)\.', raw, re.MULTILINE)}
+        pages = (values['Anonymous pages'] - values['Pages purgeable']
+                 + values['Pages wired down'] + values['Pages occupied by compressor'])
+        return f'{max(0, pages) * page_size / 1073741824:.1f} GiB'
+    except (RuntimeError, subprocess.TimeoutExpired, KeyError, AttributeError, ValueError):
+        return 'unavailable'
 
 
 def main():
@@ -115,6 +126,10 @@ def main():
         parser.error('this monitor requires macOS')
     config = Path(__file__).resolve().parents[2] / 'configs/aldaris/config.json'
     ai_root = json.loads(config.read_text())['storageRoot']
+    mach = ctypes.CDLL('/usr/lib/libSystem.B.dylib')
+    host = mach.mach_host_self()
+    cores = os.cpu_count() or 1
+    previous_ticks = None
     previous = {}
     previous_at = None
     sample = 0
@@ -131,30 +146,29 @@ def main():
                 return 1
             now = time.monotonic()
             elapsed = now - previous_at if previous_at is not None else None
-            pressure, swap = memory_status()
-            lines = [f'ALDARIS LIVE  |  {datetime.datetime.now():%H:%M:%S}  |  refresh ~{args.interval:g}s  |  Ctrl+C exits',
-                     f'GPU device utilization (WHOLE MAC): {gpu_usage()}',
-                     f'Mac memory pressure: {pressure}  |  Mac swap used: {swap}', '',
-                     f'{"PID":>7}  {"CPU %":>7}  {"RSS GiB":>8}  ROLE / EXECUTABLE']
-            total_cpu = 0.0
-            total_rss = 0.0
-            for pid, row in sorted(current.items(), key=lambda item: -item[1]['rss']):
+            ticks = cpu_ticks(mach, host)
+            system_cpu = '…'
+            if ticks is not None and previous_ticks is not None:
+                deltas = [(new - old) % (2 ** 32) for new, old in zip(ticks, previous_ticks)]
+                total = sum(deltas)
+                if total:
+                    system_cpu = f'{100 * (total - deltas[2]) / total:.1f}%'
+            junior_cpu = 0.0
+            junior_rss = 0.0
+            for pid, row in current.items():
                 old = previous.get(pid)
-                cpu = None
                 if elapsed and old and row['executable'] == old['executable'] and row['used'] >= old['used']:
-                    cpu = 100 * (row['used'] - old['used']) / elapsed
-                    total_cpu += cpu
-                total_rss += row['rss']
-                reading = f'{cpu:.1f}' if cpu is not None else '…'
-                lines.append(f'{pid:7d}  {reading:>7}  {row["rss"]:8.2f}  {row["label"]} / {Path(row["executable"]).name}')
-            if not current:
-                lines.append('No local Aldaris / LM Studio processes found. Nothing will be started.')
-            aggregate_cpu = f'{total_cpu:.1f}%' if elapsed else 'collecting baseline'
-            lines += ['', f'Tracked CPU: {aggregate_cpu}  |  Sum RSS: {total_rss:.2f} GiB',
-                      'CPU: interval measurement; 100% = one CPU core. First/new PID reading needs a second sample.',
-                      'RSS is resident process memory; shared pages can be counted more than once.',
-                      'GPU is shared across the Mac, not attributable to Aldaris alone. Unified GPU memory is not added to RSS.',
-                      'All LM Studio/Qwen sessions are included. The UI GPU helper is not the inference worker.']
+                    junior_cpu += 100 * (row['used'] - old['used']) / elapsed / cores
+                junior_rss += row['rss']
+            junior_reading = f'{junior_cpu:.1f}%' if elapsed else '…'
+            lines = [f'JUNIOR CHECK   {datetime.datetime.now():%H:%M:%S}   Ctrl+C exits', '',
+                     f'{"":8} {"Total":>14} {"Junior":>14}',
+                     f'{"GPU":8} {gpu_usage():>14} {"unavailable*":>14}',
+                     f'{"MEM":8} {memory_used():>14} {f"{junior_rss:.1f} GiB":>14}',
+                     f'{"CPU":8} {system_cpu:>14} {junior_reading:>14}', '',
+                     '* GPU: macOS exposes whole-Mac usage only.',
+                     'CPU: % of the whole Mac. Junior MEM: process RSS sum (shared pages may overlap).']
+            previous_ticks = ticks
             if terminal:
                 sys.stdout.write('\033[H\033[2J')
                 width = shutil.get_terminal_size((120, 40)).columns
