@@ -20,7 +20,8 @@ Use the first option that covers the requirement:
   Ardis/Kendo grids, and the matching component primitives.
 - In the `@ardis/ngx-kendo-ui` library and projects that consume it, always wrap `ArdisDataProvider`,
   `ArdisConfigurationProvider`, and `ArdisExpressionConfigurationProvider` in `computed()`.
-- Use Kendo icons before Font Awesome; use Font Awesome only when Kendo has no suitable icon.
+- Use Font Awesome for icons. Do not use Kendo icons (`@progress/kendo-svg-icons`, `svgIcon`,
+  `kendo-svg-icon`).
 - Use Kendo controls with `formControlName` in actual forms. Allow `ngModel` only for standalone
   controls and direct grid-cell or row editing outside a form.
 - Use Kendo theme variables rather than hardcoded colors and do not override Kendo styles with

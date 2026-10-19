@@ -135,7 +135,7 @@ Rule intent in this development file must remain synchronized with the detailed 
 - Do not use raw HTML controls when an Ardis/Kendo equivalent exists.
 - Use Kendo button, form, grid, dropdown, date picker, and dialog primitives for UI interactions.
 - Check `@ardis/ngx-kendo-ui` exports before building a custom UI element.
-- Use Kendo icons before Font Awesome. Fall back to Font Awesome only when Kendo has no suitable icon.
+- Use Font Awesome for icons. Do not use Kendo icons (`@progress/kendo-svg-icons`, `svgIcon`, `kendo-svg-icon`).
 - Do not create custom data grids, date pickers, dropdowns, or other common controls when Kendo equivalents exist.
 - Do not override Kendo component styles with `!important`; use the Kendo theming system.
 - Do not add hover or motion effects to cards unless explicitly required.
