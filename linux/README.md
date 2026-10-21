@@ -184,7 +184,9 @@ must not be committed or left on shared storage.
 
 Use `rdbsn` to select a remote SQL Server and create a compressed, copy-only
 backup in that server's configured backup directory. The command uses the
-shared `scripts/db-remote-backup.sh` workflow and requires remote targets in:
+shared `scripts/db-remote-backup.sh` workflow. An optional argument
+(`rdbsn mysuffix`) appends `_mysuffix` to the default file name
+(`<db>_<YYYYMMDD>_mysuffix.bak`). It requires remote targets in:
 
 ```text
 ~/mac-forge/config-local/local-store.json

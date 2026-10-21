@@ -175,7 +175,8 @@ selected_db="$(
   printf '%s\n' "$db_list" | fzf --prompt='Database > ' --height=45% --border
 )" || die "No database selected."
 
-default_backup_name="${selected_db}_$(date +%Y%m%d).bak"
+name_suffix="${1:-}"
+default_backup_name="${selected_db}_$(date +%Y%m%d)${name_suffix:+_$name_suffix}.bak"
 
 echo "Target      : $server_name ($connect_server)"
 if [[ -n "$expected_instance" ]]; then
