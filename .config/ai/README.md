@@ -88,15 +88,20 @@ MasterChief lanes, including distinct Coworker and Reviewer identities.
 
 ## QA handoff
 
-A QA handoff uses the same lanes, roles, and ownership rules, but the Reviewer (the Tester) uses the
-running application like a user instead of reviewing code. The word `QA` in Oliver's command selects
-it: "Prep for Artanis QA takeoff" / "Hand off to Artanis for QA" (Coworker), "Artanis QA takeoff" /
-"Process Argus's QA handoff" (Tester), and "Process Artanis's QA report" (Coworker). Commands without
-`QA` keep their code-review meaning. Artanis tests by default; any of the three may test when its
-session has a working browser tool. The pair is `qa-request-<coworker>.md` and
-`qa-report-<coworker>.md`, with captures in `qa-evidence-<coworker>/`. The request lists the build,
-URLs, test cases, and any restrictions. A listed URL is safe by Oliver's definition (a disposable VPS1
-snapshot database), so every operation there is permitted, data changes included. QA never runs through
+QA is the last step of a task, enabled on Hades only for now. After the code-review cycle ends with
+Coworker, Reviewer, and Oliver in agreement, and Oliver has deployed the app on a disposable VPS1
+snapshot database and given its URL, the Coworker writes a self-sufficient request: URL, login, pages,
+steps, and expected results. The Tester uses the running app like a user and reports; `passed`
+confirms the agreed outcome, anything else reopens the work. The word `QA` in Oliver's command
+selects this kind: "Prep for Artanis QA takeoff" / "QA handoff to Aegis" (Coworker), "Artanis QA
+takeoff" / "Process Argus's QA handoff" (Tester), and "Process Artanis's QA report" (Coworker).
+Commands without `QA` keep their code-review meaning.
+
+Artanis tests by default; any of the three may test when its session has a working browser tool. The
+pair is `qa-request-<coworker>.md` and `qa-report-<coworker>.md`, with captures in
+`qa-evidence-<coworker>/`. The Tester may perform any operation on the given URL, data changes
+included; it stops and asks Oliver when the app is not functional there or a snapshot restore is
+needed. Agents never build, start, deploy, or restore anything for QA. QA never runs through
 `team-work.sh`, and it does not authorize automated test suites.
 
 The resolver keeps routing cheap: `--mode handoff` loads `handoff/common.md`, `handoff/review.md`, and

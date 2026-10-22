@@ -21,11 +21,10 @@ never read or write another context's transporter files.
 
 ## Linux Role Assignment
 
-The common Coworker/Reviewer protocol applies in all three lanes, with the kind's default Reviewer (Argus for code
-review, Artanis for QA) and any of Artanis, Argus, or Aegis eligible for either role when Oliver explicitly asks.
+The common Coworker/Reviewer protocol applies in all three lanes, with Argus as the default Reviewer
+and any of Artanis, Argus, or Aegis eligible for either role when Oliver explicitly asks.
 The Coworker owns `request-<coworker>.md`; the pair's designated Reviewer owns the matching
-`findings-<coworker>.md`; a QA pair uses `qa-request-<coworker>.md` and `qa-report-<coworker>.md`.
-Both files include `Coworker` and `Reviewer`.
+`findings-<coworker>.md`. Both files include `Coworker` and `Reviewer`.
 
 When Oliver starts `team-work.sh`, the coordinator owns `team-loop-<coworker>.json` in the selected
 lane and invokes the two assigned identities sequentially. It never authorizes concurrent agents in
@@ -50,9 +49,6 @@ Role switching never changes lane rules:
 - Findings: `/home/oliver/work/.ai/review-handoff/findings-<coworker>.md`
 - Coordinator state: `/home/oliver/work/.ai/review-handoff/team-loop-<coworker>.json`
 - Autonomous transcripts: `/home/oliver/work/.ai/review-handoff/transcripts/<task-slug>-<UTC timestamp>.md`
-- QA request: `/home/oliver/work/.ai/review-handoff/qa-request-<coworker>.md`
-- QA report: `/home/oliver/work/.ai/review-handoff/qa-report-<coworker>.md`
-- QA evidence: `/home/oliver/work/.ai/review-handoff/qa-evidence-<coworker>/`
 
 ### Lane `zeratul`
 
@@ -60,9 +56,6 @@ Role switching never changes lane rules:
 - Findings: `/home/oliver/zeratul/.ai/review-handoff/findings-<coworker>.md`
 - Coordinator state: `/home/oliver/zeratul/.ai/review-handoff/team-loop-<coworker>.json`
 - Autonomous transcripts: `/home/oliver/zeratul/.ai/review-handoff/transcripts/<task-slug>-<UTC timestamp>.md`
-- QA request: `/home/oliver/zeratul/.ai/review-handoff/qa-request-<coworker>.md`
-- QA report: `/home/oliver/zeratul/.ai/review-handoff/qa-report-<coworker>.md`
-- QA evidence: `/home/oliver/zeratul/.ai/review-handoff/qa-evidence-<coworker>/`
 
 ### Lane `raynor`
 
@@ -70,9 +63,6 @@ Role switching never changes lane rules:
 - Findings: `/home/oliver/raynor/.ai/review-handoff/findings-<coworker>.md`
 - Coordinator state: `/home/oliver/raynor/.ai/review-handoff/team-loop-<coworker>.json`
 - Autonomous transcripts: `/home/oliver/raynor/.ai/review-handoff/transcripts/<task-slug>-<UTC timestamp>.md`
-- QA request: `/home/oliver/raynor/.ai/review-handoff/qa-request-<coworker>.md`
-- QA report: `/home/oliver/raynor/.ai/review-handoff/qa-report-<coworker>.md`
-- QA evidence: `/home/oliver/raynor/.ai/review-handoff/qa-evidence-<coworker>/`
 
 `<coworker>` is the lowercase identity of the Coworker (`artanis`, `argus`, or `aegis`). The
 Reviewer is recorded in the file headers, not the filename.
@@ -89,14 +79,13 @@ Use:
 - `Station: masterchief`
 - `Lane: <work|zeratul|raynor>`
 - Handoff ID: `<lane>:<repository-name>:<coworker>:<ISO-8601 timestamp>`
-- QA handoff ID: `<lane>:<repository-name>:qa:<coworker>:<ISO-8601 timestamp>`
 
 The repository name is the basename of the canonical repository root. The lane and coworker token in
 the metadata, handoff ID, and transporter filenames must agree. `Reviewer` is a header field only.
 
-Keep the `Branch`, `Review target`, and `Build under test` metadata values on one line so the Linux handoff validator can
+Keep the `Branch` and `Review target` metadata values on one line so the Linux handoff validator can
 compare them exactly. Run `~/.config/ai/bin/review-handoff-verify.sh <lane>` after preparing or
-writing a handoff file. Validate each coworker pair of each kind independently, including that `Coworker` and
+writing a handoff file. Validate each coworker pair independently, including that `Coworker` and
 `Reviewer` are distinct valid identities. A different findings ID is valid
 only while it represents that coworker's prior review and the current request in the same pair is
 newer; a findings file newer than a differently identified request in the same pair is an invalid
