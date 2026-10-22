@@ -203,6 +203,108 @@ validate_pair() {
     fi
 }
 
+validate_qa_pair() {
+    local request="$1"
+    local report="$2"
+    local expected_identity="$3"
+    local slug="$4"
+    local evidence="$5"
+    local request_id request_repository coworker reviewer repository_name report_id report_reviewer
+    local request_epoch report_epoch pair_failures_before name request_value report_value
+
+    if [[ -e "$evidence" || -L "$evidence" ]]; then
+        if [[ -L "$evidence" || ! -d "$evidence" ]]; then
+            fail "QA evidence is not a physical directory: $evidence"
+        elif [[ "$(stat -c '%a' "$evidence")" != "700" ]]; then
+            fail "QA evidence mode is not 700: $evidence"
+        fi
+    fi
+    if [[ ! -e "$request" && ! -e "$report" ]]; then
+        return 0
+    fi
+    if [[ ! -e "$request" ]]; then
+        validate_file "$report" || true
+        fail "QA report exists without a request: $lane $slug"
+        return 0
+    fi
+
+    validate_file "$request" || true
+    [[ "$(field "$request" Kind)" == "qa" ]] || fail "QA request Kind is not qa ($slug)"
+    [[ "$(field "$request" Status)" == "ready-for-qa" ]] \
+        || fail "QA request status is not ready-for-qa ($slug)"
+    [[ -z "$(field "$request" Automation)" ]] || fail "QA request declares automation ($slug)"
+    [[ "$(field "$request" Station)" == "masterchief" ]] \
+        || fail "QA request station is not masterchief ($slug)"
+    [[ "$(field "$request" Lane)" == "$lane" ]] || fail "QA request lane is not $lane ($slug)"
+    request_id="$(field "$request" 'Handoff ID')"
+    request_repository="$(field "$request" Repository)"
+    if [[ "$request_repository" == "$lane_root/"* \
+        && "$(git -C "$request_repository" rev-parse --show-toplevel 2>/dev/null || true)" == "$request_repository" ]]; then
+        repository_name="$(basename "$request_repository")"
+        [[ "$request_id" == "$lane:$repository_name:qa:$slug:"* ]] \
+            || fail "QA handoff ID does not match its lane, repository, and coworker ($slug)"
+    else
+        fail "QA request repository is not a canonical Git root inside $lane_root ($slug)"
+    fi
+    date -d "$(field "$request" Created)" +%s >/dev/null 2>&1 \
+        || fail "QA request Created timestamp is missing or invalid ($slug)"
+    for name in 'Build under test' 'App URL'; do
+        [[ -n "$(field "$request" "$name")" ]] || fail "QA request $name is missing ($slug)"
+    done
+    coworker="$(field "$request" Coworker)"
+    reviewer="$(field "$request" Reviewer)"
+    [[ "$coworker" == "$expected_identity" ]] \
+        || fail "QA request coworker is ${coworker:-missing}; expected $expected_identity ($slug)"
+    valid_identity "$reviewer" || fail "invalid QA tester: ${reviewer:-missing} ($slug)"
+    [[ "$reviewer" != "$coworker" ]] || fail "QA tester must differ from the coworker ($slug)"
+
+    if [[ ! -e "$report" ]]; then
+        pass "QA request awaits testing: $lane $slug"
+        return 0
+    fi
+
+    validate_file "$report" || true
+    [[ "$(field "$report" Kind)" == "qa" ]] || fail "QA report Kind is not qa ($slug)"
+    [[ "$(field "$report" Status)" == "qa-complete" ]] \
+        || fail "QA report status is not qa-complete ($slug)"
+    [[ "$(field "$report" Station)" == "masterchief" ]] \
+        || fail "QA report station is not masterchief ($slug)"
+    [[ "$(field "$report" Lane)" == "$lane" ]] || fail "QA report lane is not $lane ($slug)"
+    date -d "$(field "$report" Tested)" +%s >/dev/null 2>&1 \
+        || fail "QA report Tested timestamp is missing or invalid ($slug)"
+    case "$(field "$report" Verdict)" in
+        passed | failed | blocked | partial) ;;
+        *) fail "QA report verdict is invalid ($slug)" ;;
+    esac
+
+    report_id="$(field "$report" 'Handoff ID')"
+    if [[ "$request_id" == "$report_id" ]]; then
+        pair_failures_before="$failures"
+        for name in Repository Branch 'Build under test' Coworker; do
+            request_value="$(field "$request" "$name")"
+            report_value="$(field "$report" "$name")"
+            [[ -n "$request_value" && "$request_value" == "$report_value" ]] \
+                || fail "$name differs for QA handoff $request_id ($slug)"
+        done
+        report_reviewer="$(field "$report" Reviewer)"
+        valid_identity "$report_reviewer" || fail "invalid QA report tester ($slug)"
+        [[ "$report_reviewer" != "$coworker" ]] || fail "QA report tester must differ from the coworker ($slug)"
+        if [[ "$report_reviewer" != "$reviewer" ]]; then
+            [[ "$(field "$report" 'Reviewer override')" == "Oliver-directed"* ]] \
+                || fail "tester differs between QA request and report without an Oliver-directed override ($slug)"
+        fi
+        if [[ "$failures" == "$pair_failures_before" ]]; then
+            pass "QA request and report are paired: $lane $slug"
+        fi
+    elif request_epoch="$(date -d "$(field "$request" Created)" +%s 2>/dev/null)" \
+        && report_epoch="$(date -d "$(field "$report" Tested)" +%s 2>/dev/null)" \
+        && ((request_epoch > report_epoch)); then
+        pass "new QA request awaits testing: $lane $slug"
+    else
+        fail "QA report has a different ID and is not older than the request: $lane $slug"
+    fi
+}
+
 usage() {
     printf 'Usage: review-handoff-verify.sh <work|raynor|zeratul>\n'
 }
@@ -265,6 +367,13 @@ for slug in "${slugs[@]}"; do
     if [[ -e "$request" || -e "$findings" ]]; then
         slots_found=$((slots_found + 1))
         validate_pair "$request" "$findings" "$(identity_from_slug "$slug")" "$slug"
+    fi
+    qa_request="$handoff_directory/qa-request-$slug.md"
+    qa_report="$handoff_directory/qa-report-$slug.md"
+    qa_evidence="$handoff_directory/qa-evidence-$slug"
+    if [[ -e "$qa_request" || -e "$qa_report" || -e "$qa_evidence" || -L "$qa_evidence" ]]; then
+        slots_found=$((slots_found + 1))
+        validate_qa_pair "$qa_request" "$qa_report" "$(identity_from_slug "$slug")" "$slug" "$qa_evidence"
     fi
 done
 

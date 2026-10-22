@@ -12,8 +12,10 @@ instruction batch it emits.
 Handoff commands (`Prep for <Reviewer> takeoff` or `Hand off to <Reviewer> for review` — Argus when no
 reviewer is named — `Process <Coworker>'s review handoff`, `<Reviewer> takeoff`, or `Process <Reviewer>'s
 findings`) are routed tasks even when no code scope is named. Invoke the resolver in `handoff` mode and
-load its routed instruction paths before searching or acting. If the resolver is unavailable,
-manually read `~/.config/ai/guidelines/always/review-handoff.md` and follow its selected station flow.
+load its routed instruction paths before searching or acting. A handoff command containing `QA` (for
+example `Prep for Artanis QA takeoff`, `Artanis QA takeoff`, or `Process Artanis's QA report`) is a QA
+handoff: use `qa-handoff` mode instead. If the resolver is unavailable, follow the embedded handoff
+router manually.
 Never contact another AI session to locate or exchange handoff state.
 
 Never add `Co-Authored-By` trailers or any other AI attribution (including "Generated with Claude Code"

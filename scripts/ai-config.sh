@@ -26,6 +26,8 @@ REQUIRED_SOURCES=(
     guidelines/always/jira-tasks.md
     guidelines/always/test-execution.md
     guidelines/handoff/common.md
+    guidelines/handoff/review.md
+    guidelines/handoff/qa.md
     guidelines/handoff/hades.md
     guidelines/handoff/masterchief.md
     guidelines/jira/common.md

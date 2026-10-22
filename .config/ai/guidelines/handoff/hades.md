@@ -16,12 +16,11 @@ If the repository is not a Git repository, its root is ambiguous, multiple repos
 
 ## Lane Creation and Isolation
 
-Only the active Coworker (any of Artanis, Argus, Aegis, or Aldaris preparing a review) may create the
-handoff root or a missing project lane while processing a prep trigger (**“Prep for Argus takeoff”**,
-**“Prep for `<Reviewer>` takeoff”**, or **“Hand off to `<Reviewer>` for review”**). The deterministic
-`team-work.sh` coordinator may also create them when Oliver starts an autonomous team loop. Create
-directories with owner-only access. Each agent must create its owned transporter file with owner-only
-access; the Coworker then creates or completely replaces only `request-<coworker>.md`.
+Only the active Coworker (any of Artanis, Argus, Aegis, or Aldaris preparing a handoff) may create the
+handoff root or a missing project lane while processing a code-review or QA prep trigger. The
+deterministic `team-work.sh` coordinator may also create them when Oliver starts an autonomous team
+loop. Create directories with owner-only access. Each agent must create its owned transporter file
+with owner-only access; the Coworker then creates or completely replaces only its request file.
 
 A Reviewer must not create a missing handoff root, lane, or request file. When processing a handoff,
 a missing or unsafe path is a configuration error: report it and stop.
@@ -32,6 +31,9 @@ The active lane uses one pair per Coworker, keyed by the Coworker's lowercase id
 - Findings: `/Users/oliver/handoffserver/<project-key>/findings-<coworker>.md`
 - Coordinator state: `/Users/oliver/handoffserver/<project-key>/team-loop-<coworker>.json`
 - Autonomous transcripts: `/Users/oliver/handoffserver/<project-key>/transcripts/<task-slug>-<UTC timestamp>.md`
+- QA request: `/Users/oliver/handoffserver/<project-key>/qa-request-<coworker>.md`
+- QA report: `/Users/oliver/handoffserver/<project-key>/qa-report-<coworker>.md`
+- QA evidence: `/Users/oliver/handoffserver/<project-key>/qa-evidence-<coworker>/` (Tester-owned, owner-only)
 
 `<coworker>` is `artanis`, `argus`, `aegis`, or `aldaris`. Hades admits Aldaris as a manual-handoff
 Coworker under the common protocol; it never uses `team-loop-aldaris.json`. The Reviewer is recorded in the file
@@ -55,7 +57,8 @@ Use:
 - `Station: hades`
 - `Lane: <project-key>`
 - Handoff ID: `hades:<project-key>:<coworker>:<ISO-8601 timestamp>`
+- QA handoff ID: `hades:<project-key>:qa:<coworker>:<ISO-8601 timestamp>`
 
 The coworker token is `artanis`, `argus`, `aegis`, or `aldaris` and must match the transporter filenames. `Reviewer` is a header field only.
 
-The project key in the lane path, metadata, and handoff ID must agree, and the coworker token must match the filenames. The canonical absolute repository path recorded in both transporter files of a pair must match the active repository before review or findings analysis proceeds.
+The project key in the lane path, metadata, and handoff ID must agree, and the coworker token must match the filenames. The canonical absolute repository path recorded in both transporter files of a pair must match the active repository before reviewing, testing, or result analysis proceeds.

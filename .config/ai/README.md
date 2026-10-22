@@ -86,6 +86,23 @@ Oliver names Artanis or Aegis); he never reviews and does not take part in auton
 single universe with one project lane per repository. `bin/review-handoff-verify.sh` validates the
 MasterChief lanes, including distinct Coworker and Reviewer identities.
 
+## QA handoff
+
+A QA handoff uses the same lanes, roles, and ownership rules, but the Reviewer (the Tester) uses the
+running application like a user instead of reviewing code. The word `QA` in Oliver's command selects
+it: "Prep for Artanis QA takeoff" / "Hand off to Artanis for QA" (Coworker), "Artanis QA takeoff" /
+"Process Argus's QA handoff" (Tester), and "Process Artanis's QA report" (Coworker). Commands without
+`QA` keep their code-review meaning. Artanis tests by default; any of the three may test when its
+session has a working browser tool. The pair is `qa-request-<coworker>.md` and
+`qa-report-<coworker>.md`, with captures in `qa-evidence-<coworker>/`. The request lists the build,
+URLs, test cases, and allowed actions; data is read-only, and destructive, outbound, or production
+actions are excluded unless the request records Oliver's approval. QA never runs through
+`team-work.sh`, and it does not authorize automated test suites.
+
+The resolver keeps routing cheap: `--mode handoff` loads `handoff/common.md`, `handoff/review.md`, and
+the station flow; `--mode qa-handoff` loads `handoff/common.md`, `handoff/qa.md`, and the station flow.
+Only the short kind table in `always/review-handoff.md` is always loaded.
+
 The manual handoff remains the default and returns to Oliver after every review and findings-analysis
 step. `scripts/team-work.sh --prompt <task>` is a separate opt-in flow: it launches and resumes the
 two real assigned CLI sessions and advances only structured transporter states. When ambiguity,

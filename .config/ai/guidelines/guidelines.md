@@ -6,7 +6,7 @@ This file is the single tool-neutral entry point for deciding which shared guide
 
 1. The generated global bootstrap embeds `identities.md`, this router, and every direct
    `always/*.md` file. They are already loaded; do not read them again. Determine the preliminary
-   mode (`development`, `review`, or `handoff`) from the request, then run
+   mode (`development`, `review`, `handoff`, or `qa-handoff`) from the request, then run
    `~/.config/ai/bin/ai-context.sh --mode <mode> [--repository <path>] [--target <path> ...] [--review-target <target>]`
    and read its complete output. Use `--review-target HEAD`, `working-tree`, `staged`, or a Git diff
    range when the review scope is known.

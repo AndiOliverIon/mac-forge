@@ -27,7 +27,10 @@ usage() {
 Resolve the current AI execution and instruction context.
 
 Usage:
-  ai-context.sh --mode <development|review|handoff> [scope]
+  ai-context.sh --mode <development|review|handoff|qa-handoff> [scope]
+
+Modes handoff (code review) and qa-handoff (testing the running app) route the
+handoff protocol for that kind.
 
 Scope:
   --repository <path>       Repository or a path inside it.
@@ -391,8 +394,13 @@ select_angular_review_topics() {
 collect_job_instruction_paths() {
     local stack
 
-    if [[ "$MODE" == "handoff" && "$station" != "unresolved" ]]; then
+    if [[ "$MODE" == "handoff" || "$MODE" == "qa-handoff" ]] && [[ "$station" != "unresolved" ]]; then
         append_unique routed_instructions "$AI_ROOT/guidelines/handoff/common.md"
+        if [[ "$MODE" == "qa-handoff" ]]; then
+            append_unique routed_instructions "$AI_ROOT/guidelines/handoff/qa.md"
+        else
+            append_unique routed_instructions "$AI_ROOT/guidelines/handoff/review.md"
+        fi
         case "$station" in
             hades | masterchief)
                 append_unique routed_instructions "$AI_ROOT/guidelines/handoff/$station.md"
@@ -558,8 +566,8 @@ while (($# > 0)); do
 done
 
 case "$MODE" in
-    development | review | handoff) ;;
-    *) die "--mode must be development, review, or handoff" ;;
+    development | review | handoff | qa-handoff) ;;
+    *) die "--mode must be development, review, handoff, or qa-handoff" ;;
 esac
 
 require_command git
