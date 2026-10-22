@@ -66,7 +66,8 @@ remains the decision-maker.
 - Before reviewing, testing, or analyzing a result, verify station, lane, kind, Coworker, Reviewer,
   transporter filenames, canonical absolute repository path, handoff ID, and exact target against the
   active session and lane. The acting agent must equal `Coworker` when preparing or analyzing a
-  result, and `Reviewer` when reviewing or testing, unless the override below applies.
+  result, and `Reviewer` when reviewing or testing, unless the override below applies or the kind
+  file names another analyst.
 - On any mismatch, report stale or ambiguous state and stop without modifying repository or
   transporter files. The previous result file intentionally remains while a newer request in the same
   pair awaits the Reviewer; the handoff ID distinguishes cycles. Other pairs are different jobs and

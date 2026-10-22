@@ -90,11 +90,12 @@ MasterChief lanes, including distinct Coworker and Reviewer identities.
 
 QA is the last step of a task, enabled on Hades only for now. After the code-review cycle ends with
 Coworker, Reviewer, and Oliver in agreement, and Oliver has deployed the app on a disposable VPS1
-snapshot database and given its URL, the Coworker writes a self-sufficient request: URL, login, pages,
-steps, and expected results. The Tester uses the running app like a user and reports; `passed`
-confirms the agreed outcome, anything else reopens the work. The word `QA` in Oliver's command
+snapshot database and given its URL and an optional depth (`surface`, `medium` by default, or
+`verbose`), the Coworker decides what to test from the task and writes a self-sufficient request: URL,
+login, pages, steps, and expected results. The Tester uses the running app like a user and reports.
+Oliver reads the report first, then asks the Coworker, the code reviewer, or both to process it. The word `QA` in Oliver's command
 selects this kind: "Prep for Artanis QA takeoff" / "QA handoff to Aegis" (Coworker), "Artanis QA
-takeoff" / "Process Argus's QA handoff" (Tester), and "Process Artanis's QA report" (Coworker).
+takeoff" / "Process Argus's QA handoff" (Tester), and "Process Aegis's QA report" (Coworker or code reviewer).
 Commands without `QA` keep their code-review meaning.
 
 Artanis tests by default; any of the three may test when its session has a working browser tool. The

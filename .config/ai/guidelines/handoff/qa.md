@@ -11,8 +11,9 @@ QA is currently enabled on Hades only. On any other station, stop and tell Olive
 
 - QA is the last step of a task: it starts only after the code-review cycle ended with the Coworker,
   the Reviewer, and Oliver in agreement. Oliver's QA trigger is that agreement.
-- A `passed` verdict confirms the agreed outcome. Any other verdict reopens the work for the Coworker,
-  the code Reviewer, and Oliver; QA itself never fixes anything.
+- Oliver reads every report first. A `passed` verdict confirms the agreed outcome; any other verdict
+  may reopen the work, and Oliver decides who analyzes it (see the last section). QA never fixes
+  anything. A re-test after a fix is a new QA request with a new handoff ID.
 - Oliver owns the environment: he builds and deploys the app, prepares a disposable snapshot database
   on VPS1, and gives the URL before the flow starts. Agents never build, start, restart, deploy, or
   restore anything for QA.
@@ -47,18 +48,25 @@ QA is currently enabled on Hades only. On any other station, stop and tell Olive
 ## Coworker: Prepare for QA
 
 Trigger: Oliver says **“Prep for `<Reviewer>` QA takeoff”**, **“Prep for QA takeoff”** (Artanis tests),
-**“Hand off to `<Reviewer>` for QA”**, **“QA handoff to `<Reviewer>`”**, or an unambiguous equivalent.
+**“Hand off to `<Reviewer>` for QA”**, **“QA handoff to `<Reviewer>`”**, or an unambiguous equivalent,
+optionally naming a depth: **surface**, **medium**, or **verbose**. No depth means medium.
 
-The request must be self-sufficient: the Tester has none of the task's conversation, code, or review
-context, only this file. Write it from the task you worked on with Oliver.
+Oliver provides only the URL and the depth. The Coworker decides what to test from the task it worked
+on with Oliver. The request must be self-sufficient: the Tester has none of the task's conversation,
+code, or review context, only this file.
+
+| Depth | Cases cover |
+| --- | --- |
+| `surface` | The few behaviors that matter most: the task's main path and its critical outcome. |
+| `medium` | Every behavior the task added or changed, including its acceptance criteria and error paths. |
+| `verbose` | Everything in `medium`, plus adjacent screens and flows the change could affect. |
 
 1. Resolve and verify the routed lane and canonical repository root. Create a lane only when the
    station flow permits it for this trigger. Confirm the Tester differs from yourself.
-2. Take the URL and login from Oliver or the task context. If either is missing, ask Oliver; never
-   guess or substitute one.
-3. Write test cases that prove the agreed outcome: which page to open, what to do, and what must be
-   observed. Cover the changed behavior and the acceptance criteria; leave steps out only where
-   exploratory testing is intended.
+2. Take the URL from Oliver and the login from the task context. If either is missing, ask Oliver;
+   never guess or substitute one.
+3. Write test cases for the requested depth that prove the agreed outcome: which page to open, what
+   to do, and what must be observed. Leave steps out only where exploratory testing is intended.
 4. Generate a new handoff ID and completely replace only `qa-request-<coworker>.md` using the
    structure below. Leave the report, evidence, and every other pair unchanged.
 5. Tell Oliver the request path, handoff ID, Coworker, and Tester. Say it is ready.
@@ -79,7 +87,9 @@ context, only this file. Write it from the task you worked on with Oliver.
 - Repository: <canonical absolute path>
 - Branch: <branch>
 - App URL: <URL Oliver provided>
+- Depth: <surface|medium|verbose>
 - Code review: <approved review handoff ID, or “none”>
+- Code reviewer: <Reviewer of that code review, or “none”>
 - Task: <ticket/key/title, or “none”>
 
 ## Objective
@@ -173,9 +183,20 @@ run; `partial` when some cases are blocked or not run and none failed.
 <Decisions or missing context, or “None”.>
 ```
 
-## Coworker: Process the QA Report
+## Process the QA Report
 
-Trigger: Oliver says **“Process `<Reviewer>`'s QA report”** (for example **“Process Artanis's QA
-report”**) or an unambiguous equivalent. Follow `common.md`, classifying every non-passing case as
-`bug`, `wrong expectation`, `environment`, or `uncertain`. Analysis only; stop for Oliver, who decides
-whether the work reopens.
+Oliver reads the report first and then decides who analyzes it: the Coworker for a small problem, the
+code reviewer for an architectural one, or both when he wants a three-way discussion. Each addressed
+agent analyzes only when he triggers it.
+
+Trigger: Oliver says **“Process `<Tester>`'s QA report”** (for example **“Process Aegis's QA
+report”**) or an unambiguous equivalent, to the Coworker or the code reviewer.
+
+- **Coworker:** follow `common.md` for its own pair.
+- **Code reviewer:** select the pair by scanning only the header lines of `qa-request-*.md` for
+  `Code reviewer` equal to yourself and `Reviewer` equal to the named Tester, with a matching
+  `qa-complete` report. Exactly one selects the pair; several means ask Oliver; none means report and
+  stop. Then follow `common.md` steps 2 to 5, with a focus on design and architecture causes.
+
+Classify every non-passing case as `bug`, `wrong expectation`, `environment`, or `uncertain`. Analysis
+only: neither agent modifies transporter or repository files; stop for Oliver.
