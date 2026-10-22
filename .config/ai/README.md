@@ -95,8 +95,8 @@ it: "Prep for Artanis QA takeoff" / "Hand off to Artanis for QA" (Coworker), "Ar
 `QA` keep their code-review meaning. Artanis tests by default; any of the three may test when its
 session has a working browser tool. The pair is `qa-request-<coworker>.md` and
 `qa-report-<coworker>.md`, with captures in `qa-evidence-<coworker>/`. The request lists the build,
-URLs, test cases, and allowed actions; data is read-only, and destructive, outbound, or production
-actions are excluded unless the request records Oliver's approval. QA never runs through
+URLs, test cases, and any restrictions. A listed URL is safe by Oliver's definition (a disposable VPS1
+snapshot database), so every operation there is permitted, data changes included. QA never runs through
 `team-work.sh`, and it does not authorize automated test suites.
 
 The resolver keeps routing cheap: `--mode handoff` loads `handoff/common.md`, `handoff/review.md`, and

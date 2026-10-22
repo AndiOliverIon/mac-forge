@@ -18,18 +18,18 @@ a code review: the Tester judges observed behavior, not source code.
 
 ## Safety Boundary
 
-- The QA trigger authorizes interactive use of the listed URLs only, within the request's
-  `Allowed Actions`. It does not authorize running automated test suites (unit, Playwright, Cypress,
-  or similar); `always/test-execution.md` still governs those.
-- Data defaults to read-only: create or change data only where `Allowed Actions` permits it. Never
-  perform destructive or irreversible actions, real outbound effects (emails, payments, third-party
-  calls), or production use, unless the request records Oliver's explicit approval for this handoff.
+- A URL in the request is Oliver's statement that it is safe for QA: it runs on a disposable snapshot
+  database he prepared on VPS1. Every operation the application offers there is permitted, including
+  creating, changing, and deleting data, unless `Restrictions` limits it. Do not ask for per-action
+  approval.
+- The authorization covers only the listed URLs. It does not authorize running automated test suites
+  (unit, Playwright, Cypress, or similar); `always/test-execution.md` still governs those.
 - Credentials are referenced by name and storage location only. Never write secrets into transporter
   files or evidence.
 - The Tester never edits repository, configuration, or application code, and never restarts or
-  redeploys the application unless the request says how and allows it.
+  redeploys the application unless `Restrictions` or `Environment and Access` says how.
 - If the app is unreachable, or the observed build differs from `Build under test`, report `blocked`;
-  never test a substitute. A case that would cross the boundary is `blocked`, not attempted.
+  never test a substitute. A case that would break a restriction is `blocked`, not attempted.
 
 ## Coworker: Prepare for QA
 
@@ -84,11 +84,9 @@ Trigger: Oliver says **“Prep for `<Reviewer>` QA takeoff”**, **“Prep for Q
 - Steps: <optional exact steps; omit for exploratory testing>
 - Expected: <observable expected result>
 
-## Allowed Actions
+## Restrictions
 
-- Data: <read-only|may create|may create and modify> <scope>
-- Outbound effects: <none, or exactly what is allowed>
-- Other: <restarts, file uploads, approvals by Oliver, or “none”>
+<Limits Oliver set for this run, or “none” (everything is permitted on the listed URLs).>
 
 ## Out of Scope
 
@@ -109,7 +107,7 @@ Trigger: Oliver says **“`<Reviewer>` QA takeoff”** (for example **“Artanis
    guidelines are needed. `Coworker` and `Reviewer` must be valid as in `review.md`, differ, and
    `Coworker` must match the filename. Otherwise report and stop.
 3. Confirm the tool, reachability, and observed build before executing any case.
-4. Execute each case within the safety boundary. Record failures with exact reproduction steps and
+4. Execute each case within the restrictions. Record failures with exact reproduction steps and
    evidence. Note issues outside the cases separately; never fold them into the verdict.
 5. Completely replace only `qa-report-<coworker>.md` and that pair's evidence directory. Leave the
    request, every other pair, and repository files unchanged.
