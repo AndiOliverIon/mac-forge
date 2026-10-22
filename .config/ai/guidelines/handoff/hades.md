@@ -16,7 +16,7 @@ If the repository is not a Git repository, its root is ambiguous, multiple repos
 
 ## Lane Creation and Isolation
 
-Only the active Coworker (any of Artanis, Argus, or Aegis preparing a review) may create the
+Only the active Coworker (any of Artanis, Argus, Aegis, or Aldaris preparing a review) may create the
 handoff root or a missing project lane while processing a prep trigger (**“Prep for Argus takeoff”**,
 **“Prep for `<Reviewer>` takeoff”**, or **“Hand off to `<Reviewer>` for review”**). The deterministic
 `team-work.sh` coordinator may also create them when Oliver starts an autonomous team loop. Create
@@ -33,7 +33,8 @@ The active lane uses one pair per Coworker, keyed by the Coworker's lowercase id
 - Coordinator state: `/Users/oliver/handoffserver/<project-key>/team-loop-<coworker>.json`
 - Autonomous transcripts: `/Users/oliver/handoffserver/<project-key>/transcripts/<task-slug>-<UTC timestamp>.md`
 
-`<coworker>` is `artanis`, `argus`, or `aegis`. The Reviewer is recorded in the file
+`<coworker>` is `artanis`, `argus`, `aegis`, or `aldaris`. Hades admits Aldaris as a manual-handoff
+Coworker under the common protocol; it never uses `team-loop-aldaris.json`. The Reviewer is recorded in the file
 headers, not the filename. Only `team-work.sh` writes coordinator state. Agents may verify the loop
 ID and session metadata named by their prompt but must not edit that JSON file.
 
@@ -55,6 +56,6 @@ Use:
 - `Lane: <project-key>`
 - Handoff ID: `hades:<project-key>:<coworker>:<ISO-8601 timestamp>`
 
-The coworker token is `artanis`, `argus`, or `aegis` and must match the transporter filenames. `Reviewer` is a header field only.
+The coworker token is `artanis`, `argus`, `aegis`, or `aldaris` and must match the transporter filenames. `Reviewer` is a header field only.
 
 The project key in the lane path, metadata, and handoff ID must agree, and the coworker token must match the filenames. The canonical absolute repository path recorded in both transporter files of a pair must match the active repository before review or findings analysis proceeds.

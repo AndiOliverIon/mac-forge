@@ -24,6 +24,12 @@ session start. On MasterChief the installer manages Codex, Claude, and Copilot b
 Work, Raynor, and Zeratul review-handoff lanes. Hades retains its single-universe project-lane
 layout.
 
+The embedded set is loaded into every request, so keep it concise without dropping rules. Every
+prohibition and every always-applicable duty stays embedded. Only procedural detail may move to an
+on-demand file, and the embedded set must name it with a mandatory trigger: currently only
+`guidelines/rule-lifecycle.md`, read for any provisional-rule proposal or change. Do not place
+on-demand files directly under `guidelines/always/`; every file there is embedded.
+
 The global bootstrap invokes `bin/ai-context.sh` before task work. The resolver combines the
 canonical `configs/stations.json` inventory with the current hostname, scope path, Git metadata, and
 review corpus. It reports the station, execution universe, canonical repository, mode, represented
@@ -37,7 +43,14 @@ current-context file is written.
 Use `ai-context --help` for its scope arguments. A partial result is expected when the repository or
 target files are not yet known; identify only the missing scope and rerun it.
 
-## Aldaris delegation
+## Aldaris
+
+Aldaris remains a team member for bounded tasks that Oliver alone starts and manages on demand,
+where he reads the shared guidelines. By Oliver's decision (2026-10-22), Artanis, Argus, and Aegis do
+not delegate work to Aldaris or otherwise interact with him, except through review handoffs in which
+Aldaris is the Coworker: his output quality is insufficient for assistant delegation. The former
+assistant delegation tooling (`aldaris-ask`, its templates and schemas, and the `junior` switch) was
+removed with that decision.
 
 `junior-check` shows a compact three-row GPU/MEM/CPU matrix with Total and Junior columns,
 refreshing every second (`scripts/junior-check.sh`). Junior includes LM Studio, Qwen CLI and their
@@ -45,19 +58,8 @@ descendants. CPU percentages use whole-Mac capacity (100% is all logical cores).
 the same anonymous/wired/compressed-page calculation as `inf`; Junior memory is the process RSS sum,
 which can count shared pages more than once. GPU utilization is whole-Mac IORegistry telemetry;
 Junior GPU shows NSM (not separately measurable) because it cannot be attributed to individual processes.
-The monitor neither starts the model nor changes delegation state and needs no sudo. `--samples 2`
-gives a bounded snapshot; `--interval 2` changes the refresh interval; Ctrl+C exits.
-
-Control assistant delegation with `junior on`, `junior off`, and `junior status` (or
-`scripts/aldaris-junior.sh`). The default is OFF; the non-secret switch is stored in the ignored
-`config-local/aldaris-junior.state`, separate from shared configuration and the external drive.
-Assistants check it at task start and before each dispatch. ON requires actively seeking useful
-eligible subtasks and announcing every invocation and outcome. OFF means solo work and blocks the
-text helper before inference; results arriving after OFF are discarded. It does not close Oliver's
-manual `aldaris` sessions or unload their model. An already submitted inference may finish.
-
-The current automatic ceiling remains `trivial`. This switch does not grant automatic coding-edit
-permissions: isolated coding jobs and capability approval remain separate from the manual launcher.
+The monitor does not start the model and needs no sudo. `--samples 2` gives a bounded snapshot;
+`--interval 2` changes the refresh interval; Ctrl+C exits.
 
 Aldaris uses Qwen3.6-35B-A3B at 8-bit precision through LM Studio's MLX runtime on Hades.
 Run `aldaris` from a repository to start a supervised Qwen Code coding session. The launcher
@@ -70,20 +72,17 @@ directory is linked from `~/.lmstudio/extensions/backends/vendor` to
 `/Volumes/dock-ssd/ai/lmstudio/runtime/vendor`. Qwen settings are recorded in
 `configs/aldaris/qwen-settings.json` and installed at `/Volumes/dock-ssd/ai/qwen/settings.json`.
 
-`scripts/aldaris-ask.sh` remains a bounded text-only delegation interface with templates, schemas,
-caller/level checks, and visible logging. Start `aldaris` first to load the model. Its current
-`maxLevel` remains `trivial`; only Oliver changes it. The shared delegation rules apply to that
-interface, while interactive coding sessions are separately supervised. No coding-quality acceptance
-is implied by installation. Settings live in `configs/aldaris/config.json` and the coding-session
-instructions in `configs/aldaris/instructions.md`. The text adapter handles LM Studio MLX routing
-schema-constrained JSON into `reasoning_content`, accepting it only when it parses as JSON.
+No coding-quality acceptance is implied by installation. Settings live in
+`configs/aldaris/config.json` and the coding-session instructions in
+`configs/aldaris/instructions.md`.
 
 ## Review handoff roles
 
 Default roles: Artanis prepares a review as Coworker and Argus reviews. When Oliver explicitly
 asks (for example "Aegis, hand off to Artanis for review"), any of the three identities may be the
 Coworker or the Reviewer for that one handoff; both names are recorded in the request and findings
-headers. Lane structure is unchanged: MasterChief keeps `work`, `raynor`, and `zeratul`; Hades keeps a
+headers. On Hades, Aldaris may also be the Coworker of a manual handoff (reviewed by Argus unless
+Oliver names Artanis or Aegis); he never reviews and does not take part in autonomous team loops. Lane structure is unchanged: MasterChief keeps `work`, `raynor`, and `zeratul`; Hades keeps a
 single universe with one project lane per repository. `bin/review-handoff-verify.sh` validates the
 MasterChief lanes, including distinct Coworker and Reviewer identities.
 

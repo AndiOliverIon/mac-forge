@@ -1,3 +1,4 @@
 config-local/
 .DS_Store
 .telerik/
+.build/

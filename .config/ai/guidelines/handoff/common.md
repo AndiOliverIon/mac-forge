@@ -8,6 +8,10 @@ decision-maker.
 - Every handoff has exactly two participants: the **Coworker** (author who prepares the request and
   later evaluates findings) and the **Reviewer** (independent reviewer who writes findings). Any of
   Artanis, Argus, or Aegis may hold either role for a handoff.
+- Aldaris may hold only the Coworker role, only in manual handoffs on a station whose flow admits
+  him (currently Hades), and only for work Oliver assigned to him. He never reviews and never takes
+  part in an autonomous team loop. Apart from reviewing his handoffs and writing their findings,
+  Artanis, Argus, and Aegis do not interact with Aldaris.
 - Recommended defaults, used whenever Oliver names no reviewer: Artanis is the Coworker and Argus is
   the Reviewer. Aegis assists with bounded, lower-complexity tasks by default.
 - A role switch happens only when Oliver explicitly asks for it (for example "Aegis, hand off to
@@ -42,7 +46,7 @@ decision-maker.
   the Coworker may create a lane. A handoff never crosses lanes: both participants act inside the same
   lane, and a lane's own concurrency and isolation rules are unchanged by role switching.
 - Each Coworker has a distinct transporter pair in the active lane: `request-<coworker>.md` and
-  `findings-<coworker>.md`, with the Coworker identity in lowercase (`artanis`, `argus`, `aegis`). A
+  `findings-<coworker>.md`, with the Coworker identity in lowercase (`artanis`, `argus`, `aegis`, `aldaris`). A
   file may be absent until its owner first writes it. Different Coworkers' jobs must never share or
   overwrite each other's files.
 - Multiple lanes may run concurrently, and several pairs in one lane may be active at once, but never
@@ -116,7 +120,7 @@ agent is the Coworker for that cycle; the named agent, or Argus when none is nam
 - Lane: <station-flow lane value>
 - Handoff ID: <exact ID>
 - Created: <ISO-8601 timestamp>
-- Coworker: <Artanis|Argus|Aegis>
+- Coworker: <Artanis|Argus|Aegis|Aldaris>
 - Reviewer: <Artanis|Argus|Aegis>
 - Repository: <canonical absolute path>
 - Branch: <branch>
@@ -170,8 +174,9 @@ example **“Argus takeoff”**), or an unambiguous equivalent, to the agent tha
 
    Never create a missing handoff root, lane, or request.
 2. Complete the identity and safety checks, then load the shared router, selected review-mode stack
-   guidelines, and applicable project instructions. `Coworker` and `Reviewer` must each be one of the
-   four identities and differ, and `Coworker` must match the filename. Otherwise report and stop.
+   guidelines, and applicable project instructions. `Coworker` must be Artanis, Argus, Aegis,
+   or Aldaris (Aldaris only where the station flow admits him); `Reviewer` must be Artanis, Argus,
+   or Aegis; they must differ, and `Coworker` must match the filename. Otherwise report and stop.
 3. Independently inspect the actual review target; the Coworker's summary is not proof.
 4. Review only the defined scope. Label an out-of-scope issue only when it directly affects scoped
    correctness.

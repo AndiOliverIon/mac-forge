@@ -4,22 +4,19 @@ The protocol is dormant unless Oliver invokes a handoff command, starts `team-wo
 unambiguous equivalent instruction. Default roles are Artanis as Coworker and Argus as
 Reviewer; when Oliver explicitly names another pairing (e.g. Aegis hands off to Artanis), the common
 protocol governs the switch. An autonomous team-loop prompt carrying `Automation: team-loop` and a
-loop ID is a routed handoff trigger created from Oliver's script invocation. Station flows keep their
-own lane structure: MasterChief uses `work`, `raynor`, and `zeratul`; Hades is a single universe with
-one lane per repository.
+loop ID is a routed handoff trigger created from Oliver's script invocation.
 
 ## Route Before Acting
 
-1. Derive the physical station only from the normalized lowercase short hostname:
-   - `masterchief` → `~/.config/ai/guidelines/handoff/masterchief.md`
-   - `hades` → `~/.config/ai/guidelines/handoff/hades.md`
-2. If the hostname is unknown, ambiguous, or unsafe to determine, stop and ask Oliver. Do not choose
-   a flow or inspect or modify transporter files.
-3. Load `~/.config/ai/guidelines/handoff/common.md` and exactly one mapped station flow completely.
-4. Resolve the active lane through that station flow before touching transporter files. Station
-   identity overrides path-based guesses.
-5. Apply both files: the station flow owns lane discovery, paths, identity, and isolation; the common
-   protocol owns roles, file ownership, review behavior, and document structure.
+- The handoff-mode resolver returns `~/.config/ai/guidelines/handoff/common.md` and exactly one
+  station flow, derived only from the normalized lowercase short hostname (`masterchief` or
+  `hades` → `~/.config/ai/guidelines/handoff/<station>.md`). Without the resolver, load those two
+  files manually and completely.
+- If the hostname is unknown, ambiguous, or unsafe to determine, stop and ask Oliver. Do not choose
+  a flow or inspect or modify transporter files.
+- Resolve the active lane through the station flow before touching transporter files; station
+  identity overrides path-based guesses. The station flow owns lane discovery, paths, identity, and
+  isolation; the common protocol owns roles, file ownership, review behavior, and document structure.
 
 Loading this router alone authorizes no lane creation, transporter write, review processing, findings
 analysis, or repository change. Each action requires its trigger and the common protocol's boundary.

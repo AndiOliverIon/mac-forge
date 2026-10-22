@@ -5,19 +5,23 @@ This file is the single tool-neutral entry point for deciding which shared guide
 ## First Step For Every Task
 
 1. The generated global bootstrap embeds `identities.md`, this router, and every direct
-   `always/*.md` file. They are already loaded; do not read them again. Use the resolved context
-   emitted by `~/.config/ai/bin/ai-context.sh` for dynamic routing.
+   `always/*.md` file. They are already loaded; do not read them again. Determine the preliminary
+   mode (`development`, `review`, or `handoff`) from the request, then run
+   `~/.config/ai/bin/ai-context.sh --mode <mode> [--repository <path>] [--target <path> ...] [--review-target <target>]`
+   and read its complete output. Use `--review-target HEAD`, `working-tree`, `staged`, or a Git diff
+   range when the review scope is known.
 2. Verify that the resolved station, universe, repository, mode, stacks, and project-instruction
-   paths match the task scope. Perform only the missing read-only inventory when the result is
-   partial, then rerun the resolver with the discovered repository or target files.
+   paths match the task scope and the discovery and stack-selection rules below. Perform only the
+   missing read-only inventory when the result is partial, then rerun the resolver with the
+   discovered repository or target files. For a task spanning repositories, run it once per
+   repository and load the union of the returned paths.
 3. Run every `INSTRUCTION_BATCH_N_COMMAND` in numeric order, one command per tool call, before
    substantive analysis, recommendations, findings, or changes. Accept a batch only when its final
    `INSTRUCTION_BATCH_COMPLETE` marker is present. If the reader reports changed content, rerun the
    resolver. If output is incomplete or its completion marker is absent, read that batch's files
    individually. `NEXT_INSTRUCTION_PATHS` remains the authoritative order and manual fallback.
-4. If the resolver is unavailable or fails, fall back to reading every direct `always/*.md` file in
-   lexical order, determine the task mode, inventory the scope, and follow the manual discovery and
-   stack-selection rules below.
+4. If the resolver is unavailable or fails, determine the task mode, inventory the scope, and apply
+   the discovery and stack-selection rules below manually.
 5. State every `.md` instruction source being used and continue without asking for confirmation. The
    user will interrupt if the source list is wrong.
 
@@ -41,40 +45,39 @@ This file is the single tool-neutral entry point for deciding which shared guide
 
 ## Repository Instruction Discovery
 
-- For every repository in scope, resolve its canonical repository root even when the session was launched from a parent directory, sibling directory, worktree container, or another repository.
-- Do not rely only on instructions that the tool discovered at session start. Manually inspect the path from each repository root down to the files in scope.
-- At each applicable directory, load `AGENTS.override.md` when present; otherwise load `AGENTS.md`. Also load an applicable `CLAUDE.md` and any local tool-instruction file that an active instruction source references.
+These rules apply even when the resolver succeeds; its result does not replace them.
+
+- For every repository in scope, resolve its canonical repository root even when the session was
+  launched from a parent directory, sibling directory, worktree container, or another repository.
+  If a task key or description does not identify it, resolve it from the task source of truth and
+  actual affected files before substantive work. Load project instructions for every touched
+  repository.
+- Do not rely only on instructions discovered at session start or by the resolver. Inspect the path
+  from each repository root down to the files in scope; at each applicable directory load
+  `AGENTS.override.md` when present, otherwise `AGENTS.md`, plus an applicable `CLAUDE.md` and any
+  local tool-instruction file that an active instruction source references.
 - Repository instructions that are ignored, untracked, or local-only still apply.
-- If a task key or user description does not identify the repository directly, resolve the repository from the task source of truth and actual affected files before substantive work.
-- If more than one repository is touched, load the applicable project instructions for every one of them.
-- If repository ownership or the applicable project instruction chain remains uncertain, report the uncertainty and use the more inclusive instruction set. Never silently omit project instructions.
+- If repository ownership or the applicable project instruction chain remains uncertain, report the
+  uncertainty and use the more inclusive instruction set. Never silently omit project instructions.
 
 ## Stack Guideline Selection
-
-Select stacks through this deterministic sequence:
 
 1. Enumerate the actual files in scope: exact changed files from the authoritative review target, or
    development targets and directly affected dependencies. Do not select from the ticket title,
    user summary, or intended primary area alone.
-2. For every repository-scoped development or review task, load
-   `~/.config/ai/guidelines/provisional/general.md`.
-3. Use file paths, extensions, project metadata, and relevant contents to load the union of all
-   represented stacks:
-   - Angular / TypeScript / frontend development:
-     `~/.config/ai/guidelines/stacks/angular-development.md`, then
-     `~/.config/ai/guidelines/provisional/angular.md`
-   - Angular / TypeScript / frontend review:
-     `~/.config/ai/guidelines/stacks/angular-review/_core.md`, then every topic file whose trigger
-     matches the enumerated files according to the core table, then
-     `~/.config/ai/guidelines/provisional/angular.md`
-   - .NET / C# / backend: `~/.config/ai/guidelines/stacks/dotnet.md`, then
-     `~/.config/ai/guidelines/provisional/dotnet.md`
-   - MSSQL / stored procedures / database: `~/.config/ai/guidelines/stacks/sql.md`, then
-     `~/.config/ai/guidelines/provisional/sql.md`
+2. Use file paths, extensions, project metadata, and relevant contents to load the union of all
+   represented stacks (paths under `~/.config/ai/guidelines/`). The resolver is not exhaustive; for
+   example, it detects operations work only from Docker files. Load any represented stack it missed.
+   - Every repository-scoped development or review task: `provisional/general.md`
+   - Angular / TypeScript / frontend: for development, `stacks/angular-development.md`; for review,
+     `stacks/angular-review/_core.md` plus every topic file whose trigger in the core table matches
+     the enumerated files; then `provisional/angular.md`. Load exactly the set selected by task
+     mode, never both.
+   - .NET / C# / backend: `stacks/dotnet.md`, then `provisional/dotnet.md`
+   - MSSQL / stored procedures / database: `stacks/sql.md`, then `provisional/sql.md`
    - Deployment, provisioning, remote-server work, or Docker-hosted database operations:
-     `~/.config/ai/guidelines/stacks/ops.md`
-4. For Angular, load exactly the development set or the review set selected by task mode, never both.
-5. Re-evaluate whenever development scope expands. When an additional stack or Angular topic may
+     `stacks/ops.md`
+3. Re-evaluate whenever development scope expands. When an additional stack or Angular topic may
    match, include it rather than risk silently missing a rule.
 
 Do not read unselected stack or provisional files. Topic selection must follow the selected set's
