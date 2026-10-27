@@ -196,7 +196,9 @@ alias	demo	demo — Go to the Cerber-mounted Ardis demo folder.
 alias	work-cerb	work-cerb — Go to the Cerber-mounted work volume.
 alias	copilot	copilot — Run GitHub Copilot CLI.
 alias	aiusage	aiusage — Show local agent/API usage stats.
-alias	aldaris	aldaris [qwen args] — Start supervised local coding with Qwen Code and Qwen3.6-35B-A3B 8-bit through LM Studio MLX; requires dock-ssd.
+alias	aldaris	aldaris [qwen args] — Start supervised local coding with Qwen Code using the active Aldaris profile; requires dock-ssd.
+alias	aldaris-stop	aldaris-stop — Free all CPU/RAM used by Aldaris: unload models, stop LM Studio and other local-AI engines, end Qwen Code sessions, then verify nothing is resident.
+alias	aldaris-configure	aldaris-configure [list|show|status|apply <profile>|save <name>|clean <engine>|stop] — Pick Aldaris engine, model, context and preset in fzf (or apply a saved profile) and sync the generated Qwen settings.
 alias	dela	dela — Delete everything in the current directory; no prompt.
 alias	perflogclean	perflogclean — Delete all files in Perform output logs; no prompt.
 alias	screenshotclean	screenshotclean — Delete PNG screenshots from Desktop; no prompt.

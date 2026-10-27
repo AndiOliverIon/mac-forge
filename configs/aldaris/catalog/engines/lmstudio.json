@@ -1,0 +1,17 @@
+{
+  "id": "lmstudio",
+  "description": "LM Studio MLX runtime (lms CLI)",
+  "adapter": "lmstudio",
+  "host": "127.0.0.1",
+  "port": 1234,
+  "formats": [
+    "mlx"
+  ],
+  "apiKey": "lm-studio",
+  "idleSeconds": 1800,
+  "monitorProcessPatterns": [
+    "/Applications/LM Studio.app/",
+    "~/.lmstudio/",
+    "{storageRoot}/lmstudio/"
+  ]
+}
