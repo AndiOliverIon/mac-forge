@@ -1,0 +1,15 @@
+{
+  "id": "qwen3.6-35b-a3b-4bit-mtp",
+  "description": "Qwen3.6-35B-A3B MoE, 4-bit MLX with MTP head (TensorFold checkpoint)",
+  "format": "mlx",
+  "quantization": "4bit",
+  "diskSizeGb": 20.9,
+  "maxContext": 262144,
+  "contexts": [32768, 65536, 131072],
+  "repository": "TensorFold/Qwen3.6-35B-A3B-MLX-4bit-MTP",
+  "revision": "81169a9bc511a27c1b4eedb77a2cd98ced431847",
+  "engines": {
+    "tensorfold": { "key": "TensorFold/Qwen3.6-35B-A3B-MLX-4bit-MTP", "servedId": "Qwen3.6-35B-A3B-MLX-4bit-MTP" },
+    "omlx": { "key": "TensorFold/Qwen3.6-35B-A3B-MLX-4bit-MTP", "servedId": "Qwen3.6-35B-A3B-MLX-4bit-MTP" }
+  }
+}

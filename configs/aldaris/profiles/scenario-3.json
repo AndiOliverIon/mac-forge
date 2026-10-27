@@ -1,0 +1,7 @@
+{
+  "description": "TensorFold + Qwen3.6-35B-A3B 4-bit MTP, 128K context",
+  "engine": "tensorfold",
+  "model": "qwen3.6-35b-a3b-4bit-mtp",
+  "context": 131072,
+  "preset": "qwen3.6-coding"
+}

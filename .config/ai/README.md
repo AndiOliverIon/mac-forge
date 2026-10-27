@@ -61,8 +61,57 @@ Junior GPU shows NSM (not separately measurable) because it cannot be attributed
 The monitor does not start the model and needs no sudo. `--samples 2` gives a bounded snapshot;
 `--interval 2` changes the refresh interval; Ctrl+C exits.
 
-Aldaris uses Qwen3.6-35B-A3B at 8-bit precision through LM Studio's MLX runtime on Hades.
-Run `aldaris` from a repository to start a supervised Qwen Code coding session. The launcher
+Aldaris configuration is owned by mac-forge and is selected, not hand-edited. The catalog in
+`configs/aldaris/catalog/` has `engines/`, `models/`, `presets/` (and `global.json` with the storage
+root); a configuration is an engine, a model, a context size, and a sampling preset. Saved
+configurations are references in `configs/aldaris/profiles/<name>.json`.
+
+`aldaris-configure` (fzf) walks engine, model (only engines/formats it supports, marked
+installed/missing/unverified in that engine), context (only sizes the model offers), preset, then a
+confirm screen showing the resolved selection and the diff of every outside file. Subcommands:
+`list`, `show` (API key redacted), `status`, `apply <profile> [--yes]`, `save <name>`, `clean <engine>`,
+`stop`. It never installs or downloads; a missing engine or model is named and nothing is changed.
+
+Resource policy: only the active configuration may use CPU or RAM. `apply` and every `aldaris` launch
+automatically stop all other catalog engines (adapter `engine_stop`, then a narrow SIGTERM/SIGKILL
+fallback on that engine's own `monitorProcessPatterns` paths), and the LM Studio adapter unloads every
+model except the active one (a busy model aborts the launch instead). After a Qwen Code session ends
+the active model stays loaded for the next one (idle TTL unchanged). `aldaris-stop` (or
+`aldaris-configure stop`) frees everything on demand: it works without `active.json`, unloads all
+models, stops the LM Studio server and daemon, quits the app, ends Qwen Code sessions, then verifies
+with `aldaris-monitor.py --check-idle` and prints `Aldaris stopped; nothing resident.` (or lists
+what remains and exits 1). It changes no configuration. Engines started by hand (`external`) cannot
+be stopped by their adapter; only their catalog paths, if any, are killed.
+
+The resolved selection is written to `config-local/aldaris/active.json` (untracked). `aldaris` runs `aldaris-config verify` first and
+refuses a snapshot that no longer matches the catalog, profile, or Qwen settings; with no snapshot it
+applies `scenario-1`. `junior-check` and `--check-idle` use the catalog's engine paths. Optional real API keys go in `config-local/aldaris/api-keys.json`
+as `{"<engine>": "<key>"}`, never in the catalog. mac-forge also owns the `.model` subtree of
+`/Volumes/dock-ssd/ai/qwen/settings.json` (name, context window, sampling); other keys there are
+untouched. Each written outside file is recorded with a hash in
+`/Volumes/dock-ssd/ai/.mac-forge-manifest.json`; `aldaris-configure status` reports drift, and `apply`
+asks before overwriting an outside edit. `clean <engine>` removes only manifest entries recorded for
+that engine, after confirmation, and never deletes engine trees, models, or Qwen sessions.
+
+Engines are adapters in `scripts/aldaris-engines/<adapter>.sh` (`engine_check`, `engine_has_model`,
+`engine_probe`, `engine_ensure_running`, `engine_ensure_loaded`, `engine_stop`): `lmstudio` starts
+and loads the model itself; `omlx` starts `tools/omlx/venv/bin/omlx serve` (port 8000, bearer key,
+log `tools/omlx/server.log`, PID `tools/omlx/server.pid`), writes the context cap
+(`sampling.max_context_window_policy`) and idle unload (`idle_timeout.idle_timeout_seconds`) into its
+`settings.json`, loads the model on first request, and stops only a recorded PID that still runs from
+its venv (also removing the `~/.omlx` shim it creates); `external` (port 8001) only verifies an OpenAI-compatible
+server that Oliver started; `tensorfold` starts the Python engine 0.6.6 from `tools/tensorfold/venv`
+(port 8002, bearer key, `--parallel 1`, prompt cache capped at 16 GiB, log `tools/tensorfold/server.log`, PID `tools/tensorfold/server.pid`),
+serves the local 4-bit MTP checkpoint under `models/TensorFold/`, has no idle unload (the model stays resident
+until stop), and stops only a recorded PID that runs an executable from its tree. To add an engine or model, add a catalog JSON (and an adapter for a new
+engine); a model lists per-engine `{key, servedId}` under `engines`; an engine's `monitorProcessPatterns` (absolute
+paths; `~` and `{storageRoot}` expand) feed `junior-check` and the fallback stop. They match the kernel's executable
+path as well as `ps` names, so a process that renames its title (oMLX shows as `omlx-server`) is still found.
+
+Profiles: `scenario-1` (default) is LM Studio; `scenario-2` is oMLX with the same model and context; `scenario-3` is TensorFold with the 4-bit MTP Qwen3.6 checkpoint (TensorFold cannot serve the 8-bit one); `scenario-4` is oMLX with that same 4-bit checkpoint (linked into `tools/omlx/models/TensorFold/`), so engines can be compared on identical weights. Switch with `aldaris-configure apply scenario-2` (or `scenario-1` to go back).
+
+The `scenario-1` profile (applied automatically when no selection exists) uses Qwen3.6-35B-A3B at 8-bit precision through LM Studio's MLX runtime on
+Hades. Run `aldaris` from a repository to start a supervised Qwen Code coding session. The launcher
 starts the localhost server and loads the model as needed, uses 128K context and a 30-minute idle
 unload timeout, and refuses to start without `dock-ssd` mounted. Repository instructions and
 Oliver's explicit approval requirement for unit tests still apply. The model, standalone Qwen Code installation, Qwen session data, helper logs, and caches live under
@@ -71,9 +120,10 @@ discovery. Its model library points directly to the external drive, and its larg
 directory is linked from `~/.lmstudio/extensions/backends/vendor` to
 `/Volumes/dock-ssd/ai/lmstudio/runtime/vendor`. Qwen settings are recorded in
 `configs/aldaris/qwen-settings.json` and installed at `/Volumes/dock-ssd/ai/qwen/settings.json`.
+That file is the base for its non-`.model` keys; `.model` is generated by `aldaris-configure`.
 
 No coding-quality acceptance is implied by installation. Settings live in
-`configs/aldaris/config.json` and the coding-session instructions in
+`configs/aldaris/catalog/` and `configs/aldaris/profiles/`, and the coding-session instructions in
 `configs/aldaris/instructions.md`.
 
 ## Review handoff roles

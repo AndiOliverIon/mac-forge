@@ -1,0 +1,7 @@
+{
+  "description": "oMLX + Qwen3.6-35B-A3B 4-bit MTP (TensorFold checkpoint), 128K context",
+  "engine": "omlx",
+  "model": "qwen3.6-35b-a3b-4bit-mtp",
+  "context": 131072,
+  "preset": "qwen3.6-coding"
+}
