@@ -186,7 +186,24 @@ Use `rdbsn` to select a remote SQL Server and create a compressed, copy-only
 backup in that server's configured backup directory. The command uses the
 shared `scripts/db-remote-backup.sh` workflow. An optional argument
 (`rdbsn mysuffix`) appends `_mysuffix` to the default file name
-(`<db>_<YYYYMMDD>_mysuffix.bak`). It requires remote targets in:
+(`<db>_<YYYYMMDD>_mysuffix.bak`).
+
+`rdbsn --convert` produces a snapshot for an older SQL Server, for example a
+2022 `.bak` from a 2025 server. A native `.bak` never restores on an older
+version. After the database pick it reads the source version and offers it
+(the unchanged native backup) plus every older version. For an older version it
+exports a BACPAC with SqlPackage, imports it into a throwaway local
+`mcr.microsoft.com/mssql/server:<year>-latest` container, backs that up to
+`<db>_<YYYYMMDD>[_suffix]_sql<year>.bak` in the current directory, and removes
+the container and BACPAC. On macOS it then offers to upload the file with `rup`,
+and `rdbr` restores it on the older server as usual. It needs SqlPackage
+(`dotnet tool install -g microsoft.sqlpackage`), Docker (started automatically
+when Docker Desktop is installed), and the target image pulled locally; it stops
+with the missing step otherwise. The export is not transactionally consistent
+while the source is being written, orphaned database users block it, logins are
+not carried, and features newer than the target version fail the import.
+
+It requires remote targets in:
 
 ```text
 ~/mac-forge/config-local/local-store.json

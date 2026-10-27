@@ -35,6 +35,17 @@ print_backup_stats() {
     }'
 }
 
+convert_mode=0
+script_args=()
+for arg in "$@"; do
+  if [[ "$arg" == "--convert" ]]; then
+    convert_mode=1
+  else
+    script_args+=("$arg")
+  fi
+done
+set -- "${script_args[@]+"${script_args[@]}"}"
+
 require_cmd fzf
 require_cmd jq
 require_cmd sqlcmd
@@ -175,15 +186,193 @@ selected_db="$(
   printf '%s\n' "$db_list" | fzf --prompt='Database > ' --height=45% --border
 )" || die "No database selected."
 
+# --convert only: a BACPAC exported from the source is imported into a throwaway
+# local SQL Server container of the chosen older version, which writes the .bak.
+sql_major_year() {
+  case "$1" in
+    17) echo 2025 ;;
+    16) echo 2022 ;;
+    15) echo 2019 ;;
+    14) echo 2017 ;;
+    *) return 1 ;;
+  esac
+}
+
+ensure_docker_running() {
+  require_cmd docker
+  docker info >/dev/null 2>&1 && return 0
+
+  echo "Docker is not running. Starting Docker Desktop..."
+  case "$(uname -s)" in
+    Darwin) open -g -a Docker || open -a Docker || true ;;
+    Linux) systemctl --user start docker-desktop 2>/dev/null || true ;;
+  esac
+
+  local i
+  for ((i = 1; i <= 60; i++)); do
+    if docker info >/dev/null 2>&1; then
+      echo "Docker is ready."
+      return 0
+    fi
+    sleep 2
+  done
+  die "Docker did not become ready in time. Start Docker Desktop and retry."
+}
+
+convert_container=""
+convert_work_dir=""
+
+cleanup_convert() {
+  if [[ -n "$convert_container" ]]; then
+    docker rm -f "$convert_container" >/dev/null 2>&1 || true
+    convert_container=""
+  fi
+  if [[ -n "$convert_work_dir" ]]; then
+    rm -rf "$convert_work_dir"
+    convert_work_dir=""
+  fi
+}
+
+run_convert_snapshot() {
+  local out_file="$1"
+  local sa_pwd port local_server bacpac_file step_start i
+
+  trap cleanup_convert EXIT
+  convert_work_dir="$(mktemp -d "${TMPDIR:-/tmp}/forge-rdbsn-convert.XXXXXX")"
+  bacpac_file="$convert_work_dir/$selected_db.bacpac"
+
+  echo
+  echo "▶ Exporting BACPAC from '$server_name'..."
+  echo "  Writes to the source during export are not captured consistently."
+  step_start=$SECONDS
+  "$SQLPACKAGE_BIN" /Action:Export \
+    /SourceServerName:"$connect_server" \
+    /SourceDatabaseName:"$selected_db" \
+    /SourceUser:"$server_user" \
+    /SourcePassword:"$server_pwd" \
+    /SourceTrustServerCertificate:True \
+    /TargetFile:"$bacpac_file" ||
+    die "BACPAC export failed. Orphaned users (SQL71564) or unsupported objects are reported above."
+  echo "  Export took $((SECONDS - step_start))s."
+
+  echo
+  echo "▶ Starting throwaway SQL Server $convert_year container ($convert_image)..."
+  sa_pwd="$(head -c 512 /dev/urandom | LC_ALL=C tr -dc 'A-Za-z0-9' | cut -c1-24)Aa1!"
+  convert_container="forge-rdbsn-convert-$$"
+  docker run -d --name "$convert_container" --platform linux/amd64 \
+    -e ACCEPT_EULA=Y -e MSSQL_SA_PASSWORD="$sa_pwd" \
+    -p 127.0.0.1::1433 "$convert_image" >/dev/null ||
+    die "Could not start container from $convert_image."
+
+  port="$(docker port "$convert_container" 1433/tcp | head -n 1)"
+  port="${port##*:}"
+  [[ "$port" =~ ^[0-9]+$ ]] || die "Could not read the container's SQL port."
+  local_server="tcp:127.0.0.1,$port"
+
+  run_local_sqlcmd() {
+    run_sqlcmd_raw -S "$local_server" -U sa -P "$sa_pwd" -C -b "$@"
+  }
+
+  for ((i = 1; i <= 90; i++)); do
+    run_local_sqlcmd -Q "SELECT 1" >/dev/null 2>&1 && break
+    ((i < 90)) || die "SQL Server container did not become ready in time."
+    sleep 2
+  done
+
+  echo
+  echo "▶ Importing BACPAC into SQL Server $convert_year..."
+  step_start=$SECONDS
+  "$SQLPACKAGE_BIN" /Action:Import \
+    /TargetServerName:"$local_server" \
+    /TargetDatabaseName:"$selected_db" \
+    /TargetUser:sa \
+    /TargetPassword:"$sa_pwd" \
+    /TargetTrustServerCertificate:True \
+    /SourceFile:"$bacpac_file" ||
+    die "BACPAC import into SQL Server $convert_year failed. Objects using newer-version features are reported above."
+  echo "  Import took $((SECONDS - step_start))s."
+
+  echo
+  echo "▶ Writing SQL Server $convert_year backup..."
+  run_local_sqlcmd -Q "BACKUP DATABASE $(tsql_ident "$selected_db") TO DISK = N'/var/opt/mssql/data/forge-convert.bak' WITH INIT, COPY_ONLY, COMPRESSION, STATS = 25;" ||
+    die "Backup inside the conversion container failed."
+  docker cp "$convert_container:/var/opt/mssql/data/forge-convert.bak" "$out_file" >/dev/null ||
+    die "Could not copy the backup out of the conversion container."
+
+  cleanup_convert
+  trap - EXIT
+
+  echo
+  echo "✔ SQL Server $convert_year backup created:"
+  echo "  $out_file"
+  printf '  Size           : %s\n' "$(du -h "$out_file" | cut -f1)"
+  echo "  Users from the source keep their names; map them to logins after restore if needed."
+
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    echo
+    read -r -p "Upload it to a remote SQL backup path now (rup)? [y/N]: " upload_answer
+    if [[ "${upload_answer,,}" == "y" || "${upload_answer,,}" == "yes" ]]; then
+      "$SCRIPT_DIR/db-remote-upload.sh" "$out_file"
+    fi
+  fi
+}
+
+if ((convert_mode)); then
+  source_major_raw="$(run_sqlcmd_capture "SET NOCOUNT ON; SELECT CAST(SERVERPROPERTY('ProductMajorVersion') AS int);")" ||
+    die "Failed to read the SQL Server version of '$server_name'."
+  source_major="$(printf '%s' "$source_major_raw" | tr -d '\r' | sed '/^$/d' | head -n 1)"
+  source_year="$(sql_major_year "$source_major")" ||
+    die "Unsupported SQL Server major version '$source_major' on '$server_name'."
+
+  version_rows="$(printf '%s\tSQL Server %s (native backup, same as source)\n' "$source_year" "$source_year")"
+  for year in 2022 2019 2017; do
+    ((year < source_year)) || continue
+    version_rows+=$'\n'"$(printf '%s\tSQL Server %s (convert through BACPAC, local .bak)' "$year" "$year")"
+  done
+
+  convert_year="$(
+    printf '%s\n' "$version_rows" |
+      fzf --prompt='Snapshot version > ' --delimiter=$'\t' --with-nth=2 --height=30% --border |
+      cut -f1
+  )" || die "No snapshot version selected."
+  [[ -n "$convert_year" ]] || die "No snapshot version selected."
+
+  if [[ "$convert_year" == "$source_year" ]]; then
+    convert_mode=0
+  else
+    SQLPACKAGE_BIN="${FORGE_SQLPACKAGE_BIN:-$(command -v sqlpackage || printf '%s' "$HOME/.dotnet/tools/sqlpackage")}"
+    [[ -x "$SQLPACKAGE_BIN" ]] ||
+      die "SqlPackage not found. Install it with: dotnet tool install -g microsoft.sqlpackage"
+
+    ensure_docker_running
+    if declare -F forge_sql_resolve_image >/dev/null; then
+      convert_image="$(forge_sql_resolve_image "$convert_year")"
+    else
+      convert_image="mcr.microsoft.com/mssql/server:${convert_year}-latest"
+    fi
+    docker image inspect "$convert_image" >/dev/null 2>&1 ||
+      die "SQL Server $convert_year image '$convert_image' not found locally. Run: docker pull $convert_image"
+  fi
+fi
+
 name_suffix="${1:-}"
 default_backup_name="${selected_db}_$(date +%Y%m%d)${name_suffix:+_$name_suffix}.bak"
+if ((convert_mode)); then
+  default_backup_name="${selected_db}_$(date +%Y%m%d)${name_suffix:+_$name_suffix}_sql${convert_year}.bak"
+fi
 
 echo "Target      : $server_name ($connect_server)"
 if [[ -n "$expected_instance" ]]; then
   echo "Instance    : $expected_instance"
 fi
 echo "Database    : $selected_db"
-echo "Backup path : $backup_dir"
+if ((convert_mode)); then
+  echo "Source      : SQL Server $source_year"
+  echo "Convert to  : SQL Server $convert_year ($convert_image)"
+  echo "Output dir  : $PWD"
+else
+  echo "Backup path : $backup_dir"
+fi
 echo
 read -r -p "Backup file name [$default_backup_name]: " backup_name
 backup_name="${backup_name:-$default_backup_name}"
@@ -221,6 +410,17 @@ tsql_ident() {
   name="${name//]/]]}"
   printf '[%s]' "$name"
 }
+
+if ((convert_mode)); then
+  [[ "$backup_name" != */* ]] || die "Backup file name cannot contain '/'."
+  convert_out_file="$PWD/$backup_name"
+  if [[ -e "$convert_out_file" ]]; then
+    read -r -p "$convert_out_file already exists. Overwrite? [y/N]: " overwrite_answer
+    [[ "${overwrite_answer,,}" == "y" || "${overwrite_answer,,}" == "yes" ]] || die "Aborted; existing file kept."
+  fi
+  run_convert_snapshot "$convert_out_file"
+  exit 0
+fi
 
 backup_full_path="$(join_backup_path "$backup_dir" "$backup_name")"
 backup_full_path_sql="$(escape_tsql_string "$backup_full_path")"

@@ -56,37 +56,42 @@ human_file_size() {
 }
 
 #######################################
-# Step 1 — Pick a backup in the current directory
+# Step 1 — Pick a backup in the current directory (or use the file argument)
 #######################################
-source_path="$(pwd)"
-echo "🔍 Scanning backups in $source_path..."
+if [[ -n "${1:-}" ]]; then
+  [[ -f "$1" ]] || die "Backup file not found: $1"
+  SOURCE_FULL="$(cd "$(dirname -- "$1")" && pwd)/$(basename -- "$1")"
+else
+  source_path="$(pwd)"
+  echo "🔍 Scanning backups in $source_path..."
 
-mapfile -t BACKUP_LIST < <(
-  find "$source_path" -maxdepth 1 -type f \( -iname "*.bak" -o -iname "*.bkp" \) -print0 |
-    xargs -0 stat -f '%m%t%N' |
-    sort -nr |
-    cut -f2-
-)
+  mapfile -t BACKUP_LIST < <(
+    find "$source_path" -maxdepth 1 -type f \( -iname "*.bak" -o -iname "*.bkp" \) -print0 |
+      xargs -0 stat -f '%m%t%N' |
+      sort -nr |
+      cut -f2-
+  )
 
-((${#BACKUP_LIST[@]} > 0)) || die "No .bak files found in $source_path."
+  ((${#BACKUP_LIST[@]} > 0)) || die "No .bak files found in $source_path."
 
-BACKUP_ROWS=()
-for backup_full in "${BACKUP_LIST[@]}"; do
-  [[ -f "$backup_full" ]] || continue
-  backup_name="$(basename -- "$backup_full")"
-  size_bytes="$(file_size_bytes "$backup_full")" || continue
-  printf -v backup_row '[%9s]  %s\t%s' "$(human_file_size "$size_bytes")" "$backup_name" "$backup_full"
-  BACKUP_ROWS+=("$backup_row")
-done
+  BACKUP_ROWS=()
+  for backup_full in "${BACKUP_LIST[@]}"; do
+    [[ -f "$backup_full" ]] || continue
+    backup_name="$(basename -- "$backup_full")"
+    size_bytes="$(file_size_bytes "$backup_full")" || continue
+    printf -v backup_row '[%9s]  %s\t%s' "$(human_file_size "$size_bytes")" "$backup_name" "$backup_full"
+    BACKUP_ROWS+=("$backup_row")
+  done
 
-((${#BACKUP_ROWS[@]} > 0)) || die "No readable .bak files found in $source_path."
+  ((${#BACKUP_ROWS[@]} > 0)) || die "No readable .bak files found in $source_path."
 
-SELECTED_ROW="$(
-  printf '%s\n' "${BACKUP_ROWS[@]}" |
-    fzf --prompt="Select file to upload > " --delimiter=$'\t' --with-nth=1 --height=60% --reverse
-)" || die "No file selected."
-[[ "$SELECTED_ROW" == *$'\t'* ]] || die "Unexpected file selection."
-SOURCE_FULL="${SELECTED_ROW#*$'\t'}"
+  SELECTED_ROW="$(
+    printf '%s\n' "${BACKUP_ROWS[@]}" |
+      fzf --prompt="Select file to upload > " --delimiter=$'\t' --with-nth=1 --height=60% --reverse
+  )" || die "No file selected."
+  [[ "$SELECTED_ROW" == *$'\t'* ]] || die "Unexpected file selection."
+  SOURCE_FULL="${SELECTED_ROW#*$'\t'}"
+fi
 
 #######################################
 # Step 2 — Pick the remote backup path
