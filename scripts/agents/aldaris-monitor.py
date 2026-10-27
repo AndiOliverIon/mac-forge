@@ -13,6 +13,8 @@ import subprocess
 import sys
 import time
 
+import aldaris_config
+
 
 def command(args):
     result = subprocess.run(args, capture_output=True, text=True, timeout=4)
@@ -28,7 +30,7 @@ def cpu_seconds(value):
     return seconds + (int(days) * 86400 if days else 0)
 
 
-def processes(ai_root):
+def processes(ai_root, engine_patterns=()):
     rows = {}
     raw = command(['/bin/ps', '-axo', 'pid=,ppid=,time=,rss=,comm='])
     for line in raw.splitlines():
@@ -53,6 +55,8 @@ def processes(ai_root):
                 continue
             selected[pid] = ('INFERENCE worker' if 'llmworker.js' in arguments
                              else 'LM Studio service')
+        elif aldaris_config.matches(engine_patterns, pid, executable):
+            selected[pid] = 'Inference engine'
     # Include subprocesses spawned by the CLI or inference runtime, even if their
     # executable is a compiler or an interpreter outside the installation paths.
     changed = True
@@ -119,13 +123,22 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--interval', type=float, default=1.0, help='refresh interval in seconds (default 1)')
     parser.add_argument('--samples', type=int, help='stop after this many readings (default: until Ctrl+C)')
+    parser.add_argument('--check-idle', action='store_true', help='list resident Aldaris processes; exit 1 if any')
     args = parser.parse_args()
     if not (0.2 <= args.interval <= 60) or (args.samples is not None and args.samples < 1):
         parser.error('interval must be 0.2–60 seconds; samples must be positive')
     if sys.platform != 'darwin':
         parser.error('this monitor requires macOS')
-    config = Path(__file__).resolve().parents[2] / 'configs/aldaris/config.json'
-    ai_root = json.loads(config.read_text())['storageRoot']
+    try:
+        ai_root = aldaris_config.storage_root()
+        engine_patterns = aldaris_config.all_engine_patterns()
+    except aldaris_config.ConfigError as error:
+        parser.error(str(error))
+    if args.check_idle:
+        found = processes(ai_root, engine_patterns)
+        for pid, row in sorted(found.items()):
+            print(f"{pid}\t{row['label']}\t{row['rss']:.1f} GiB")
+        sys.exit(1 if found else 0)
     mach = ctypes.CDLL('/usr/lib/libSystem.B.dylib')
     host = mach.mach_host_self()
     cores = os.cpu_count() or 1
@@ -140,7 +153,7 @@ def main():
         while True:
             started = time.monotonic()
             try:
-                current = processes(ai_root)
+                current = processes(ai_root, engine_patterns)
             except (RuntimeError, subprocess.TimeoutExpired) as error:
                 print(f'Cannot read process metrics: {error}', file=sys.stderr)
                 return 1

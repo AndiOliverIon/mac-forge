@@ -24,6 +24,12 @@ session start. On MasterChief the installer manages Codex, Claude, and Copilot b
 Work, Raynor, and Zeratul review-handoff lanes. Hades retains its single-universe project-lane
 layout.
 
+The embedded set is loaded into every request, so keep it concise without dropping rules. Every
+prohibition and every always-applicable duty stays embedded. Only procedural detail may move to an
+on-demand file, and the embedded set must name it with a mandatory trigger: currently only
+`guidelines/rule-lifecycle.md`, read for any provisional-rule proposal or change. Do not place
+on-demand files directly under `guidelines/always/`; every file there is embedded.
+
 The global bootstrap invokes `bin/ai-context.sh` before task work. The resolver combines the
 canonical `configs/stations.json` inventory with the current hostname, scope path, Git metadata, and
 review corpus. It reports the station, execution universe, canonical repository, mode, represented
@@ -37,7 +43,14 @@ current-context file is written.
 Use `ai-context --help` for its scope arguments. A partial result is expected when the repository or
 target files are not yet known; identify only the missing scope and rerun it.
 
-## Aldaris delegation
+## Aldaris
+
+Aldaris remains a team member for bounded tasks that Oliver alone starts and manages on demand,
+where he reads the shared guidelines. By Oliver's decision (2026-10-22), Artanis, Argus, and Aegis do
+not delegate work to Aldaris or otherwise interact with him, except through review handoffs in which
+Aldaris is the Coworker: his output quality is insufficient for assistant delegation. The former
+assistant delegation tooling (`aldaris-ask`, its templates and schemas, and the `junior` switch) was
+removed with that decision.
 
 `junior-check` shows a compact three-row GPU/MEM/CPU matrix with Total and Junior columns,
 refreshing every second (`scripts/junior-check.sh`). Junior includes LM Studio, Qwen CLI and their
@@ -45,22 +58,60 @@ descendants. CPU percentages use whole-Mac capacity (100% is all logical cores).
 the same anonymous/wired/compressed-page calculation as `inf`; Junior memory is the process RSS sum,
 which can count shared pages more than once. GPU utilization is whole-Mac IORegistry telemetry;
 Junior GPU shows NSM (not separately measurable) because it cannot be attributed to individual processes.
-The monitor neither starts the model nor changes delegation state and needs no sudo. `--samples 2`
-gives a bounded snapshot; `--interval 2` changes the refresh interval; Ctrl+C exits.
+The monitor does not start the model and needs no sudo. `--samples 2` gives a bounded snapshot;
+`--interval 2` changes the refresh interval; Ctrl+C exits.
 
-Control assistant delegation with `junior on`, `junior off`, and `junior status` (or
-`scripts/aldaris-junior.sh`). The default is OFF; the non-secret switch is stored in the ignored
-`config-local/aldaris-junior.state`, separate from shared configuration and the external drive.
-Assistants check it at task start and before each dispatch. ON requires actively seeking useful
-eligible subtasks and announcing every invocation and outcome. OFF means solo work and blocks the
-text helper before inference; results arriving after OFF are discarded. It does not close Oliver's
-manual `aldaris` sessions or unload their model. An already submitted inference may finish.
+Aldaris configuration is owned by mac-forge and is selected, not hand-edited. The catalog in
+`configs/aldaris/catalog/` has `engines/`, `models/`, `presets/` (and `global.json` with the storage
+root); a configuration is an engine, a model, a context size, and a sampling preset. Saved
+configurations are references in `configs/aldaris/profiles/<name>.json`.
 
-The current automatic ceiling remains `trivial`. This switch does not grant automatic coding-edit
-permissions: isolated coding jobs and capability approval remain separate from the manual launcher.
+`aldaris-configure` (fzf) walks engine, model (only engines/formats it supports, marked
+installed/missing/unverified in that engine), context (only sizes the model offers), preset, then a
+confirm screen showing the resolved selection and the diff of every outside file. Subcommands:
+`list`, `show` (API key redacted), `status`, `apply <profile> [--yes]`, `save <name>`, `clean <engine>`,
+`stop`. It never installs or downloads; a missing engine or model is named and nothing is changed.
 
-Aldaris uses Qwen3.6-35B-A3B at 8-bit precision through LM Studio's MLX runtime on Hades.
-Run `aldaris` from a repository to start a supervised Qwen Code coding session. The launcher
+Resource policy: only the active configuration may use CPU or RAM. `apply` and every `aldaris` launch
+automatically stop all other catalog engines (adapter `engine_stop`, then a narrow SIGTERM/SIGKILL
+fallback on that engine's own `monitorProcessPatterns` paths), and the LM Studio adapter unloads every
+model except the active one (a busy model aborts the launch instead). After a Qwen Code session ends
+the active model stays loaded for the next one (idle TTL unchanged). `aldaris-stop` (or
+`aldaris-configure stop`) frees everything on demand: it works without `active.json`, unloads all
+models, stops the LM Studio server and daemon, quits the app, ends Qwen Code sessions, then verifies
+with `aldaris-monitor.py --check-idle` and prints `Aldaris stopped; nothing resident.` (or lists
+what remains and exits 1). It changes no configuration. Engines started by hand (`external`) cannot
+be stopped by their adapter; only their catalog paths, if any, are killed.
+
+The resolved selection is written to `config-local/aldaris/active.json` (untracked). `aldaris` runs `aldaris-config verify` first and
+refuses a snapshot that no longer matches the catalog, profile, or Qwen settings; with no snapshot it
+applies `scenario-1`. `junior-check` and `--check-idle` use the catalog's engine paths. Optional real API keys go in `config-local/aldaris/api-keys.json`
+as `{"<engine>": "<key>"}`, never in the catalog. mac-forge also owns the `.model` subtree of
+`/Volumes/dock-ssd/ai/qwen/settings.json` (name, context window, sampling); other keys there are
+untouched. Each written outside file is recorded with a hash in
+`/Volumes/dock-ssd/ai/.mac-forge-manifest.json`; `aldaris-configure status` reports drift, and `apply`
+asks before overwriting an outside edit. `clean <engine>` removes only manifest entries recorded for
+that engine, after confirmation, and never deletes engine trees, models, or Qwen sessions.
+
+Engines are adapters in `scripts/aldaris-engines/<adapter>.sh` (`engine_check`, `engine_has_model`,
+`engine_probe`, `engine_ensure_running`, `engine_ensure_loaded`, `engine_stop`): `lmstudio` starts
+and loads the model itself; `omlx` starts `tools/omlx/venv/bin/omlx serve` (port 8000, bearer key,
+log `tools/omlx/server.log`, PID `tools/omlx/server.pid`), writes the context cap
+(`sampling.max_context_window_policy`) and idle unload (`idle_timeout.idle_timeout_seconds`) into its
+`settings.json`, loads the model on first request, and stops only a recorded PID that still runs from
+its venv (also removing the `~/.omlx` shim it creates); `external` (port 8001) only verifies an OpenAI-compatible
+server that Oliver started; `tensorfold` starts the Python engine 0.6.6 from `tools/tensorfold/venv`
+(port 8002, bearer key, `--parallel 1`, prompt cache capped at 16 GiB, log `tools/tensorfold/server.log`, PID `tools/tensorfold/server.pid`),
+serves the local 4-bit MTP checkpoint under `models/TensorFold/`, has no idle unload (the model stays resident
+until stop), and stops only a recorded PID that runs an executable from its tree. To add an engine or model, add a catalog JSON (and an adapter for a new
+engine); a model lists per-engine `{key, servedId}` under `engines`; an engine's `monitorProcessPatterns` (absolute
+paths; `~` and `{storageRoot}` expand) feed `junior-check` and the fallback stop. They match the kernel's executable
+path as well as `ps` names, so a process that renames its title (oMLX shows as `omlx-server`) is still found.
+
+Profiles: `scenario-1` (default) is LM Studio; `scenario-2` is oMLX with the same model and context; `scenario-3` is TensorFold with the 4-bit MTP Qwen3.6 checkpoint (TensorFold cannot serve the 8-bit one); `scenario-4` is oMLX with that same 4-bit checkpoint (linked into `tools/omlx/models/TensorFold/`), so engines can be compared on identical weights. Switch with `aldaris-configure apply scenario-2` (or `scenario-1` to go back).
+
+The `scenario-1` profile (applied automatically when no selection exists) uses Qwen3.6-35B-A3B at 8-bit precision through LM Studio's MLX runtime on
+Hades. Run `aldaris` from a repository to start a supervised Qwen Code coding session. The launcher
 starts the localhost server and loads the model as needed, uses 128K context and a 30-minute idle
 unload timeout, and refuses to start without `dock-ssd` mounted. Repository instructions and
 Oliver's explicit approval requirement for unit tests still apply. The model, standalone Qwen Code installation, Qwen session data, helper logs, and caches live under
@@ -69,23 +120,44 @@ discovery. Its model library points directly to the external drive, and its larg
 directory is linked from `~/.lmstudio/extensions/backends/vendor` to
 `/Volumes/dock-ssd/ai/lmstudio/runtime/vendor`. Qwen settings are recorded in
 `configs/aldaris/qwen-settings.json` and installed at `/Volumes/dock-ssd/ai/qwen/settings.json`.
+That file is the base for its non-`.model` keys; `.model` is generated by `aldaris-configure`.
 
-`scripts/aldaris-ask.sh` remains a bounded text-only delegation interface with templates, schemas,
-caller/level checks, and visible logging. Start `aldaris` first to load the model. Its current
-`maxLevel` remains `trivial`; only Oliver changes it. The shared delegation rules apply to that
-interface, while interactive coding sessions are separately supervised. No coding-quality acceptance
-is implied by installation. Settings live in `configs/aldaris/config.json` and the coding-session
-instructions in `configs/aldaris/instructions.md`. The text adapter handles LM Studio MLX routing
-schema-constrained JSON into `reasoning_content`, accepting it only when it parses as JSON.
+No coding-quality acceptance is implied by installation. Settings live in
+`configs/aldaris/catalog/` and `configs/aldaris/profiles/`, and the coding-session instructions in
+`configs/aldaris/instructions.md`.
 
 ## Review handoff roles
 
 Default roles: Artanis prepares a review as Coworker and Argus reviews. When Oliver explicitly
 asks (for example "Aegis, hand off to Artanis for review"), any of the three identities may be the
 Coworker or the Reviewer for that one handoff; both names are recorded in the request and findings
-headers. Lane structure is unchanged: MasterChief keeps `work`, `raynor`, and `zeratul`; Hades keeps a
+headers. On Hades, Aldaris may also be the Coworker of a manual handoff (reviewed by Argus unless
+Oliver names Artanis or Aegis); he never reviews and does not take part in autonomous team loops. Lane structure is unchanged: MasterChief keeps `work`, `raynor`, and `zeratul`; Hades keeps a
 single universe with one project lane per repository. `bin/review-handoff-verify.sh` validates the
 MasterChief lanes, including distinct Coworker and Reviewer identities.
+
+## QA handoff
+
+QA is the last step of a task, enabled on Hades only for now. After the code-review cycle ends with
+Coworker, Reviewer, and Oliver in agreement, and Oliver has deployed the app on a disposable VPS1
+snapshot database and given its URL and an optional depth (`surface`, `medium` by default, or
+`verbose`), the Coworker decides what to test from the task and writes a self-sufficient request: URL,
+login, pages, steps, and expected results. The Tester uses the running app like a user and reports.
+Oliver reads the report first, then asks the Coworker, the code reviewer, or both to process it. The word `QA` in Oliver's command
+selects this kind: "Prep for Artanis QA takeoff" / "QA handoff to Aegis" (Coworker), "Artanis QA
+takeoff" / "Process Argus's QA handoff" (Tester), and "Process Aegis's QA report" (Coworker or code reviewer).
+Commands without `QA` keep their code-review meaning.
+
+Artanis tests by default; any of the three may test when its session has a working browser tool. The
+pair is `qa-request-<coworker>.md` and `qa-report-<coworker>.md`, with captures in
+`qa-evidence-<coworker>/`. The Tester may perform any operation on the given URL, data changes
+included; it stops and asks Oliver when the app is not functional there or a snapshot restore is
+needed. Agents never build, start, deploy, or restore anything for QA. QA never runs through
+`team-work.sh`, and it does not authorize automated test suites.
+
+The resolver keeps routing cheap: `--mode handoff` loads `handoff/common.md`, `handoff/review.md`, and
+the station flow; `--mode qa-handoff` loads `handoff/common.md`, `handoff/qa.md`, and the station flow.
+Only the short kind table in `always/review-handoff.md` is always loaded.
 
 The manual handoff remains the default and returns to Oliver after every review and findings-analysis
 step. `scripts/team-work.sh --prompt <task>` is a separate opt-in flow: it launches and resumes the

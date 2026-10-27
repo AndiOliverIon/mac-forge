@@ -196,8 +196,9 @@ alias	demo	demo — Go to the Cerber-mounted Ardis demo folder.
 alias	work-cerb	work-cerb — Go to the Cerber-mounted work volume.
 alias	copilot	copilot — Run GitHub Copilot CLI.
 alias	aiusage	aiusage — Show local agent/API usage stats.
-alias	aldaris	aldaris [qwen args] — Start supervised local coding with Qwen Code and Qwen3.6-35B-A3B 8-bit through LM Studio MLX; requires dock-ssd.
-alias	aldaris-ask	aldaris-ask --caller NAME --level LEVEL --task TEXT [--template NAME] [--schema NAME] [--file PATH|-] — Delegate one bounded text step to local LM Studio Aldaris with a visible, logged banner; --list shows templates and schemas, --verdict ID records the outcome, --stats summarizes results. Settings live in configs/aldaris/config.json.
+alias	aldaris	aldaris [qwen args] — Start supervised local coding with Qwen Code using the active Aldaris profile; requires dock-ssd.
+alias	aldaris-stop	aldaris-stop — Free all CPU/RAM used by Aldaris: unload models, stop LM Studio and oMLX (and other local-AI engines), end Qwen Code sessions, then verify nothing is resident.
+alias	aldaris-configure	aldaris-configure [list|show|status|apply <profile>|save <name>|clean <engine>|stop] — Pick Aldaris engine, model, context and preset in fzf (or apply a saved profile) and sync the generated Qwen settings.
 alias	dela	dela — Delete everything in the current directory; no prompt.
 alias	perflogclean	perflogclean — Delete all files in Perform output logs; no prompt.
 alias	screenshotclean	screenshotclean — Delete PNG screenshots from Desktop; no prompt.
@@ -429,5 +430,4 @@ alias	ttbs	ttbs — Go to the Ardis Timetrack repo and build its solution.
 alias	ttbd	ttbd — Go to the Ardis Timetrack repo and build/push its Docker image.
 alias	wk	wk — Go to the Alice in Wonder Kitchen project.
 alias	wkdata	wkdata — Go to the Alice in Wonder Kitchen data folder.
-alias	junior	junior on|off|status — Enable or disable assistant delegation to Aldaris locally; default off. Manual aldaris sessions remain available.
 alias	junior-check	junior-check [--interval SECONDS] [--samples COUNT] — Live Total/Junior GPU, memory and CPU matrix; Junior GPU shows NSM (not separately measurable). Refreshes every second; Ctrl+C exits.

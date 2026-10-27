@@ -1,0 +1,11 @@
+{
+  "id": "tensorfold",
+  "description": "TensorFold Python engine 0.6.6 (MLX), started and stopped by Aldaris",
+  "adapter": "tensorfold",
+  "host": "127.0.0.1",
+  "port": 8002,
+  "formats": ["mlx"],
+  "apiKey": "aldaris-local",
+  "idleSeconds": 1800,
+  "monitorProcessPatterns": ["{storageRoot}/tools/tensorfold/"]
+}

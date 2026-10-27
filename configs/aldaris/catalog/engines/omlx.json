@@ -1,0 +1,11 @@
+{
+  "id": "omlx",
+  "description": "oMLX server (MLX, continuous batching), started and stopped by Aldaris",
+  "adapter": "omlx",
+  "host": "127.0.0.1",
+  "port": 8000,
+  "formats": ["mlx"],
+  "apiKey": "aldaris-local",
+  "idleSeconds": 1800,
+  "monitorProcessPatterns": ["{storageRoot}/tools/omlx/"]
+}

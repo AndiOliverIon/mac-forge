@@ -1,0 +1,11 @@
+{
+  "id": "external",
+  "description": "Any other OpenAI-compatible server you start yourself; edit host/port to match",
+  "adapter": "external",
+  "host": "127.0.0.1",
+  "port": 8001,
+  "formats": ["mlx"],
+  "apiKey": "local",
+  "idleSeconds": 1800,
+  "monitorProcessPatterns": []
+}

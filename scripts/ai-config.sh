@@ -20,12 +20,14 @@ COPILOT_TEMPLATE="$AI_SOURCE/bootstrap/copilot-instructions.md"
 REQUIRED_SOURCES=(
     identities.md
     guidelines/guidelines.md
-    guidelines/always/aldaris-delegation.md
+    guidelines/rule-lifecycle.md
     guidelines/always/provisional-rules.md
     guidelines/always/review-handoff.md
     guidelines/always/jira-tasks.md
     guidelines/always/test-execution.md
     guidelines/handoff/common.md
+    guidelines/handoff/review.md
+    guidelines/handoff/qa.md
     guidelines/handoff/hades.md
     guidelines/handoff/masterchief.md
     guidelines/jira/common.md

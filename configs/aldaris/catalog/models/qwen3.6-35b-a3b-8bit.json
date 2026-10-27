@@ -1,0 +1,15 @@
+{
+  "id": "qwen3.6-35b-a3b-8bit",
+  "description": "Qwen3.6-35B-A3B MoE, 8-bit MLX",
+  "format": "mlx",
+  "quantization": "8bit",
+  "diskSizeGb": 37.75,
+  "maxContext": 262144,
+  "contexts": [32768, 65536, 131072],
+  "repository": "mlx-community/Qwen3.6-35B-A3B-8bit",
+  "revision": "e06a74e6236a60c8367e1a3214e83d8b61b637b0",
+  "engines": {
+    "lmstudio": { "key": "qwen3.6-35b-a3b", "servedId": "aldaris" },
+    "omlx": { "key": "mlx-community/Qwen3.6-35B-A3B-8bit", "servedId": "Qwen3.6-35B-A3B-8bit" }
+  }
+}
