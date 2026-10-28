@@ -706,11 +706,11 @@ run_agent() {
 		if [[ -z "$session_id" ]]; then
 			generated_session="$(new_uuid)"
 			copilot --prompt "$agent_prompt" --output-format json --session-id "$generated_session" \
-				-C "$repository" --allow-all-tools --add-dir "$lane_directory" --no-ask-user \
+				-C "$repository" --allow-all-tools --add-dir "$lane_directory" --add-dir "$HOME/.config/ai" --no-ask-user \
 				>"$raw_output" || exit_code=$?
 		else
 			copilot --prompt "$agent_prompt" --output-format json --resume "$session_id" \
-				-C "$repository" --allow-all-tools --add-dir "$lane_directory" --no-ask-user \
+				-C "$repository" --allow-all-tools --add-dir "$lane_directory" --add-dir "$HOME/.config/ai" --no-ask-user \
 				>"$raw_output" || exit_code=$?
 		fi
 		jq -r 'select(.type == "assistant.message" or .type == "result") | .content // .message // empty' \

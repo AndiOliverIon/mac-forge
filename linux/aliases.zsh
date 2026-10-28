@@ -61,7 +61,7 @@ alias sp="~/mac-forge/linux/scripts/sudo-session.sh"
 # AI team members (name-based launch)
 alias artanis="codex"
 alias argus="claude"
-alias aegis="copilot"
+alias aegis="copilot --add-dir ~/.config/ai --allow-tool='shell(~/.config/ai/bin/ai-context.sh)' --allow-tool='shell(~/.config/ai/bin/ai-read-instructions.sh)' --allow-tool='shell($HOME/mac-forge/.config/ai/bin/ai-context.sh)' --allow-tool='shell($HOME/mac-forge/.config/ai/bin/ai-read-instructions.sh)'"
 alias team-work="~/mac-forge/scripts/team-work.sh"
 alias tw="~/mac-forge/scripts/team-work.sh"
 alias work-today="~/mac-forge/scripts/work-today.sh"

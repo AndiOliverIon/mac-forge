@@ -267,7 +267,7 @@ alias aiusage='~/mac-forge/scripts/agents/usage.sh'
 # AI team members (name-based launch)
 alias artanis="codex"
 alias argus="claude"
-alias aegis="copilot"
+alias aegis="copilot --add-dir ~/.config/ai --allow-tool='shell(~/.config/ai/bin/ai-context.sh)' --allow-tool='shell(~/.config/ai/bin/ai-read-instructions.sh)' --allow-tool='shell($HOME/mac-forge/.config/ai/bin/ai-context.sh)' --allow-tool='shell($HOME/mac-forge/.config/ai/bin/ai-read-instructions.sh)'"
 alias aldaris="~/mac-forge/scripts/aldaris.sh"
 alias aldaris-configure="~/mac-forge/scripts/aldaris-configure.sh"
 alias aldaris-stop="~/mac-forge/scripts/aldaris-configure.sh stop"
