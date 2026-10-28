@@ -53,7 +53,7 @@ assistant delegation tooling (`aldaris-ask`, its templates and schemas, and the 
 removed with that decision.
 
 `junior-check` shows a compact three-row GPU/MEM/CPU matrix with Total and Junior columns,
-refreshing every second (`scripts/junior-check.sh`). Junior includes LM Studio, Qwen CLI and their
+refreshing every 3 seconds (`scripts/junior-check.sh`). Junior includes LM Studio, Qwen CLI and their
 descendants. CPU percentages use whole-Mac capacity (100% is all logical cores). Total memory uses
 the same anonymous/wired/compressed-page calculation as `inf`; Junior memory is the process RSS sum,
 which can count shared pages more than once. GPU utilization is whole-Mac IORegistry telemetry;
