@@ -58,6 +58,7 @@ alias ea=eject-all
 alias hdd-clean="~/mac-forge/scripts/hdd-clean.sh"
 alias hc=hdd-clean
 alias binclear="~/mac-forge/scripts/bin-clear.sh"
+alias bsa="~/mac-forge/scripts/brainstorm-archive.sh"
 alias al="~/mac-forge/scripts/aliases.sh"
 alias a=al
 alias workset="~/mac-forge/scripts/work.sh"

@@ -134,6 +134,7 @@ alias rdown="~/mac-forge/linux/scripts/db-remote-download.sh"
 alias rlist="~/mac-forge/scripts/db-remote-list.sh"
 alias dbo="~/mac-forge/scripts/db-optimize.sh"
 alias binclear="~/mac-forge/scripts/bin-clear.sh"
+alias bsa="~/mac-forge/scripts/brainstorm-archive.sh"
 alias port-release="~/mac-forge/scripts/port-release.sh"
 alias prl=port-release
 alias sshc="~/mac-forge/scripts/sshc.sh"
