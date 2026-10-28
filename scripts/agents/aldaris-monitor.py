@@ -9,6 +9,7 @@ from pathlib import Path
 import plistlib
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -125,6 +126,8 @@ def main():
     parser.add_argument('--samples', type=int, help='stop after this many readings (default: until Ctrl+C)')
     parser.add_argument('--check-idle', action='store_true', help='list resident Aldaris processes; exit 1 if any')
     args = parser.parse_args()
+    # A parent that started us with SIGINT ignored would otherwise make Ctrl+C a no-op.
+    signal.signal(signal.SIGINT, signal.default_int_handler)
     if not (0.2 <= args.interval <= 60) or (args.samples is not None and args.samples < 1):
         parser.error('interval must be 0.2–60 seconds; samples must be positive')
     if sys.platform != 'darwin':
