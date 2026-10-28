@@ -24,24 +24,42 @@ if [[ "${1:-}" == "--all" ]]; then
     done < <(jq -r '.projects[]?' "$PROJECTS_FILE")
     ((${#paths[@]} > 0)) || die "No projects declared in $PROJECTS_FILE"
 
+    if [[ -t 1 ]]; then
+        GREEN=$'\033[32m' ORANGE=$'\033[38;5;208m' RED=$'\033[31m' RESET=$'\033[0m'
+    else
+        GREEN="" ORANGE="" RED="" RESET=""
+    fi
+
+    results=()
     ok=0 skipped=0 failed=0
     for p in "${paths[@]}"; do
         p="${p/#\~/$HOME}"
-        echo "== $p"
+        name="$(basename "$(dirname "$p")")"
         if [[ ! -d "$p" ]]; then
-            echo "✖ Folder not found" >&2
+            results+=("${RED}✖ $name — folder not found: $p${RESET}")
             failed=$((failed + 1))
             continue
         fi
         rc=0
-        (cd "$p" && "$SELF") || rc=$?
+        out="$( (cd "$p" && "$SELF") 2>&1 )" || rc=$?
         case "$rc" in
-            0) ok=$((ok + 1)) ;;
-            "$EXIT_NOTHING") skipped=$((skipped + 1)) ;;
-            *) failed=$((failed + 1)) ;;
+            0)
+                created="$(sed -n 's/^✔ Created //p' <<<"$out" | head -n 1)"
+                results+=("${GREEN}✔ $name — $(basename "$created")${RESET}")
+                ok=$((ok + 1))
+                ;;
+            "$EXIT_NOTHING")
+                results+=("${ORANGE}– $name — nothing to archive${RESET}")
+                skipped=$((skipped + 1))
+                ;;
+            *)
+                results+=("${RED}✖ $name — $(tail -n 1 <<<"$out" | sed 's/^✖ //')${RESET}")
+                failed=$((failed + 1))
+                ;;
         esac
     done
 
+    printf '%s\n' "${results[@]}"
     echo
     echo "Done: $ok archived, $skipped nothing to archive, $failed failed"
     ((failed == 0)) || exit 1
