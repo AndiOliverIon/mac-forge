@@ -122,7 +122,7 @@ def memory_used():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--interval', type=float, default=1.0, help='refresh interval in seconds (default 1)')
+    parser.add_argument('--interval', type=float, default=3.0, help='refresh interval in seconds (default 3)')
     parser.add_argument('--samples', type=int, help='stop after this many readings (default: until Ctrl+C)')
     parser.add_argument('--check-idle', action='store_true', help='list resident Aldaris processes; exit 1 if any')
     args = parser.parse_args()
