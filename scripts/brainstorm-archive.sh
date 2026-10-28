@@ -30,8 +30,23 @@ archive_end_date() {
     fi
 }
 
-# Deletes archives older than $2 days in $1/archive, never touching $3 (archive made this run).
-# Prints the removed file names, one per line.
+# Moves a file to the trash; never falls back to permanent deletion.
+move_to_trash() {
+    if command -v trash >/dev/null 2>&1; then
+        trash "$1"
+    elif command -v gio >/dev/null 2>&1; then
+        gio trash "$1"
+    elif command -v trash-put >/dev/null 2>&1; then
+        trash-put "$1"
+    elif command -v osascript >/dev/null 2>&1; then
+        osascript -e 'on run argv' -e 'tell application "Finder" to delete (POSIX file (item 1 of argv) as alias)' -e 'end run' "$1" >/dev/null
+    else
+        return 1
+    fi
+}
+
+# Moves to the trash archives older than $2 days in $1/archive, never touching $3 (archive made this run).
+# Prints the trashed file names, one per line.
 clean_old_archives() {
     local dir="$1/archive" days="$2" keep="${3:-}" cutoff f end
     [[ -d "$dir" ]] || return 0
@@ -40,8 +55,7 @@ clean_old_archives() {
         [[ -f "$f" && ! -L "$f" && "$(basename "$f")" != "$keep" ]] || continue
         end="$(archive_end_date "$(basename "$f")")" || continue
         if [[ "$end" < "$cutoff" ]]; then
-            rm -f -- "$f"
-            basename "$f"
+            move_to_trash "$f" && basename "$f"
         fi
     done
 }
@@ -113,7 +127,9 @@ if [[ "${1:-}" == "--all" ]]; then
                     [[ -n "$f" ]] && removed+=("$f")
                 done < <(clean_old_archives "$p" "$days" "$created")
                 if ((${#removed[@]} > 0)); then
-                    results+=("    🗑  removed ${#removed[@]} archive(s) older than $days days: ${removed[*]}")
+                    for f in "${removed[@]}"; do
+                        results+=("${RED}    🗑  $name — trashed $f (older than $days days)${RESET}")
+                    done
                     cleaned=$((cleaned + ${#removed[@]}))
                 fi
             else
@@ -125,7 +141,7 @@ if [[ "${1:-}" == "--all" ]]; then
 
     printf '%s\n' "${results[@]}"
     echo
-    echo "Done: $ok archived, $skipped nothing to archive, $failed failed, $cleaned old archive(s) removed"
+    echo "Done: $ok archived, $skipped nothing to archive, $failed failed, $cleaned old archive(s) moved to trash"
     ((failed == 0)) || exit 1
     exit 0
 fi
