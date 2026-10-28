@@ -9,6 +9,43 @@ die() {
 # Exit code 3 means "nothing to archive" (used by --all to skip quietly).
 EXIT_NOTHING=3
 
+# Prints the date (YYYY-MM-DD) that is $1 days before today, on BSD or GNU date.
+cutoff_date() {
+    date -v-"$1"d +%F 2>/dev/null || date -d "-$1 days" +%F
+}
+
+# Last covered date of archive-YYYY-MM-DD_DD(.tar.gz) or archive-YYYY-MM-DD_YYYY-MM-DD(.tar.gz).
+archive_end_date() {
+    local base="${1%.tar.gz}" first last
+    base="${base#archive-}"
+    first="${base%%_*}"
+    last="${base#*_}"
+    [[ "$first" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || return 1
+    if [[ "$last" =~ ^[0-9]{2}$ ]]; then
+        echo "${first:0:8}$last"
+    elif [[ "$last" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+        echo "$last"
+    else
+        return 1
+    fi
+}
+
+# Deletes archives older than $2 days in $1/archive, never touching $3 (archive made this run).
+# Prints the removed file names, one per line.
+clean_old_archives() {
+    local dir="$1/archive" days="$2" keep="${3:-}" cutoff f end
+    [[ -d "$dir" ]] || return 0
+    cutoff="$(cutoff_date "$days")"
+    for f in "$dir"/archive-*.tar.gz; do
+        [[ -f "$f" && ! -L "$f" && "$(basename "$f")" != "$keep" ]] || continue
+        end="$(archive_end_date "$(basename "$f")")" || continue
+        if [[ "$end" < "$cutoff" ]]; then
+            rm -f -- "$f"
+            basename "$f"
+        fi
+    done
+}
+
 if [[ "${1:-}" == "--all" ]]; then
     [[ $# -eq 1 ]] || die "Usage: brainstorm-archive [--all]"
     command -v jq >/dev/null 2>&1 || die "jq is required for --all"
@@ -18,10 +55,17 @@ if [[ "${1:-}" == "--all" ]]; then
     PROJECTS_FILE="${BRAINSTORM_PROJECTS_FILE:-$FORGE_ROOT/config-local/brainstorm-projects.json}"
     [[ -f "$PROJECTS_FILE" ]] || die "Projects file not found: $PROJECTS_FILE"
 
+    # Each project is a path string or {"path": ..., "retentionDays": ...}; the latter overrides the global value.
     paths=()
-    while IFS= read -r line; do
-        [[ -n "$line" ]] && paths+=("$line")
-    done < <(jq -r '.projects[]?' "$PROJECTS_FILE")
+    retentions=()
+    while IFS=$'\t' read -r path days; do
+        [[ -n "$path" ]] || continue
+        paths+=("$path")
+        retentions+=("$days")
+    done < <(jq -r '.retentionDays as $g | .projects[]? |
+        if type == "string" then [., ($g // "")]
+        else [.path, (if has("retentionDays") then (.retentionDays // "") else ($g // "") end)] end
+        | map(tostring) | join("\t")' "$PROJECTS_FILE")
     ((${#paths[@]} > 0)) || die "No projects declared in $PROJECTS_FILE"
 
     if [[ -t 1 ]]; then
@@ -31,8 +75,10 @@ if [[ "${1:-}" == "--all" ]]; then
     fi
 
     results=()
-    ok=0 skipped=0 failed=0
-    for p in "${paths[@]}"; do
+    ok=0 skipped=0 failed=0 cleaned=0
+    for i in "${!paths[@]}"; do
+        p="${paths[$i]}"
+        days="${retentions[$i]}"
         p="${p/#\~/$HOME}"
         name="$(basename "$(dirname "$p")")"
         if [[ ! -d "$p" ]]; then
@@ -42,10 +88,11 @@ if [[ "${1:-}" == "--all" ]]; then
         fi
         rc=0
         out="$( (cd "$p" && "$SELF") 2>&1 )" || rc=$?
+        created=""
         case "$rc" in
             0)
-                created="$(sed -n 's/^✔ Created //p' <<<"$out" | head -n 1)"
-                results+=("${GREEN}✔ $name — $(basename "$created")${RESET}")
+                created="$(basename "$(sed -n 's/^✔ Created //p' <<<"$out" | head -n 1)")"
+                results+=("${GREEN}✔ $name — $created${RESET}")
                 ok=$((ok + 1))
                 ;;
             "$EXIT_NOTHING")
@@ -57,11 +104,28 @@ if [[ "${1:-}" == "--all" ]]; then
                 failed=$((failed + 1))
                 ;;
         esac
+
+        # Retention of 0 or empty disables cleanup; only valid brainstorm roots are cleaned.
+        if [[ "$rc" == 0 || "$rc" == "$EXIT_NOTHING" ]] && [[ -n "$days" && "$days" != 0 ]]; then
+            if [[ "$days" =~ ^[0-9]+$ ]]; then
+                removed=()
+                while IFS= read -r f; do
+                    [[ -n "$f" ]] && removed+=("$f")
+                done < <(clean_old_archives "$p" "$days" "$created")
+                if ((${#removed[@]} > 0)); then
+                    results+=("    🗑  removed ${#removed[@]} archive(s) older than $days days: ${removed[*]}")
+                    cleaned=$((cleaned + ${#removed[@]}))
+                fi
+            else
+                results+=("${RED}✖ $name — invalid retentionDays: $days${RESET}")
+                failed=$((failed + 1))
+            fi
+        fi
     done
 
     printf '%s\n' "${results[@]}"
     echo
-    echo "Done: $ok archived, $skipped nothing to archive, $failed failed"
+    echo "Done: $ok archived, $skipped nothing to archive, $failed failed, $cleaned old archive(s) removed"
     ((failed == 0)) || exit 1
     exit 0
 fi

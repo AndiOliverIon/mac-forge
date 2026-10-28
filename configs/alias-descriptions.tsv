@@ -47,7 +47,7 @@ alias	ea	ea — Short shortcut for eject-all.
 alias	hdd-clean	hdd-clean — Find old large files by extension and delete them after confirmation.
 alias	hc	hc — Find old large files by extension and delete them after confirmation (short for hdd-clean).
 alias	binclear	binclear — Remove bin and debug directories from the current tree.
-alias	bsa	bsa — Run inside a project brainstorm folder: archive all past YYYY-MM-DD folders (not today) into archive/archive-<first>_<lastday>.tar.gz, then delete them. Use --all to do this for every brainstorm folder listed in config-local/brainstorm-projects.json (key: projects).
+alias	bsa	bsa — Run inside a project brainstorm folder: archive all past YYYY-MM-DD folders (not today) into archive/archive-<first>_<lastday>.tar.gz, then delete them. Use --all to do this for every brainstorm folder listed in config-local/brainstorm-projects.json (key: projects) and print a colored summary (green archived, orange nothing to do). --all also deletes archives older than retentionDays (global key; a project may be {path, retentionDays} to override; 0, null or no value disables cleanup for it; archive age = last date in its name).
 alias	al	al — Open the alias finder and copy the selected alias name.
 alias	a	a — Open the alias finder and copy the selected alias name (short for al).
 alias	workset	workset — Switch the active SQL Docker data and snapshot storage paths.
@@ -244,7 +244,7 @@ script	team-work	team-work --prompt TASK — Coordinate separate persistent Cowo
 script	ardis-complete	ardis-complete — Complete Ardis planning/activity data over a selected date range.
 script	ardis-migrate	ardis-migrate — Run Ardis migrations against a selected local SQL database. Optional --version YEAR selects a parallel SQL container.
 script	bin-clear	bin-clear — Remove bin and debug directories from the current tree.
-script	brainstorm-archive	brainstorm-archive — Run inside a project brainstorm folder: archive all past YYYY-MM-DD folders (not today) into archive/archive-<first>_<lastday>.tar.gz, then delete them. Use --all to do this for every brainstorm folder listed in config-local/brainstorm-projects.json (key: projects).
+script	brainstorm-archive	brainstorm-archive — Run inside a project brainstorm folder: archive all past YYYY-MM-DD folders (not today) into archive/archive-<first>_<lastday>.tar.gz, then delete them. Use --all to do this for every brainstorm folder listed in config-local/brainstorm-projects.json (key: projects) and print a colored summary (green archived, orange nothing to do). --all also deletes archives older than retentionDays (global key; a project may be {path, retentionDays} to override; 0, null or no value disables cleanup for it; archive age = last date in its name).
 script	branch-delete	branch-delete — Delete local git branches matching a pattern.
 script	branch-local-clean	branch-local-clean — Preview or delete local branches by safe prefix.
 script	clean	clean — Delete contents of selected configured cleanup targets.
