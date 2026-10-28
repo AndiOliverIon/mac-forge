@@ -64,14 +64,14 @@ while IFS= read -r line; do
     command_part="${command_part:1:${#command_part}-2}"
   fi
 
-  entries+=("alias\t${name}\t${description}\t${command_part}")
+  entries+=("alias\t${name}\t${description%% || *}\t${command_part}\t${description}")
 done < <(cat "${ALIAS_FILES[@]}" 2>/dev/null)
 
 if [[ -d "$SCRIPTS_DIR" ]]; then
   while IFS= read -r -d '' script_path; do
     script_name="$(basename "$script_path" .sh)"
     description="$(description_for script "$script_name" "Executable forge script.")"
-    entries+=("script\t${script_name}\t${description}\t${script_path}")
+    entries+=("script\t${script_name}\t${description%% || *}\t${script_path}\t${description}")
   done < <(find "$SCRIPTS_DIR" -maxdepth 1 -type f -name "*.sh" -perm -u+x -print0 | sort -z)
 fi
 
@@ -93,7 +93,7 @@ selection="$({ printf '%b\n' "${entries[@]}"; } \
       --with-nth=1,2,3 \
       --nth=2,3,4 \
       --preview-window='right:50%:wrap' \
-      --preview='printf "Type: %s\nName: %s\nDescription: %s\n\nCommand:\n%s\n" {1} {2} {3} {4}')"
+      --preview='printf "Type: %s\nName: %s\n\nDescription:\n" {1} {2}; printf "%s" {5} | awk "{gsub(/ \\|\\| /, \"\\n- \")}1" | fold -s -w "${FZF_PREVIEW_COLUMNS:-60}"; printf "\n\nCommand:\n%s\n" {4}')"
 
 [[ -z "$selection" ]] && exit 0
 
