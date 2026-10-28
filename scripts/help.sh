@@ -3,6 +3,23 @@
 set -euo pipefail
 
 FORGE_ROOT="${FORGE_ROOT:-$HOME/mac-forge}"
+
+# Preview renderer called by fzf: help.sh --preview <type> <name> <description> <command>
+if [[ "${1:-}" == "--preview" ]]; then
+  BOLD=$'\033[1m' CYAN=$'\033[36m' GREEN=$'\033[32m' ORANGE=$'\033[38;5;208m' RED=$'\033[31m' BLUE=$'\033[34m' RESET=$'\033[0m'
+  printf '%sType:%s %s\n' "$CYAN" "$RESET" "$2"
+  printf '%sName:%s %s%s%s\n\n' "$CYAN" "$RESET" "$BOLD$GREEN" "$3" "$RESET"
+  printf '%sDescription:%s\n' "$CYAN" "$RESET"
+  printf '%s' "$4" \
+    | awk '{gsub(/ \|\| /, "\n- ")}1' \
+    | fold -s -w "${FZF_PREVIEW_COLUMNS:-60}" \
+    | awk -v o="$ORANGE" -v g="$GREEN" -v r="$RED" -v b="$BOLD" -v x="$RESET" '
+        /^- / { $0 = o "-" x substr($0, 2) }
+        { gsub(/green/, g "&" x); gsub(/orange/, o "&" x); gsub(/red/, r "&" x); gsub(/--[a-z]+/, b "&" x); print }'
+  printf '\n%sCommand:%s\n%s%s%s\n' "$CYAN" "$RESET" "$BLUE" "$5" "$RESET"
+  exit 0
+fi
+
 ALIASES_FILE="$FORGE_ROOT/dotfiles/aliases"
 ALIAS_FILES=(
   "$FORGE_ROOT/dotfiles/aliases"
@@ -93,7 +110,8 @@ selection="$({ printf '%b\n' "${entries[@]}"; } \
       --with-nth=1,2,3 \
       --nth=2,3,4 \
       --preview-window='right:50%:wrap' \
-      --preview='printf "Type: %s\nName: %s\n\nDescription:\n" {1} {2}; printf "%s" {5} | awk "{gsub(/ \\|\\| /, \"\\n- \")}1" | fold -s -w "${FZF_PREVIEW_COLUMNS:-60}"; printf "\n\nCommand:\n%s\n" {4}')"
+      --ansi \
+      --preview="\"${BASH_SOURCE[0]}\" --preview {1} {2} {5} {4}")"
 
 [[ -z "$selection" ]] && exit 0
 
