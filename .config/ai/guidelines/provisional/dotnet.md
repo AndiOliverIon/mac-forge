@@ -11,3 +11,7 @@
 - For non-HTTP entry points, report license denial through the established license-exception and
   transport-feedback pipeline rather than returning feature-specific booleans or implementing custom
   SignalR or UI feedback.
+- Keep entity business-logic classes free of workflow orchestration such as worklist, container or
+  session state; they only select the entity's work and execute it. Evaluate, validate and start the
+  workflow at the orchestrating entry point or in the workflow's manager, checking each precondition
+  in one layer only, and mirror the layering of the nearest sibling flow.
