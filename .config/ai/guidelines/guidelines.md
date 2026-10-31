@@ -29,6 +29,11 @@ This file is the single tool-neutral entry point for deciding which shared guide
 
 - See `always/jira-tasks.md` (already loaded) for handling a task by its number/key (e.g. `PER-6792`).
 
+## Optional Architectural Graphs
+
+- Only when Oliver explicitly requests architectural-graph consultation, read
+  `~/.config/ai/guidelines/graphify.md` and follow it.
+
 ## Task Modes
 
 | Mode | Use for |

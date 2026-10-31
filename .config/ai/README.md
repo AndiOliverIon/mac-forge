@@ -26,9 +26,10 @@ layout.
 
 The embedded set is loaded into every request, so keep it concise without dropping rules. Every
 prohibition and every always-applicable duty stays embedded. Only procedural detail may move to an
-on-demand file, and the embedded set must name it with a mandatory trigger: currently only
-`guidelines/rule-lifecycle.md`, read for any provisional-rule proposal or change. Do not place
-on-demand files directly under `guidelines/always/`; every file there is embedded.
+on-demand file, and the embedded set must name it with a mandatory trigger. This includes
+`guidelines/rule-lifecycle.md` for provisional-rule work and `guidelines/graphify.md` only when Oliver
+explicitly requests architectural-graph consultation. Do not place on-demand files directly under
+`guidelines/always/`; every file there is embedded.
 
 The global bootstrap invokes `bin/ai-context.sh` before task work. The resolver combines the
 canonical `configs/stations.json` inventory with the current hostname, scope path, Git metadata, and
@@ -42,6 +43,17 @@ current-context file is written.
 
 Use `ai-context --help` for its scope arguments. A partial result is expected when the repository or
 target files are not yet known; identify only the missing scope and rerun it.
+
+## Optional architectural graphs
+
+Ask an agent: "For this task Artanis consult also the graph for a better grasp of the architecture."
+The shared router loads `guidelines/graphify.md` for general consultation rules and a small registry,
+then the agent reads only the matching `guidelines/graphify/projects/<project>.md` profile for paths,
+commands, maintenance behavior, and known gaps. To register another approved, indexed project, add
+its profile and registry row; do not grow the general guide with project details.
+Currently only the Hades `ardis.timetrack` experiment is registered. Ordinary tasks do not load the
+guide/profiles or query a graph.
+The guide is shared by Artanis, Argus, Aegis, and human-managed Aldaris; substitute the intended name.
 
 ## Aldaris
 

@@ -20,6 +20,7 @@ COPILOT_TEMPLATE="$AI_SOURCE/bootstrap/copilot-instructions.md"
 REQUIRED_SOURCES=(
     identities.md
     guidelines/guidelines.md
+    guidelines/graphify.md
     guidelines/rule-lifecycle.md
     guidelines/always/provisional-rules.md
     guidelines/always/review-handoff.md
