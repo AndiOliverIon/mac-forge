@@ -2,6 +2,7 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEFAULT_COWORKER="artanis"
 DEFAULT_REVIEWER="argus"
 DEFAULT_MAX_CYCLES=5
@@ -705,12 +706,12 @@ run_agent() {
 	aegis)
 		if [[ -z "$session_id" ]]; then
 			generated_session="$(new_uuid)"
-			copilot --prompt "$agent_prompt" --output-format json --session-id "$generated_session" \
-				-C "$repository" --allow-all-tools --add-dir "$lane_directory" --add-dir "$HOME/.config/ai" --no-ask-user \
+			"$SCRIPT_DIR/aegis.sh" --prompt "$agent_prompt" --output-format json --session-id "$generated_session" \
+				-C "$repository" --add-dir "$lane_directory" --no-ask-user \
 				>"$raw_output" || exit_code=$?
 		else
-			copilot --prompt "$agent_prompt" --output-format json --resume "$session_id" \
-				-C "$repository" --allow-all-tools --add-dir "$lane_directory" --add-dir "$HOME/.config/ai" --no-ask-user \
+			"$SCRIPT_DIR/aegis.sh" --prompt "$agent_prompt" --output-format json --resume "$session_id" \
+				-C "$repository" --add-dir "$lane_directory" --no-ask-user \
 				>"$raw_output" || exit_code=$?
 		fi
 		jq -r 'select(.type == "assistant.message" or .type == "result") | .content // .message // empty' \

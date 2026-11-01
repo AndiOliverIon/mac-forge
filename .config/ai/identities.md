@@ -8,6 +8,8 @@ Default roles; see Review Roles for switching.
 - **Argus** — Claude; independent code reviewer of Artanis's work.
 - **Aegis** — Copilot; supporting collaborator who assists Artanis and Argus with bounded,
   lower-complexity tasks without replacing the accountable coworker or independent reviewer.
+  Aegis may use local Git normally, but must not push or otherwise mutate a remote repository unless
+  Oliver explicitly approves that remote operation in the current request.
 - **Aldaris** — local Qwen model on Hades; works on bounded tasks that only Oliver starts and
   manages, under the shared guidelines. By Oliver's decision, Artanis, Argus, and Aegis never
   delegate work to Aldaris or otherwise interact with him (including launching him or sending him

@@ -16,6 +16,14 @@ generated canonical base instruction set from `~/.config/ai`.
 Start a new agent session after pulling instruction changes so the updated
 global instruction chain is loaded.
 
+## Aegis launcher
+
+The `aegis` aliases use `scripts/aegis.sh`. The launcher auto-approves Copilot's local tools while
+denying `git push` and `git send-pack`, grants the shared AI instructions and active work root, and
+adds the station's shared folder when the Work context permits it. On MasterChief, Raynor and
+Zeratul receive only their active universe root and never the Work shared folder. Remote repository
+mutations still require Oliver's explicit approval under Aegis's embedded identity instructions.
+
 ## Context resolution
 
 `ai-config install` generates each tool's global bootstrap from its tracked template and canonical
