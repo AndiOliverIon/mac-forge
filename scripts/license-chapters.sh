@@ -118,6 +118,10 @@ PY
 }
 
 EXTERNAL_FOLDER="$(resolve_external_folder)"
+# macOS-style appsettings paths (/Users/<name>/...) don't exist on Linux; map them to $HOME.
+if [[ "$(uname -s)" != "Darwin" && "$EXTERNAL_FOLDER" == /Users/* ]]; then
+  EXTERNAL_FOLDER="$HOME/${EXTERNAL_FOLDER#/Users/*/}"
+fi
 if [[ -n "$EXTERNAL_FOLDER" ]]; then
   LICENSE_ROOT="$EXTERNAL_FOLDER/wwwroot/license"
 else
