@@ -25,9 +25,18 @@ copilot_args=(
 	--deny-tool='shell(git send-pack)'
 )
 
+if command -v copilot >/dev/null 2>&1; then
+	copilot_command=(copilot)
+elif command -v gh >/dev/null 2>&1; then
+	copilot_command=(gh copilot --)
+else
+	printf 'Error: GitHub Copilot CLI is unavailable.\n' >&2
+	exit 1
+fi
+
 for allowed_directory in "$HOME/.config/ai" "$workspace_root" "$shared_root"; do
 	[[ -n "$allowed_directory" && -d "$allowed_directory" ]] || continue
 	copilot_args+=(--add-dir "$allowed_directory")
 done
 
-exec copilot "${copilot_args[@]}" "$@"
+exec "${copilot_command[@]}" "${copilot_args[@]}" "$@"
