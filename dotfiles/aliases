@@ -268,7 +268,7 @@ alias aiusage='~/mac-forge/scripts/agents/usage.sh'
 # AI team members (name-based launch)
 alias artanis="codex"
 alias argus="claude"
-alias aegis="copilot --add-dir ~/.config/ai --add-dir /home/oliver/shared --allow-tool='shell(~/.config/ai/bin/ai-context.sh)' --allow-tool='shell(~/.config/ai/bin/ai-read-instructions.sh)' --allow-tool='shell($HOME/mac-forge/.config/ai/bin/ai-context.sh)' --allow-tool='shell($HOME/mac-forge/.config/ai/bin/ai-read-instructions.sh)'"
+alias aegis="copilot --add-dir ~/.config/ai --add-dir /home/oliver/shared --add-dir /home/oliver/work/.ai --allow-tool='shell(~/.config/ai/bin/review-handoff-verify.sh)' --allow-tool='shell($HOME/mac-forge/.config/ai/bin/review-handoff-verify.sh)' --allow-tool='shell(~/.config/ai/bin/ai-context.sh)' --allow-tool='shell(~/.config/ai/bin/ai-read-instructions.sh)' --allow-tool='shell($HOME/mac-forge/.config/ai/bin/ai-context.sh)' --allow-tool='shell($HOME/mac-forge/.config/ai/bin/ai-read-instructions.sh)'"
 alias aldaris="~/mac-forge/scripts/aldaris.sh"
 alias aldaris-configure="~/mac-forge/scripts/aldaris-configure.sh"
 alias aldaris-stop="~/mac-forge/scripts/aldaris-configure.sh stop"
