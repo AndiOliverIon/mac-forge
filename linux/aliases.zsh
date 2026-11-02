@@ -222,6 +222,7 @@ alias lcsnapdel='cd "$HOME/sql/snapshots" && rm -rf ./*'
 alias work='cd "$FORGE_WORK_ROOT"'
 alias perf='__forge_project_cd ardis-perform'
 alias perf230='__forge_project_cd ardis-perform-230'
+alias perf232='__forge_project_cd ardis-perform-232'
 alias timetrack='__forge_project_cd ardis.timetrack'
 alias tt=timetrack
 ttbs() { __forge_project_cd ardis.timetrack && ./buildsolution.sh; }

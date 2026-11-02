@@ -217,6 +217,7 @@ $locations = @{
   "perfdev" = "C:\work\ardis-perform-dev"
   "perf228" = "C:\work\ardis-perform-228"
   "perf230" = "C:\work\ardis-perform-230"
+  "perf232" = "C:\work\ardis-perform-232"
   "perfold" = "C:\work\ardis-perform-older"
   "perfclient230" = "C:\work\ardis-perform-230\ardis.perform.client"
   "gpt" = "C:\work\ardis.tools.extensions"
