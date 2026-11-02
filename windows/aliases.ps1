@@ -220,6 +220,7 @@ $locations = @{
   "perf232" = "C:\work\ardis-perform-232"
   "perfold" = "C:\work\ardis-perform-older"
   "perfclient230" = "C:\work\ardis-perform-230\ardis.perform.client"
+  "perfclient232" = "C:\work\ardis-perform-232\ardis.perform.client"
   "gpt" = "C:\work\ardis.tools.extensions"
   "gptbin" = "C:\work\ardis.tools.extensions\Ardis.Utils\bin\debug\net8.0"
   "lc" = "C:\work\ardis-local-connector"
