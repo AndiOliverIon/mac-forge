@@ -40,6 +40,10 @@ done
 SYSTEM_PROMPT="$(cat "$FORGE_ROOT/configs/aldaris/instructions.md" && shared_base)" || {
   echo "Could not read every shared AI instruction under $SHARED_AI; Aldaris was not started." >&2; exit 1;
 }
+HANDOFF_PUBLISHER="$HOME/.config/ai/bin/review-handoff-publish.sh"
+[[ -x "$HANDOFF_PUBLISHER" ]] || {
+  echo "Handoff publisher is missing or not executable: $HANDOFF_PUBLISHER" >&2; exit 1;
+}
 
 export QWEN_HOME="$AI_ROOT/qwen"
 export HF_HOME="$AI_ROOT/cache/huggingface"
@@ -55,4 +59,5 @@ engine_ensure_loaded
 
 exec "$QWEN" --auth-type openai --openai-base-url "$BASE_URL" \
   --openai-api-key "$API_KEY" --model "$MODEL" \
+  --allowed-tools "Shell($HANDOFF_PUBLISHER *)" \
   --append-system-prompt "$SYSTEM_PROMPT" "$@"

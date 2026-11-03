@@ -7,10 +7,17 @@ station="$(printf '%s' "$station" | tr '[:upper:]' '[:lower:]')"
 
 workspace_root="${FORGE_UNIVERSE_ROOT:-$HOME/work}"
 shared_root=""
+handoff_lane=""
 
 case "$station" in
 	hades)
 		shared_root="/Volumes/shared"
+		if repository_root="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+			project_key="$(basename "$repository_root")"
+			if [[ "$project_key" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
+				handoff_lane="$HOME/handoffserver/$project_key"
+			fi
+		fi
 		;;
 	masterchief)
 		if [[ -z "${FORGE_UNIVERSE_ROOT:-}" ]]; then
@@ -34,7 +41,7 @@ else
 	exit 1
 fi
 
-for allowed_directory in "$HOME/.config/ai" "$workspace_root" "$shared_root"; do
+for allowed_directory in "$HOME/.config/ai" "$workspace_root" "$shared_root" "$handoff_lane"; do
 	[[ -n "$allowed_directory" && -d "$allowed_directory" ]] || continue
 	copilot_args+=(--add-dir "$allowed_directory")
 done

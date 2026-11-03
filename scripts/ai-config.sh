@@ -11,12 +11,17 @@ AI_LINK="$USER_CONFIG_ROOT/.config/ai"
 CODEX_DIR="$USER_CONFIG_ROOT/.codex"
 CLAUDE_DIR="$USER_CONFIG_ROOT/.claude"
 COPILOT_DIR="$USER_CONFIG_ROOT/.copilot"
+CODEX_RULES_DIR="$CODEX_DIR/rules"
 CODEX_BOOTSTRAP="$CODEX_DIR/AGENTS.md"
 CLAUDE_BOOTSTRAP="$CLAUDE_DIR/CLAUDE.md"
 COPILOT_BOOTSTRAP="$COPILOT_DIR/copilot-instructions.md"
 CODEX_TEMPLATE="$AI_SOURCE/bootstrap/codex-AGENTS.md"
 CLAUDE_TEMPLATE="$AI_SOURCE/bootstrap/claude-CLAUDE.md"
 COPILOT_TEMPLATE="$AI_SOURCE/bootstrap/copilot-instructions.md"
+CODEX_HANDOFF_RULES_SOURCE="$AI_SOURCE/bootstrap/codex-review-handoff.rules"
+CODEX_HANDOFF_RULES="$CODEX_RULES_DIR/review-handoff.rules"
+CLAUDE_HANDOFF_RULE_MAST="Bash(/home/oliver/.config/ai/bin/review-handoff-publish.sh *)"
+CLAUDE_HANDOFF_RULE_HADES="Bash(/Users/oliver/.config/ai/bin/review-handoff-publish.sh *)"
 REQUIRED_SOURCES=(
     identities.md
     guidelines/guidelines.md
@@ -49,10 +54,12 @@ REQUIRED_SOURCES=(
     guidelines/provisional/sql.md
     bin/ai-context.sh
     bin/ai-read-instructions.sh
+    bin/review-handoff-publish.sh
     bin/review-handoff-verify.sh
     bootstrap/codex-AGENTS.md
     bootstrap/claude-CLAUDE.md
     bootstrap/copilot-instructions.md
+    bootstrap/codex-review-handoff.rules
 )
 failures=0
 warnings=0
@@ -139,6 +146,11 @@ check_required_sources() {
     else
         fail "shared handoff validator is not executable: $AI_SOURCE/bin/review-handoff-verify.sh"
     fi
+    if [[ -x "$AI_SOURCE/bin/review-handoff-publish.sh" ]]; then
+        pass "shared executable: bin/review-handoff-publish.sh"
+    else
+        fail "shared handoff publisher is not executable: $AI_SOURCE/bin/review-handoff-publish.sh"
+    fi
 
     if command -v jq >/dev/null 2>&1; then
         pass "AI context dependency: jq"
@@ -165,6 +177,11 @@ check_required_sources() {
         pass "AI handoff validator syntax"
     else
         fail "AI handoff validator has invalid Bash syntax"
+    fi
+    if bash -n "$AI_SOURCE/bin/review-handoff-publish.sh"; then
+        pass "AI handoff publisher syntax"
+    else
+        fail "AI handoff publisher has invalid Bash syntax"
     fi
     if [[ -x "$TEAM_WORK_SCRIPT" ]]; then
         pass "team workflow coordinator is executable"
@@ -318,6 +335,8 @@ require_source_layout() {
         || die "shared resolver is not executable: $AI_SOURCE/bin/ai-context.sh"
     [[ -x "$AI_SOURCE/bin/ai-read-instructions.sh" ]] \
         || die "shared batch reader is not executable: $AI_SOURCE/bin/ai-read-instructions.sh"
+    [[ -x "$AI_SOURCE/bin/review-handoff-publish.sh" ]] \
+        || die "shared handoff publisher is not executable: $AI_SOURCE/bin/review-handoff-publish.sh"
     command -v jq >/dev/null 2>&1 \
         || die "required command is unavailable: jq"
     jq -e '.schemaVersion == 1 and (.stations | type == "array")' "$FORGE_ROOT/configs/stations.json" >/dev/null 2>&1 \
@@ -402,6 +421,23 @@ check_bootstrap() {
         pass "$tool_name bootstrap matches the generated shared sources"
     else
         fail "$tool_name bootstrap differs from the generated $source_path"
+    fi
+}
+
+check_claude_handoff_permissions() {
+    if [[ -L "$CLAUDE_DIR/settings.json" || ! -f "$CLAUDE_DIR/settings.json" ]]; then
+        fail "Claude settings are missing or not a regular file: $CLAUDE_DIR/settings.json"
+    elif jq -e \
+        --arg masterchief "$CLAUDE_HANDOFF_RULE_MAST" \
+        --arg hades "$CLAUDE_HANDOFF_RULE_HADES" \
+        '(.permissions.allow // []) as $allow
+         | ($allow | type == "array")
+           and ($allow | index($masterchief) != null)
+           and ($allow | index($hades) != null)' \
+        "$CLAUDE_DIR/settings.json" >/dev/null; then
+        pass "Claude allows the validated handoff publisher"
+    else
+        fail "Claude does not allow the validated handoff publisher"
     fi
 }
 
@@ -528,6 +564,8 @@ verify_config() {
     check_tool_directory "$CODEX_DIR" "Codex"
     check_tool_directory "$CLAUDE_DIR" "Claude"
     check_tool_directory "$COPILOT_DIR" "Copilot"
+    check_bootstrap "$CODEX_HANDOFF_RULES_SOURCE" "$CODEX_HANDOFF_RULES" "Codex handoff rules" cat
+    check_claude_handoff_permissions
     check_bootstrap "$CODEX_TEMPLATE" "$CODEX_BOOTSTRAP" "Codex"
     check_bootstrap "$CLAUDE_TEMPLATE" "$CLAUDE_BOOTSTRAP" "Claude"
     check_bootstrap "$COPILOT_TEMPLATE" "$COPILOT_BOOTSTRAP" "Copilot"
@@ -620,6 +658,41 @@ install_bootstrap() {
     printf 'Installed: %s\n' "$target_path"
 }
 
+install_claude_handoff_permissions() {
+    local settings_path="$CLAUDE_DIR/settings.json"
+    local temporary_path
+
+    [[ ! -L "$settings_path" ]] \
+        || die "Claude settings must be a regular file: $settings_path"
+    if [[ ! -e "$settings_path" ]]; then
+        printf '{}\n' > "$settings_path"
+    fi
+    [[ -f "$settings_path" ]] \
+        || die "Claude settings must be a regular file: $settings_path"
+
+    temporary_path="$(mktemp "${settings_path}.ai-config.XXXXXX")"
+    if ! jq \
+        --arg masterchief "$CLAUDE_HANDOFF_RULE_MAST" \
+        --arg hades "$CLAUDE_HANDOFF_RULE_HADES" \
+        'def add_once($entry): if index($entry) == null then . + [$entry] else . end;
+         .permissions = (.permissions // {})
+         | .permissions.allow = ((.permissions.allow // [])
+             | add_once($masterchief)
+             | add_once($hades))' \
+        "$settings_path" > "$temporary_path"; then
+        rm -f "$temporary_path"
+        die "failed to add the handoff publisher to Claude settings"
+    fi
+    if cmp -s "$temporary_path" "$settings_path"; then
+        rm -f "$temporary_path"
+        printf 'Already current: %s\n' "$settings_path"
+        return
+    fi
+    chmod 600 "$temporary_path"
+    mv "$temporary_path" "$settings_path"
+    printf 'Installed Claude handoff permission: %s\n' "$settings_path"
+}
+
 install_config() {
     local station lane handoff_directory transcript_directory
 
@@ -630,6 +703,7 @@ install_config() {
     ensure_tool_directory "$CODEX_DIR" "Codex"
     ensure_tool_directory "$CLAUDE_DIR" "Claude"
     ensure_tool_directory "$COPILOT_DIR" "Copilot"
+    ensure_tool_directory "$CODEX_RULES_DIR" "Codex rules"
     if [[ "$station" == "masterchief" ]]; then
         for lane in work raynor zeratul; do
             handoff_directory="/home/oliver/$lane/.ai/review-handoff"
@@ -645,6 +719,8 @@ install_config() {
         done
     fi
     install_ai_link
+    install_bootstrap "$CODEX_HANDOFF_RULES_SOURCE" "$CODEX_HANDOFF_RULES" cat
+    install_claude_handoff_permissions
     install_bootstrap "$CODEX_TEMPLATE" "$CODEX_BOOTSTRAP"
     install_bootstrap "$CLAUDE_TEMPLATE" "$CLAUDE_BOOTSTRAP"
     install_bootstrap "$COPILOT_TEMPLATE" "$COPILOT_BOOTSTRAP"

@@ -54,6 +54,12 @@ remains the decision-maker.
 - Replace a present owned transporter file with one update operation. When using `apply_patch`, use
   exactly one operation for that path; never combine `Delete File` and `Add File` for the same path
   in one patch. Use `Add File` only after verifying that the owned file is absent.
+- When transporter content is staged in `/tmp`, publish it with the station's canonical absolute
+  publisher path (`/home/oliver/.config/ai/bin/review-handoff-publish.sh` on MasterChief or
+  `/Users/oliver/.config/ai/bin/review-handoff-publish.sh` on Hades), the source path, and the owned
+  transporter filename. Do not copy it into the lane with `cp`; the publisher validates the active
+  lane, metadata, file type, and destination before replacing the transporter without an approval
+  prompt.
 - Transporter files contain only the latest state; conversation and version-control history provide
   the long-term record.
 

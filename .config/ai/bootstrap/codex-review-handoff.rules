@@ -1,0 +1,11 @@
+prefix_rule(
+    pattern = ["/home/oliver/.config/ai/bin/review-handoff-publish.sh"],
+    decision = "allow",
+    justification = "Publish a validated handoff transporter into the active MasterChief lane.",
+)
+
+prefix_rule(
+    pattern = ["/Users/oliver/.config/ai/bin/review-handoff-publish.sh"],
+    decision = "allow",
+    justification = "Publish a validated handoff transporter into the active Hades project lane.",
+)
