@@ -154,8 +154,10 @@ alias	perfclient	perfclient — Go to the Ardis Perform Angular client.
 alias	perfdev	perfdev — Go to the Ardis Perform DEV worktree.
 alias	perf228	perf228 — Go to the Ardis Perform 228 worktree.
 alias	perf230	perf230 — Go to the Ardis Perform 230 worktree.
+alias	perf232	perf232 — Go to the Ardis Perform 232 worktree.
 alias	perfold	perfold — Go to the older Ardis Perform worktree.
 alias	perfclient230	perfclient230 — Go to the Ardis Perform 230 Angular client.
+alias	perfclient232	perfclient232 — Go to the Ardis Perform 232 Angular client.
 alias	perftest	perftest — Run all Ardis Perform unit tests, or filter them with an optional test-name keyword.
 alias	gpt	gpt — Go to the Ardis Tools Extensions repo.
 alias	gptbin	gptbin — Go to the Ardis Utils debug build output folder.
