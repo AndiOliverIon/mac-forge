@@ -33,7 +33,10 @@ dotnet build "$PROJDIR/$PROJECT_NAME.csproj" -c Debug
 
 # Generate OpenAPI JSON from the built assembly
 DLL="$PROJDIR/bin/Debug/$TARGET_FRAMEWORK/osx-arm64/Ardis.Perform.dll"
-dotnet tool run swagger tofile --output "$PROJDIR/openapi-v1.json" "$DLL" v1
+(
+    cd "$PROJDIR"
+    dotnet tool run swagger tofile --output "$PROJDIR/openapi-v1.json" "$DLL" v1
+)
 
 # Ensure output directory exists; optionally force regeneration
 mkdir -p "$OUTDIR"
