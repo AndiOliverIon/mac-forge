@@ -156,6 +156,18 @@ Oliver names Artanis or Aegis); he never reviews and does not take part in auton
 single universe with one project lane per repository. `bin/review-handoff-verify.sh` validates the
 MasterChief lanes, including distinct Coworker and Reviewer identities.
 
+## PR review
+
+For a colleague's pull request, say “Review last N commits for PR” or “Review this branch for PR
+[against <base>]”. The words “for PR” select the `pr-review` kind; without them a review keeps its
+ordinary, unformatted meaning, and the handoff kinds are unchanged. Only one kind-table row and one
+clarifying sentence are always loaded; the row names the format file so a manual fallback still
+finds it; the format lives in `guidelines/review/pr.md`, routed by `--mode pr-review`, which
+selects stack guidelines as review mode does. The answer is read-only and stays in the conversation:
+problems ordered by severity as `Problem k/N` with file and line, problem, recommendation, and a
+paste-ready reply to the author in Oliver's voice. Follow-ups such as “Rewrite reply 2 softer” adjust
+one problem without re-reviewing.
+
 ## QA handoff
 
 QA is the last step of a task, enabled on Hades only for now. After the code-review cycle ends with

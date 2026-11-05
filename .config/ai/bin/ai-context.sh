@@ -27,10 +27,11 @@ usage() {
 Resolve the current AI execution and instruction context.
 
 Usage:
-  ai-context.sh --mode <development|review|handoff|qa-handoff> [scope]
+  ai-context.sh --mode <development|review|handoff|qa-handoff|pr-review> [scope]
 
 Modes handoff (code review) and qa-handoff (testing the running app) route the
-handoff protocol for that kind.
+handoff protocol for that kind. Mode pr-review routes the read-only PR review
+format and selects stack guidelines as review mode does.
 
 Scope:
   --repository <path>       Repository or a path inside it.
@@ -348,7 +349,7 @@ corpus_matches() {
 select_angular_review_topics() {
     local target
 
-    [[ "$MODE" == "review" ]] || return 0
+    [[ "$MODE" == "review" || "$MODE" == "pr-review" ]] || return 0
     selection_corpus="$({
         for target in "${resolved_targets[@]}"; do
             printf '%s\n' "$target"
@@ -408,6 +409,8 @@ collect_job_instruction_paths() {
         esac
     fi
 
+    [[ "$MODE" == "pr-review" ]] && append_unique routed_instructions "$AI_ROOT/guidelines/review/pr.md"
+
     [[ -n "$repository_root" ]] && append_unique provisional_instructions "$AI_ROOT/guidelines/provisional/general.md"
 
     for stack in "${stacks[@]}"; do
@@ -416,7 +419,7 @@ collect_job_instruction_paths() {
                 append_unique stack_instructions "$AI_ROOT/guidelines/stacks/angular-development.md"
                 append_unique provisional_instructions "$AI_ROOT/guidelines/provisional/angular.md"
                 ;;
-            angular:review)
+            angular:review | angular:pr-review)
                 append_unique stack_instructions "$AI_ROOT/guidelines/stacks/angular-review/_core.md"
                 select_angular_review_topics
                 append_unique provisional_instructions "$AI_ROOT/guidelines/provisional/angular.md"
@@ -566,8 +569,8 @@ while (($# > 0)); do
 done
 
 case "$MODE" in
-    development | review | handoff | qa-handoff) ;;
-    *) die "--mode must be development, review, handoff, or qa-handoff" ;;
+    development | review | handoff | qa-handoff | pr-review) ;;
+    *) die "--mode must be development, review, handoff, qa-handoff, or pr-review" ;;
 esac
 
 require_command git
