@@ -36,30 +36,31 @@ EOF
 }
 
 member_processes() {
-  local member="$1" pid tty comm name
+  local member="$1" pid tty comm name app_bundle
   while read -r pid tty comm; do
     name="${comm##*/}"
     case "$member" in
       artanis)
         if [[ "$tty" != "??" && "$name" == "codex" ]]; then
-          printf '%s\tterminal codex (%s)\n' "$pid" "$tty"
+          printf '%s\tterminal\tcodex on %s\n' "$pid" "$tty"
         fi
         case "$comm" in
           /Applications/ChatGPT.app/Contents/MacOS/ChatGPT | /Applications/Codex.app/Contents/MacOS/Codex)
-            printf '%s\tCodex app (%s)\n' "$pid" "${comm#/Applications/}"
+            app_bundle="${comm#/Applications/}"
+            printf '%s\tCodex app\t%s\n' "$pid" "${app_bundle%%/*}"
             ;;
         esac
         ;;
       argus)
         if [[ "$tty" != "??" && "$name" == "claude" ]]; then
-          printf '%s\tterminal claude (%s)\n' "$pid" "$tty"
+          printf '%s\tterminal\tclaude on %s\n' "$pid" "$tty"
         fi
         ;;
       aegis)
         [[ "$tty" != "??" ]] || continue
         if [[ "$name" == "copilot" ]] ||
           { [[ "$name" == "gh" ]] && ps -o args= -p "$pid" 2>/dev/null | grep -q '^gh copilot'; }; then
-          printf '%s\tterminal copilot (%s)\n' "$pid" "$tty"
+          printf '%s\tterminal\t%s on %s\n' "$pid" "$name" "$tty"
         fi
         ;;
     esac
@@ -104,10 +105,17 @@ display_name="$(printf '%s' "${member_key:0:1}" | tr '[:lower:]' '[:upper:]')${m
 found="$(member_processes "$member_key")"
 [[ -n "$found" ]] || die "No running $display_name process found. Start $display_name first."
 
-echo "Keeping this Mac awake for $display_name:"
-printf '%s\n' "$found" | while IFS=$'\t' read -r pid label; do
-  echo "  pid $pid  $label"
-done
+print_processes() {
+  local prefix="$1" pid mode detail
+  while IFS=$'\t' read -r pid mode detail; do
+    [[ -n "$pid" ]] || continue
+    printf '%s pid %-7s mode: %-10s (%s)\n' "$prefix" "$pid" "$mode" "$detail"
+  done
+}
+
+echo "Member: $display_name"
+echo "Found processes:"
+printf '%s\n' "$found" | print_processes " "
 
 if ! pmset -g batt 2>/dev/null | grep -q "AC Power"; then
   echo "Warning: on battery; only idle sleep is prevented. Plug in for full protection."
@@ -117,6 +125,7 @@ echo "Keep the lid open. Press Ctrl+C to release."
 caffeinate_flags="-ims"
 [[ "$keep_display" == true ]] && caffeinate_flags="-dims"
 
+echo "caffeinate $caffeinate_flags ($([[ "$keep_display" == true ]] && echo "display stays on" || echo "display may sleep"))"
 caffeinate "$caffeinate_flags" &
 caffeinate_pid=$!
 trap 'kill "$caffeinate_pid" 2>/dev/null || true' EXIT
@@ -126,8 +135,14 @@ while true; do
   sleep "$poll_seconds" &
   wait $! || true
   kill -0 "$caffeinate_pid" 2>/dev/null || die "caffeinate stopped unexpectedly."
-  if [[ -z "$(member_processes "$member_key")" ]]; then
-    echo "$display_name has no running processes; released."
+  current="$(member_processes "$member_key")"
+  if [[ -z "$current" ]]; then
+    echo "$(date +%H:%M:%S) $display_name has no running processes; released."
     exit 0
+  fi
+  if [[ "$current" != "$found" ]]; then
+    comm -13 <(printf '%s\n' "$found" | sort) <(printf '%s\n' "$current" | sort) | print_processes "$(date +%H:%M:%S) + started"
+    comm -23 <(printf '%s\n' "$found" | sort) <(printf '%s\n' "$current" | sort) | print_processes "$(date +%H:%M:%S) - ended  "
+    found="$current"
   fi
 done
