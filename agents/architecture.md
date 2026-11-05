@@ -80,6 +80,9 @@ development database—may still run locally and is not redirected to VPS1 by th
   preserves approved routine-local changes as a baseline, and waits for Oliver's decisions inside the
   original terminal process; `/stop` ends a waiting loop without approval. Each autonomous task also
   receives one owner-only Markdown transcript in the active lane's `transcripts/` directory.
+- `scripts/keep-alive.sh`: macOS-only `keep-alive --member <Artanis|Argus|Aegis> [--display]`; holds
+  `caffeinate` while that member's terminal sessions (or, for Artanis, the Codex app) run, without
+  changing `pmset` settings. No Linux alias: `caffeinate` is macOS-specific.
 - `scripts/clean.sh`: interactive cleaner for configured target directories.
 - `scripts/perform-prep.sh`, `scripts/perform-test.sh`, `scripts/ardis-migrate.sh`, and
   `scripts/gen-open-api.sh`: Ardis/Perform helpers.
