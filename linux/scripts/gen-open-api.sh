@@ -56,10 +56,13 @@ if [[ ! -f "${DLL}" ]]; then
     exit 1
 fi
 
-dotnet tool run swagger tofile \
-    --output "${PROJDIR}/openapi-v1.json" \
-    "${DLL}" \
-    v1
+(
+    cd "${PROJDIR}"
+    dotnet tool run swagger tofile \
+        --output "${PROJDIR}/openapi-v1.json" \
+        "${DLL}" \
+        v1
+)
 
 mkdir -p "${OUTDIR}"
 rm -f "${OUTFILE}"
