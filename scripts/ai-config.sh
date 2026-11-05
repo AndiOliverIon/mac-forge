@@ -36,6 +36,7 @@ REQUIRED_SOURCES=(
     guidelines/handoff/qa.md
     guidelines/handoff/hades.md
     guidelines/handoff/masterchief.md
+    guidelines/review/pr.md
     guidelines/jira/common.md
     guidelines/stacks/angular-development.md
     guidelines/stacks/angular-review/_core.md

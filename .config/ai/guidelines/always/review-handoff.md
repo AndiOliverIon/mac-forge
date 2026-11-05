@@ -2,13 +2,15 @@
 
 The protocol is dormant unless Oliver invokes a handoff command, starts `team-work.sh`, or gives an
 unambiguous equivalent instruction. An autonomous team-loop prompt carrying `Automation: team-loop`
-and a loop ID is a routed code-review trigger created from Oliver's script invocation.
+and a loop ID is a routed code-review trigger created from Oliver's script invocation. The protocol
+stays dormant for `pr-review`, which only routes through this table.
 
 ## Pick the Kind From the Trigger
 
 | Oliver's words | Kind | Resolver mode |
 | --- | --- | --- |
-| No handoff command | ordinary co-work or review | `development` or `review` |
+| No handoff command and no “for PR” trigger | ordinary co-work or review | `development` or `review` |
+| “Review … for PR” (last N commits, this branch) | PR review of a peer's work; read-only, no handoff files | `pr-review` (loads `guidelines/review/pr.md`; stacks as `review`) |
 | Handoff command containing `QA` (“Prep for Artanis QA takeoff”, “Artanis QA takeoff”, “Process Artanis's QA report”) | QA: Reviewer tests the running app | `qa-handoff` |
 | Any other handoff command (“Prep for Argus takeoff”, “Argus takeoff”, “Process Argus's findings”) | code review | `handoff` |
 
