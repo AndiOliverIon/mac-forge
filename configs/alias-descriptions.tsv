@@ -83,7 +83,7 @@ alias	linux-clean	linux-clean — Run approved reconstructible Linux cache clean
 alias	sim	sim — Cycle focus through the captured desktop apps with mouse movement || Use --cycle SECONDS to save the interval.
 alias	present	present — Set external display presentation resolution/mode.
 alias	prs	prs — Set external display presentation resolution/mode (short for present).
-alias	convert-mov	convert-mov — Convert a selected .mov in the current folder to a readable, high-quality GIF (half-res, ffmpeg+gifski) || Use -n to name output, -o to drop near-duplicate frames (smaller GIF).
+alias	convert-mov	convert-mov — Convert a selected .mov in the current folder to a readable, high-quality GIF (half-res, ffmpeg+gifski) || Use -n to name output, --o (also -o/--optimize) for a smaller GIF (10 fps, up to 1000px wide, 128 colors; full clip timing).
 alias	patch	patch — Apply, remove, or inspect intervention patches || Use --old for legacy project paths || Use --custom to edit mock license chapters.
 alias	p	p — Apply intervention patches || Use --old for legacy project paths || Use --custom to edit mock license chapters.
 alias	pr	pr — Remove intervention patches and restore the original mock license chapter list.
@@ -278,7 +278,7 @@ script	linux-clean-yarn-cache	linux-clean-yarn-cache — Clear Yarn v1 downloade
 script	linux-clean-stale-temp	linux-clean-stale-temp — Delete stale current-user temporary entries while preserving open, recent, symlinked, and mixed-ownership content.
 script	linux-clean-desktop-caches	linux-clean-desktop-caches — Clear reconstructible thumbnail and shader caches as a full-only cleanup.
 script	sim	sim — Cycle focus through the desktop apps captured at startup until Ctrl+C, with mouse movement and no clicks.
-script	convert-mov	convert-mov — Convert a selected .mov in the current folder to a readable, high-quality GIF (half-res, ffmpeg+gifski) || Use -n to name output, -o to drop near-duplicate frames (smaller GIF).
+script	convert-mov	convert-mov — Convert a selected .mov in the current folder to a readable, high-quality GIF (half-res, ffmpeg+gifski) || Use -n to name output, --o (also -o/--optimize) for a smaller GIF (10 fps, up to 1000px wide, 128 colors; full clip timing).
 script	db-admin	db-admin — Administer a local SQL database: offline/online, drop, recovery, shrink. || Optional --version YEAR selects a parallel SQL container.
 script	db-clear	db-clear — Clear SQL databases; default hard mode removes container/data after typed confirmation. || Optional --version YEAR targets a parallel SQL container.
 script	db-fix	db-fix — Run SQL fix scripts from the repo sqls folder against a chosen database.
