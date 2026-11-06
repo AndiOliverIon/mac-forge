@@ -20,6 +20,14 @@ himself. This is not a handoff: write no transporter files.
   directly breaks the changed code.
 - Jira stays dormant unless Oliver names a task key in the request.
 
+## Validation
+
+- Scope linting, formatting, and similar validation to files changed by the review target whenever
+  the underlying tool accepts file paths. Run repository-wide checks only when scoped execution is
+  unavailable, project configuration requires full context, or Oliver explicitly requests them.
+  Stop a non-essential repository-wide check after 60 seconds without progress when an equivalent
+  scoped check is available.
+
 ## Output
 
 Answer in the conversation, all problems in one response, ordered by severity (`blocking`,
