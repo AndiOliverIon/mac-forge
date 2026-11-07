@@ -8,6 +8,7 @@ alias desk="cd ~/Desktop"
 alias dev="cd ~/dev"
 alias down="cd ~/Downloads"
 alias projects="cd ~/projects"
+alias wp="cd ~/projects/work-pocket"
 alias cdp='pwd | pbcopy'
 alias reloadterm="source ~/.zshrc"
 alias fixdock="killall Dock"
